@@ -20,6 +20,16 @@ export default function Homepage() {
 
   const slides = event ? generateOnboardingSlides(event) : [];
 
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % Math.max(slides.length, 1));
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + Math.max(slides.length, 1)) % Math.max(slides.length, 1));
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => nextSlide(),
+    onSwipedRight: () => prevSlide(),
+    trackMouse: false,
+    trackTouch: true,
+  });
+
   // Auto-advance slides
   useEffect(() => {
     if (!slides.length) return;
@@ -36,16 +46,6 @@ export default function Homepage() {
       </div>
     );
   }
-
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => nextSlide(),
-    onSwipedRight: () => prevSlide(),
-    trackMouse: false,
-    trackTouch: true,
-  });
 
   return (
     <div className="min-h-screen flex flex-col" style={{ fontFamily: "var(--font-body)" }}>
