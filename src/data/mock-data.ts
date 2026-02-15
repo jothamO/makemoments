@@ -1,4 +1,4 @@
-import type { CelebrationEvent, Template, Celebration, Admin, SaleRecord } from "./types";
+import type { CelebrationEvent, Template, Celebration, Admin, SaleRecord, StoryPage } from "./types";
 
 export const mockEvents: CelebrationEvent[] = [
   {
@@ -29,6 +29,20 @@ export const mockEvents: CelebrationEvent[] = [
   },
 ];
 
+const defaultPage = (overrides: Partial<StoryPage> = {}): StoryPage => ({
+  id: `page-${Math.random().toString(36).slice(2, 8)}`,
+  text: "",
+  fontFamily: "Playfair Display",
+  fontSize: "medium",
+  textAlign: "center",
+  textColor: "#FFFFFF",
+  bgGradientStart: "#FF4081",
+  bgGradientEnd: "#FF8C7A",
+  transition: "fade",
+  stickers: [],
+  ...overrides,
+});
+
 export const mockTemplates: Template[] = [
   {
     id: "tpl-1",
@@ -47,6 +61,11 @@ export const mockTemplates: Template[] = [
     layers: ["gradient-overlay", "floral-border"],
     popularity: 342,
     createdAt: Date.now(),
+    defaultPages: [
+      defaultPage({ text: "", bgGradientStart: "#FF4081", bgGradientEnd: "#C2185B" }),
+      defaultPage({ text: "Happy Women's Day!", bgGradientStart: "#FF8C7A", bgGradientEnd: "#FF4081" }),
+      defaultPage({ text: "You are incredible 💐", bgGradientStart: "#FFD54F", bgGradientEnd: "#FF8C7A" }),
+    ],
   },
   {
     id: "tpl-2",
@@ -66,6 +85,10 @@ export const mockTemplates: Template[] = [
     layers: ["frame-white"],
     popularity: 215,
     createdAt: Date.now(),
+    defaultPages: [
+      defaultPage({ bgGradientStart: "#E8D5E0", bgGradientEnd: "#F8E8F0" }),
+      defaultPage({ text: "You inspire everyone 🌟", bgGradientStart: "#FF4081", bgGradientEnd: "#FF8C7A" }),
+    ],
   },
   {
     id: "tpl-3",
@@ -83,6 +106,11 @@ export const mockTemplates: Template[] = [
     layers: ["watercolor-bg"],
     popularity: 189,
     createdAt: Date.now(),
+    defaultPages: [
+      defaultPage({ bgGradientStart: "#FFF3E0", bgGradientEnd: "#FFE0B2", textColor: "#2D1B30" }),
+      defaultPage({ text: "Dear Mom", fontFamily: "Playfair Display", bgGradientStart: "#FFCCBC", bgGradientEnd: "#FF8A65", textColor: "#FFFFFF" }),
+      defaultPage({ text: "Thank you for everything you do 💕", bgGradientStart: "#FF4081", bgGradientEnd: "#FF8C7A" }),
+    ],
   },
 ];
 
@@ -93,8 +121,12 @@ export const mockCelebrations: Celebration[] = [
     eventId: "evt-1",
     slug: "sarah-mom-2026",
     email: "jane@example.com",
-    userMedia: { "ms-1": "/placeholder.svg", "ms-2": "/placeholder.svg" },
-    userText: { "ts-1": "Super Mom Sarah", "ts-2": "You inspire everyone around you. Happy Women's Day! 💐" },
+    pages: [
+      defaultPage({ photoUrl: "/placeholder.svg", text: "", bgGradientStart: "#FF4081", bgGradientEnd: "#C2185B" }),
+      defaultPage({ text: "Super Mom Sarah", fontFamily: "Playfair Display", bgGradientStart: "#FF8C7A", bgGradientEnd: "#FF4081", stickers: [{ emoji: "👑", x: 80, y: 10 }] }),
+      defaultPage({ text: "You inspire everyone around you. Happy Women's Day! 💐", bgGradientStart: "#FFD54F", bgGradientEnd: "#FF8C7A" }),
+    ],
+    musicTrackId: "track-3",
     removeWatermark: true,
     hasMusic: true,
     customLink: true,
@@ -110,8 +142,11 @@ export const mockCelebrations: Celebration[] = [
     eventId: "evt-1",
     slug: "happy-wd-tina",
     email: "mark@example.com",
-    userMedia: { "ms-7": "/placeholder.svg" },
-    userText: { "ts-4": "Dear Tina", "ts-5": "Wishing you the most wonderful Women's Day! You are truly amazing." },
+    pages: [
+      defaultPage({ photoUrl: "/placeholder.svg", bgGradientStart: "#FFF3E0", bgGradientEnd: "#FFE0B2", textColor: "#2D1B30" }),
+      defaultPage({ text: "Dear Tina", fontFamily: "Playfair Display", bgGradientStart: "#FFCCBC", bgGradientEnd: "#FF8A65" }),
+      defaultPage({ text: "Wishing you the most wonderful Women's Day! You are truly amazing.", bgGradientStart: "#FF4081", bgGradientEnd: "#FF8C7A" }),
+    ],
     removeWatermark: false,
     hasMusic: false,
     customLink: false,

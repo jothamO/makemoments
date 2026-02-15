@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { createCelebration } from "@/data/data-service";
-import type { CelebrationEvent, Template } from "@/data/types";
+import type { CelebrationEvent, Template, StoryPage } from "@/data/types";
 import { CreditCard } from "lucide-react";
 
 interface PaymentModalProps {
@@ -14,14 +14,14 @@ interface PaymentModalProps {
   onClose: () => void;
   event: CelebrationEvent;
   template: Template;
-  userMedia: Record<string, string>;
-  userText: Record<string, string>;
+  pages: StoryPage[];
+  musicTrackId?: string;
 }
 
 const BASE_PRICE = 1000;
 const UPSELL_PRICE = 500;
 
-export function PaymentModal({ open, onClose, event, template, userMedia, userText }: PaymentModalProps) {
+export function PaymentModal({ open, onClose, event, template, pages, musicTrackId }: PaymentModalProps) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [removeWatermark, setRemoveWatermark] = useState(false);
@@ -38,14 +38,15 @@ export function PaymentModal({ open, onClose, event, template, userMedia, userTe
     if (!email) return;
     setProcessing(true);
     setTimeout(() => {
-      const slug = `${(userText[template.textSlots[0]?.id] || "card").toLowerCase().replace(/\s+/g, "-")}-${Date.now().toString(36)}`;
+      const firstText = pages.find((p) => p.text)?.text || "card";
+      const slug = `${firstText.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 20)}-${Date.now().toString(36)}`;
       createCelebration({
         templateId: template.id,
         eventId: event.id,
         slug,
         email,
-        userMedia,
-        userText,
+        pages,
+        musicTrackId: hasMusic ? musicTrackId : undefined,
         removeWatermark,
         hasMusic,
         customLink,
@@ -60,6 +61,7 @@ export function PaymentModal({ open, onClose, event, template, userMedia, userTe
   };
 
   const t = event.theme;
+  const firstPage = pages[0];
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -70,13 +72,21 @@ export function PaymentModal({ open, onClose, event, template, userMedia, userTe
         </DialogHeader>
 
         <div className="space-y-5 mt-2">
-          {/* Preview */}
-          <div
-            className="aspect-video rounded-lg flex items-center justify-center text-white text-sm"
-            style={{ background: `linear-gradient(135deg, ${t.bgGradientStart}, ${t.bgGradientEnd})` }}
-          >
-            Preview: {template.name}
-          </div>
+          {/* Preview thumbnail */}
+          {firstPage && (
+            <div
+              className="aspect-video rounded-lg flex items-center justify-center overflow-hidden"
+              style={{ background: `linear-gradient(135deg, ${firstPage.bgGradientStart}, ${firstPage.bgGradientEnd})` }}
+            >
+              {firstPage.photoUrl ? (
+                <img src={firstPage.photoUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <p className="text-sm px-4 text-center" style={{ color: firstPage.textColor, fontFamily: firstPage.fontFamily }}>
+                  {firstPage.text || template.name}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Upsells */}
           <div className="space-y-3">
