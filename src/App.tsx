@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Homepage from "./pages/Homepage";
 import TemplateGallery from "./pages/TemplateGallery";
-import TemplateEditor from "./pages/TemplateEditor";
+import StoryEditor from "./pages/StoryEditor";
 import CelebrationView from "./pages/CelebrationView";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminEvents from "./pages/admin/Events";
@@ -30,7 +30,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Homepage />} />
             <Route path="/create/:eventSlug" element={<TemplateGallery />} />
-            <Route path="/create/:eventSlug/:templateId" element={<TemplateEditor />} />
+            <Route path="/create/:eventSlug/:templateId" element={<StoryEditor />} />
 
             {/* Admin */}
             <Route path="/admin" element={<AdminLayout />}>

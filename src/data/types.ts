@@ -61,6 +61,33 @@ export interface Template {
   layers: string[];
   popularity: number;
   createdAt: number;
+  /** Default pages used when this template is selected in the story editor */
+  defaultPages?: StoryPage[];
+}
+
+export type SlideTransition = "fade" | "slide" | "zoom" | "flip";
+export type FontSize = "small" | "medium" | "large";
+
+export interface StoryPage {
+  id: string;
+  photoUrl?: string;
+  text: string;
+  fontFamily: string;
+  fontSize: FontSize;
+  textAlign: "left" | "center" | "right";
+  textColor: string;
+  bgGradientStart: string;
+  bgGradientEnd: string;
+  transition: SlideTransition;
+  stickers: { emoji: string; x: number; y: number }[];
+}
+
+export interface MusicTrack {
+  id: string;
+  name: string;
+  artist: string;
+  duration: number; // seconds
+  previewUrl?: string;
 }
 
 export interface Celebration {
@@ -69,8 +96,8 @@ export interface Celebration {
   eventId: string;
   slug: string;
   email: string;
-  userMedia: Record<string, string>;
-  userText: Record<string, string>;
+  pages: StoryPage[];
+  musicTrackId?: string;
   removeWatermark: boolean;
   hasMusic: boolean;
   customLink: boolean;
