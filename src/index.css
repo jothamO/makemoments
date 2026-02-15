@@ -91,3 +91,40 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Smooth animations */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Custom gradient backgrounds */
+.gradient-hero {
+  background-size: 200% 200%;
+  animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating animation for decorative elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Pulse animation for CTAs */
+@keyframes pulse-shadow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 64, 129, 0.4); }
+  50% { box-shadow: 0 0 0 20px rgba(255, 64, 129, 0); }
+}
+
+.pulse-hover:hover {
+  animation: pulse-shadow 2s infinite;
+}

@@ -14,6 +14,10 @@ export function getAllEvents(): CelebrationEvent[] {
   return [...mockEvents];
 }
 
+export function getUpcomingEvents(): CelebrationEvent[] {
+  return mockEvents.filter((e) => e.status === "upcoming");
+}
+
 export function getEventById(id: string): CelebrationEvent | undefined {
   return mockEvents.find((e) => e.id === id);
 }
