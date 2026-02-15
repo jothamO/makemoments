@@ -18,6 +18,17 @@ export default function Homepage() {
   const upcomingEvents = getUpcomingEvents();
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  const slides = event ? generateOnboardingSlides(event) : [];
+
+  // Auto-advance slides
+  useEffect(() => {
+    if (!slides.length) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
   if (!event || !theme) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -25,16 +36,6 @@ export default function Homepage() {
       </div>
     );
   }
-
-  const slides = generateOnboardingSlides(event);
-
-  // Auto-advance slides
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [slides.length]);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
