@@ -25,24 +25,42 @@ import { getTemplatesByEvent, getAllMusic } from "@/data/data-service";
 import type { Template, StoryPage, EventTheme, MusicTrack } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { PaymentModal } from "@/components/PaymentModal";
+import { StoryPreviewPlayer } from "@/components/editor/StoryPreviewPlayer";
 
 // ---------------------------------------------------------------------------
 // Constants & Types
 // ---------------------------------------------------------------------------
 const COLOR_THEMES = [
-    { name: "default", primary: "#FF4081", secondary: "#FF8C7A" },
-    { name: "purple", primary: "#9C27B0", secondary: "#E1BEE7" },
-    { name: "blue", primary: "#2196F3", secondary: "#90CAF9" },
-    { name: "green", primary: "#4CAF50", secondary: "#A5D6A7" },
-    { name: "orange", primary: "#FF9800", secondary: "#FFCC80" },
-    { name: "teal", primary: "#009688", secondary: "#80CBC4" },
+    { name: "Mint", primary: "#E2F0E9", secondary: "#C5E3D5" },
+    { name: "Sky", primary: "#E0F2FE", secondary: "#BAE6FD" },
+    { name: "Peach", primary: "#FFEDD5", secondary: "#FED7AA" },
+    { name: "Banana", primary: "#FEF9C3", secondary: "#FEF08A" },
+    { name: "Coral", primary: "#FEE2E2", secondary: "#FECACA" },
+    { name: "Purple", primary: "#F5F3FF", secondary: "#EDE9FE" },
+    { name: "Pink", primary: "#FCE7F3", secondary: "#FBCFE8" },
+    { name: "Wine", primary: "#FDF2F8", secondary: "#F9A8D4" },
+    { name: "Forest", primary: "#F0FDF4", secondary: "#DCFCE7" },
+    { name: "Gold", primary: "#FEFCE8", secondary: "#FEF9C3" },
+    { name: "Rose", primary: "#FFF1F2", secondary: "#FFE4E6" },
+    { name: "Lavender", primary: "#F5F3FF", secondary: "#EDE9FE" },
+    { name: "Lemon", primary: "#FEFCE8", secondary: "#FEF9C3" },
+    { name: "Slate", primary: "#F8FAFC", secondary: "#F1F5F9" },
+    { name: "Sunset", primary: "#FFF7ED", secondary: "#FFEDD5" },
+    { name: "Teal", primary: "#F0FDFA", secondary: "#CCFBF1" },
+    { name: "Midnight", primary: "#EEF2FF", secondary: "#E0E7FF" },
+    { name: "Ocean", primary: "#F0F9FF", secondary: "#E0F2FE" },
+    { name: "Noir", primary: "#FAFAFA", secondary: "#F4F4F5" },
+    { name: "Violet", primary: "#FAF5FF", secondary: "#F3E8FF" },
 ];
 
 const FONT_OPTIONS = [
+    { name: "Default", value: "Poppins" },
     { name: "Elegant", value: "Playfair Display" },
-    { name: "Modern", value: "Montserrat" },
+    { name: "Handwritten", value: "Dancing Script" },
     { name: "Playful", value: "Pacifico" },
-    { name: "Bold", value: "Bebas Neue" },
+    { name: "Modern", value: "Montserrat" },
+    { name: "Romantic", value: "Playfair Display" },
+    { name: "Dancing", value: "Dancing Script" },
 ];
 
 const ALIGN_OPTIONS = [
@@ -142,7 +160,6 @@ export default function CreatePage() {
     }
 
     const hasContent = pages.some(p => p.photoUrl || p.text.trim().length > 0);
-    const btnColorClass = hasContent ? "bg-black text-white" : "bg-gray-400/50 text-white/50";
 
     // -----------------------------------------------------------------------
     // Render
@@ -184,7 +201,7 @@ export default function CreatePage() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         className="w-full max-w-lg aspect-[4/5] flex flex-col items-center justify-center text-center px-4"
                     >
                         {/* Photo Slot */}
@@ -221,12 +238,15 @@ export default function CreatePage() {
                                 rows={3}
                             />
 
-                            {/* Separator Line */}
-                            <div className="w-full h-[1px] bg-gray-500/20 mt-4 relative">
-                                <span className="absolute right-0 -top-6 text-[10px] font-bold text-gray-400 tracking-widest uppercase">
+                            {/* Character Count Above Separator */}
+                            <div className="flex justify-end pr-1 mb-1">
+                                <span className="text-[10px] font-medium text-gray-500/60 tabular-nums uppercase tracking-widest">
                                     {currentPage.text.length} / 200
                                 </span>
                             </div>
+
+                            {/* Separator Line */}
+                            <div className="w-full h-[1px] bg-gray-500/20" />
                         </div>
 
                         {/* Stickers on Page */}
@@ -292,49 +312,83 @@ export default function CreatePage() {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute bottom-full mb-4 bg-black/95 backdrop-blur-xl p-2 rounded-2xl flex items-center gap-2 shadow-2xl z-50 border border-white/10"
+                            className={cn(
+                                "absolute bottom-full mb-4 bg-zinc-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl z-50 border border-white/10",
+                                activePicker === "theme" ? "p-4 min-w-[300px]" : "p-2"
+                            )}
                         >
-                            {activePicker === "theme" && COLOR_THEMES.map(ct => (
-                                <button
-                                    key={ct.name}
-                                    onClick={() => {
-                                        updateCurrentPage({ bgGradientStart: ct.primary, bgGradientEnd: ct.secondary });
-                                        setActivePicker(null);
-                                    }}
-                                    className="w-8 h-8 rounded-full border border-white/20 transition-transform active:scale-90"
-                                    style={{ background: `linear-gradient(135deg, ${ct.primary}, ${ct.secondary})` }}
-                                />
-                            ))}
+                            {activePicker === "theme" && (
+                                <>
+                                    <p className="text-[10px] uppercase tracking-widest text-white/40 font-semibold mb-3 px-2">Theme</p>
+                                    <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+                                        {COLOR_THEMES.map(ct => (
+                                            <button
+                                                key={ct.name}
+                                                onClick={() => {
+                                                    updateCurrentPage({ bgGradientStart: ct.primary, bgGradientEnd: ct.secondary });
+                                                    setActivePicker(null);
+                                                }}
+                                                className={cn(
+                                                    "flex items-center gap-3 p-2 w-full rounded-xl transition-colors text-left",
+                                                    currentPage.bgGradientStart === ct.primary ? "bg-white/10" : "hover:bg-white/5"
+                                                )}
+                                            >
+                                                <div
+                                                    className="w-8 h-8 rounded-lg border border-white/10 shrink-0"
+                                                    style={{ background: `linear-gradient(135deg, ${ct.primary}, ${ct.secondary})` }}
+                                                />
+                                                <span className="text-white/80 text-xs font-medium">{ct.name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
 
-                            {activePicker === "font" && FONT_OPTIONS.map(font => (
-                                <button
-                                    key={font.name}
-                                    onClick={() => {
-                                        updateCurrentPage({ fontFamily: font.value });
-                                        setActivePicker(null);
-                                    }}
-                                    className="px-3 py-1.5 text-white whitespace-nowrap text-xs font-semibold hover:bg-white/10 rounded-lg transition-colors"
-                                    style={{ fontFamily: font.value }}
-                                >
-                                    {font.name}
-                                </button>
-                            ))}
+                            {activePicker === "font" && (
+                                <div className="space-y-0.5 min-w-[180px] p-1 max-h-72 overflow-y-auto">
+                                    {FONT_OPTIONS.map(font => (
+                                        <button
+                                            key={font.name}
+                                            onClick={() => {
+                                                updateCurrentPage({ fontFamily: font.value });
+                                                setActivePicker(null);
+                                            }}
+                                            className={cn(
+                                                "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between",
+                                                currentPage.fontFamily === font.value
+                                                    ? "bg-white/15 text-white"
+                                                    : "text-white/70 hover:bg-white/5"
+                                            )}
+                                            style={{ fontFamily: font.value }}
+                                        >
+                                            {font.name}
+                                            {currentPage.fontFamily === font.value && (
+                                                <Check className="w-4 h-4 text-emerald-400" />
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
-                            {activePicker === "align" && ALIGN_OPTIONS.map(opt => (
-                                <button
-                                    key={opt.id}
-                                    onClick={() => {
-                                        updateCurrentPage({ textAlign: opt.id as any });
-                                        setActivePicker(null);
-                                    }}
-                                    className={cn(
-                                        "p-2 text-white hover:bg-white/10 rounded-lg transition-colors",
-                                        currentPage.textAlign === opt.id && "bg-white/20"
-                                    )}
-                                >
-                                    {opt.icon}
-                                </button>
-                            ))}
+                            {activePicker === "align" && (
+                                <div className="flex items-center gap-1 p-1">
+                                    {ALIGN_OPTIONS.map(opt => (
+                                        <button
+                                            key={opt.id}
+                                            onClick={() => {
+                                                updateCurrentPage({ textAlign: opt.id as StoryPage["textAlign"] });
+                                                setActivePicker(null);
+                                            }}
+                                            className={cn(
+                                                "p-2 text-white hover:bg-white/10 rounded-lg transition-colors",
+                                                currentPage.textAlign === opt.id && "bg-white/20"
+                                            )}
+                                        >
+                                            {opt.icon}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
                             {activePicker === "music" && (
                                 <div className="space-y-1 max-h-48 overflow-y-auto p-1 min-w-[160px]">
@@ -378,8 +432,8 @@ export default function CreatePage() {
                                 </div>
                             )}
 
-                            <button onClick={() => setActivePicker(null)} className="p-2 ml-2 text-white/40 hover:text-white border-l border-white/10">
-                                <X className="w-4 h-4" />
+                            <button onClick={() => setActivePicker(null)} className="absolute top-3 right-3 p-1.5 text-white/30 hover:text-white rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5" />
                             </button>
                         </motion.div>
                     )}
@@ -395,18 +449,30 @@ export default function CreatePage() {
             </div>
 
             {/* ACTION BUTTONS */}
-            <div className="grid grid-cols-2 gap-3 px-4 pb-6">
+            <div className="flex gap-3 px-4 pb-8 pt-4 safe-area-bottom">
                 <button
                     onClick={() => setIsPreviewOpen(true)}
-                    className="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-800 text-white font-semibold text-sm hover:bg-gray-700 transition-colors"
+                    className={cn(
+                        "flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 font-semibold transition-all shadow-xl active:scale-95",
+                        hasContent
+                            ? "bg-zinc-800 text-white hover:bg-zinc-900"
+                            : "bg-white/10 backdrop-blur-md border border-white/10 text-white/40 shadow-none"
+                    )}
                 >
-                    <Play className="w-4 h-4 fill-current" /> Preview
+                    <Play className="w-5 h-5 fill-current" />
+                    Preview
                 </button>
                 <button
                     onClick={() => setIsPaymentOpen(true)}
-                    className="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-800 text-white font-semibold text-sm hover:bg-gray-700 transition-colors"
+                    className={cn(
+                        "flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 font-semibold transition-all shadow-xl active:scale-95",
+                        hasContent
+                            ? "bg-zinc-900 text-white hover:bg-black"
+                            : "bg-white/10 backdrop-blur-md border border-white/10 text-white/40 shadow-none"
+                    )}
                 >
-                    <Send className="w-4 h-4" /> Publish
+                    <Send className="w-5 h-5" />
+                    Publish
                 </button>
             </div>
 
@@ -415,45 +481,17 @@ export default function CreatePage() {
                 open={isPaymentOpen}
                 onClose={() => setIsPaymentOpen(false)}
                 event={event}
-                template={{ id: "direct-tpl", name: "Custom Story" } as any}
+                template={{ id: "direct-tpl", name: "Custom Story", eventId: event.id, category: "Custom", previewUrl: "", pages: [] } as Template}
                 pages={pages}
                 musicTrackId={selectedMusicId}
             />
 
-            {/* FULLSCREEN PREVIEW OVERLAY */}
-            <AnimatePresence>
-                {isPreviewOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-black"
-                    >
-                        <button
-                            onClick={() => setIsPreviewOpen(false)}
-                            className="absolute top-6 right-6 z-[110] p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-
-                        <div className="w-full h-full flex items-center justify-center">
-                            <p className="text-white/40 font-medium">Previewing your story...</p>
-                            {/* Simplified preview loop or just one page for now */}
-                            <div
-                                className="absolute inset-0 flex items-center justify-center"
-                                style={{ background: `linear-gradient(135deg, ${currentPage.bgGradientStart}, ${currentPage.bgGradientEnd})` }}
-                            >
-                                <div className="text-center">
-                                    {currentPage.photoUrl && <img src={currentPage.photoUrl} className="w-40 h-40 mx-auto rounded-3xl mb-8 shadow-2xl" />}
-                                    <h1 className="text-5xl font-bold px-12" style={{ fontFamily: currentPage.fontFamily, color: currentPage.textColor }}>
-                                        {currentPage.text || "Your message here"}
-                                    </h1>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* STORY PREVIEW PLAYER */}
+            <StoryPreviewPlayer
+                pages={pages}
+                open={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
+            />
 
             <style>{`
         header, main, footer { user-select: none; }
