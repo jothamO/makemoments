@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Homepage from "./pages/Homepage";
 import CreatePage from "./pages/CreatePage";
+import { Navigate } from "react-router-dom";
+import { getActiveEvent } from "@/data/data-service";
 import TemplateGallery from "./pages/TemplateGallery";
 import StoryEditor from "./pages/StoryEditor";
 import CelebrationView from "./pages/CelebrationView";
@@ -30,7 +32,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Homepage />} />
-            <Route path="/create" element={<CreatePage />} />
+            <Route path="/create" element={<CreateRedirect />} />
+            <Route path="/:eventSlug/create" element={<CreatePage />} />
             <Route path="/create/:eventSlug" element={<TemplateGallery />} />
             <Route path="/create/:eventSlug/:templateId" element={<StoryEditor />} />
 
@@ -56,5 +59,13 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
+
+function CreateRedirect() {
+  const activeEvent = getActiveEvent();
+  if (activeEvent) {
+    return <Navigate to={`/${activeEvent.slug}/create`} replace />;
+  }
+  return <Navigate to="/" replace />;
+}
 
 export default App;
