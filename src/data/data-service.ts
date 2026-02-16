@@ -1,5 +1,10 @@
-import { mockEvents, mockTemplates, mockCelebrations, mockAdmins, mockSales } from "./mock-data";
-import type { CelebrationEvent, Template, Celebration, SaleRecord } from "./types";
+import { mockEvents, mockTemplates, mockCelebrations, mockAdmins, mockSales, mockMusic } from "./mock-data";
+import type { CelebrationEvent, Template, Celebration, SaleRecord, MusicTrack } from "./types";
+
+// ---- Music ----
+export function getAllMusic(): MusicTrack[] {
+  return [...mockMusic];
+}
 
 // ---- Events ----
 export function getActiveEvent(): CelebrationEvent | undefined {

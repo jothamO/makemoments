@@ -70,19 +70,19 @@ export default function Homepage() {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
             className="relative z-10 max-w-4xl mx-auto px-6 text-center"
           >
             <div className="space-y-6 md:space-y-8">
               {/* Slide Icon/Badge */}
               {slides[currentSlide].badge && (
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.15, duration: 0.5 }}
                   className="inline-block"
                 >
                   <Badge
@@ -96,9 +96,9 @@ export default function Homepage() {
 
               {/* Headline */}
               <motion.h1
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
                 className="text-5xl md:text-7xl font-bold leading-tight"
                 style={{
                   fontFamily: "var(--font-headline)",
@@ -110,9 +110,9 @@ export default function Homepage() {
 
               {/* Subheadline */}
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.35, duration: 0.6, ease: "easeOut" }}
                 className="text-lg md:text-2xl opacity-90 max-w-2xl mx-auto"
                 style={{
                   color: theme.textLight,
@@ -124,9 +124,9 @@ export default function Homepage() {
               {/* CTA Button (only on last slide) */}
               {currentSlide === slides.length - 1 && (
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
+                  transition={{ delay: 0.45, duration: 0.5, ease: "easeOut" }}
                 >
                   <Button
                     asChild
@@ -137,7 +137,7 @@ export default function Homepage() {
                       color: theme.textLight,
                     }}
                   >
-                    <Link to={`/create/${event.slug}`}>
+                    <Link to="/create">
                       <Sparkles className="mr-2 h-6 w-6" />
                       {theme.ctaText} ✨
                     </Link>

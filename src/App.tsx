@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Homepage from "./pages/Homepage";
+import CreatePage from "./pages/CreatePage";
 import TemplateGallery from "./pages/TemplateGallery";
 import StoryEditor from "./pages/StoryEditor";
 import CelebrationView from "./pages/CelebrationView";
@@ -29,6 +30,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Homepage />} />
+            <Route path="/create" element={<CreatePage />} />
             <Route path="/create/:eventSlug" element={<TemplateGallery />} />
             <Route path="/create/:eventSlug/:templateId" element={<StoryEditor />} />
 

@@ -87,6 +87,7 @@ export interface MusicTrack {
   name: string;
   artist: string;
   duration: number; // seconds
+  url?: string;
   previewUrl?: string;
 }
 

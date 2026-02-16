@@ -1,4 +1,11 @@
-import type { CelebrationEvent, Template, Celebration, Admin, SaleRecord, StoryPage } from "./types";
+import type { CelebrationEvent, Template, Celebration, Admin, SaleRecord, StoryPage, MusicTrack } from "./types";
+
+export const mockMusic: MusicTrack[] = [
+  { id: "track-1", name: "Soft Morning", artist: "Lofi Girl", url: "/audio/track1.mp3", duration: 120 },
+  { id: "track-2", name: "Heartfelt", artist: "Piano Dreams", url: "/audio/track2.mp3", duration: 180 },
+  { id: "track-3", name: "Upbeat Celebration", artist: "Party Mix", url: "/audio/track3.mp3", duration: 145 },
+  { id: "track-4", name: "Acoustic Love", artist: "Guitar Guy", url: "/audio/track4.mp3", duration: 160 },
+];
 
 export const mockEvents: CelebrationEvent[] = [
   {
