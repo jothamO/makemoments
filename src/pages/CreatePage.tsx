@@ -177,7 +177,7 @@ export default function CreatePage() {
             </header>
 
             {/* CANVAS AREA */}
-            <main className="flex-1 relative flex items-center justify-center p-6 bg-black/5">
+            <main className="flex-1 relative flex items-center justify-center p-6">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentPageIndex}
@@ -264,25 +264,23 @@ export default function CreatePage() {
             </main>
 
             {/* PAGE DOTS & NAVIGATION */}
-            <div className="flex items-center justify-center pb-4 py-2">
-                <div className="flex items-center gap-1.5 px-3 py-2 bg-black/10 backdrop-blur-md rounded-full shadow-inner">
-                    {pages.map((_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setCurrentPageIndex(i)}
-                            className={cn(
-                                "w-2.5 h-2.5 rounded-full transition-all duration-300",
-                                i === currentPageIndex ? "bg-black w-6" : "bg-gray-400/60"
-                            )}
-                        />
-                    ))}
+            <div className="flex items-center justify-center py-3 gap-2">
+                {pages.map((_, i) => (
                     <button
-                        onClick={addPage}
-                        className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-black transition-colors ml-1"
-                    >
-                        <Plus className="w-4 h-4" />
-                    </button>
-                </div>
+                        key={i}
+                        onClick={() => setCurrentPageIndex(i)}
+                        className={cn(
+                            "rounded-full transition-all duration-300",
+                            i === currentPageIndex ? "w-3 h-3 bg-black" : "w-2.5 h-2.5 bg-gray-400/50"
+                        )}
+                    />
+                ))}
+                <button
+                    onClick={addPage}
+                    className="w-5 h-5 rounded-full border-2 border-dashed border-gray-400/50 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-500 transition-colors"
+                >
+                    <Plus className="w-3 h-3" />
+                </button>
             </div>
 
             {/* FLOATING TOOLBAR */}
@@ -387,9 +385,9 @@ export default function CreatePage() {
                     )}
                 </AnimatePresence>
 
-                <div className="bg-black/95 backdrop-blur-2xl px-6 py-3 rounded-2xl flex items-center gap-8 shadow-2xl border border-white/10">
+                <div className="flex items-center gap-3">
                     <ToolbarIcon icon={<Palette className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "theme" ? null : "theme")} active={activePicker === "theme"} />
-                    <ToolbarIcon icon={<span className="font-serif text-lg">F</span>} onClick={() => setActivePicker(activePicker === "font" ? null : "font")} active={activePicker === "font"} />
+                    <ToolbarIcon icon={<span className="font-serif text-lg italic">F</span>} onClick={() => setActivePicker(activePicker === "font" ? null : "font")} active={activePicker === "font"} />
                     <ToolbarIcon icon={ALIGN_OPTIONS.find(o => o.id === currentPage.textAlign)?.icon || <AlignCenter className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "align" ? null : "align")} active={activePicker === "align"} />
                     <ToolbarIcon icon={<Music className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "music" ? null : "music")} active={activePicker === "music"} />
                     <ToolbarIcon icon={<StarIcon className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "stickers" ? null : "stickers")} active={activePicker === "stickers"} />
@@ -397,24 +395,18 @@ export default function CreatePage() {
             </div>
 
             {/* ACTION BUTTONS */}
-            <div className="grid grid-cols-2 gap-3 px-6 pb-8">
+            <div className="grid grid-cols-2 gap-3 px-4 pb-6">
                 <button
                     onClick={() => setIsPreviewOpen(true)}
-                    className={cn(
-                        "flex items-center justify-center gap-2 py-4 rounded-3xl font-bold transition-all duration-500",
-                        btnColorClass
-                    )}
+                    className="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-800 text-white font-semibold text-sm hover:bg-gray-700 transition-colors"
                 >
                     <Play className="w-4 h-4 fill-current" /> Preview
                 </button>
                 <button
                     onClick={() => setIsPaymentOpen(true)}
-                    className={cn(
-                        "flex items-center justify-center gap-2 py-4 rounded-3xl font-bold transition-all duration-500 shadow-lg",
-                        btnColorClass
-                    )}
+                    className="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-800 text-white font-semibold text-sm hover:bg-gray-700 transition-colors"
                 >
-                    <Send className="w-4 h-4 fill-current" /> Publish
+                    <Send className="w-4 h-4" /> Publish
                 </button>
             </div>
 
@@ -477,8 +469,8 @@ function ToolbarIcon({ icon, onClick, active }: { icon: React.ReactNode; onClick
         <button
             onClick={onClick}
             className={cn(
-                "text-white/60 hover:text-white transition-all transform active:scale-90",
-                active && "text-white"
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all transform active:scale-90",
+                active ? "bg-gray-900 text-white" : "bg-gray-800/90 text-white/80 hover:bg-gray-900 hover:text-white"
             )}
         >
             {icon}
