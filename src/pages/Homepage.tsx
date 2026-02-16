@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 import { ChevronLeft, ChevronRight, Sparkles, Bell } from "lucide-react";
 import { useEventTheme } from "@/contexts/ThemeContext";
@@ -66,87 +66,62 @@ export default function Homepage() {
         <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-20" style={{ background: theme.accent }} />
         <div className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full opacity-15" style={{ background: theme.secondary }} />
 
-        {/* Slides */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-            className="relative z-10 max-w-4xl mx-auto px-6 text-center"
-          >
-            <div className="space-y-6 md:space-y-8">
-              {/* Slide Icon/Badge */}
-              {slides[currentSlide].badge && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.15, duration: 0.5 }}
-                  className="inline-block"
+        {/* Slides - CSS crossfade, no AnimatePresence */}
+        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className="absolute inset-0 flex items-center justify-center px-6 transition-opacity duration-500 ease-in-out"
+              style={{ opacity: index === currentSlide ? 1 : 0, pointerEvents: index === currentSlide ? "auto" : "none" }}
+            >
+              <div className="space-y-6 md:space-y-8">
+                {slide.badge && (
+                  <div className="inline-block">
+                    <Badge
+                      className="text-xs px-4 py-1.5 rounded-full border-0"
+                      style={{ background: "rgba(255,255,255,0.25)", color: theme.textLight }}
+                    >
+                      {slide.badge}
+                    </Badge>
+                  </div>
+                )}
+
+                <h1
+                  className="text-5xl md:text-7xl font-bold leading-tight"
+                  style={{ fontFamily: "var(--font-headline)", color: theme.textLight }}
                 >
-                  <Badge
-                    className="text-xs px-4 py-1.5 rounded-full border-0"
-                    style={{ background: "rgba(255,255,255,0.25)", color: theme.textLight }}
-                  >
-                    {slides[currentSlide].badge}
-                  </Badge>
-                </motion.div>
-              )}
+                  {slide.headline}
+                </h1>
 
-              {/* Headline */}
-              <motion.h1
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
-                className="text-5xl md:text-7xl font-bold leading-tight"
-                style={{
-                  fontFamily: "var(--font-headline)",
-                  color: theme.textLight,
-                }}
-              >
-                {slides[currentSlide].headline}
-              </motion.h1>
-
-              {/* Subheadline */}
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.6, ease: "easeOut" }}
-                className="text-lg md:text-2xl opacity-90 max-w-2xl mx-auto"
-                style={{
-                  color: theme.textLight,
-                }}
-              >
-                {slides[currentSlide].subheadline}
-              </motion.p>
-
-              {/* CTA Button (only on last slide) */}
-              {currentSlide === slides.length - 1 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.45, duration: 0.5, ease: "easeOut" }}
+                <p
+                  className="text-lg md:text-2xl opacity-90 max-w-2xl mx-auto"
+                  style={{ color: theme.textLight }}
                 >
-                  <Button
-                    asChild
-                    size="lg"
-                    className="text-lg px-10 py-7 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 border-0 pulse-hover"
-                    style={{
-                      background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
-                      color: theme.textLight,
-                    }}
-                  >
-                    <Link to="/create">
-                      <Sparkles className="mr-2 h-6 w-6" />
-                      {theme.ctaText} ✨
-                    </Link>
-                  </Button>
-                </motion.div>
-              )}
+                  {slide.subheadline}
+                </p>
+
+                {index === slides.length - 1 && (
+                  <div>
+                    <Button
+                      asChild
+                      size="lg"
+                      className="text-lg px-10 py-7 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 border-0 pulse-hover"
+                      style={{
+                        background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
+                        color: theme.textLight,
+                      }}
+                    >
+                      <Link to={`/${event.slug}/create`}>
+                        <Sparkles className="mr-2 h-6 w-6" />
+                        {theme.ctaText} ✨
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
+          ))}
+        </div>
 
         {/* Navigation Arrows (desktop) */}
         <div className="hidden md:block">
@@ -185,16 +160,13 @@ export default function Homepage() {
         </div>
 
         {/* Swipe Hint (mobile) */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
+        <div
           className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm opacity-60 md:hidden flex items-center gap-2"
           style={{ color: theme.textLight }}
         >
           <span>Swipe to navigate</span>
           <ChevronRight className="w-4 h-4 animate-pulse" />
-        </motion.div>
+        </div>
       </section>
 
       {/* SECTION 2: HOW IT WORKS */}
@@ -401,32 +373,28 @@ function UpcomingEventCard({ event }: { event: CelebrationEvent }) {
 }
 
 // BackgroundPattern Component
-function BackgroundPattern({ pattern, theme }: { pattern: string; theme: EventTheme }) {
+function BackgroundPattern({ pattern }: { pattern: string; theme: EventTheme }) {
   const emojis = pattern === "floral" ? ["🌸", "🌺", "✨"] : ["❤️", "💖", "✨"];
+  // Pre-computed positions to avoid re-renders
+  const items = React.useMemo(() =>
+    Array.from({ length: 8 }, (_, i) => ({
+      left: `${(i * 13 + 5) % 100}%`,
+      delay: `${i * -3}s`,
+      duration: `${20 + (i % 3) * 8}s`,
+      emoji: emojis[i % emojis.length],
+    })),
+  [pattern]);
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(15)].map((_, i) => (
-        <motion.div
+      {items.map((item, i) => (
+        <span
           key={i}
-          className="absolute text-3xl md:text-5xl opacity-20"
-          initial={{
-            x: Math.random() * 100 + "%",
-            y: -20 + "%",
-          }}
-          animate={{
-            y: "110%",
-            rotate: 360,
-          }}
-          transition={{
-            duration: 20 + Math.random() * 20,
-            repeat: Infinity,
-            delay: Math.random() * 10,
-            ease: "linear",
-          }}
+          className="absolute text-3xl md:text-5xl opacity-20 animate-float-down"
+          style={{ left: item.left, animationDelay: item.delay, animationDuration: item.duration }}
         >
-          {emojis[i % emojis.length]}
-        </motion.div>
+          {item.emoji}
+        </span>
       ))}
     </div>
   );

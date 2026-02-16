@@ -71,15 +71,15 @@ const ALIGN_OPTIONS = [
 
 const STICKER_OPTIONS = ["❤️", "✨", "🎉", "🔥", "🌸", "👑", "🎂", "🎈"];
 
-const createInitialPage = (theme: EventTheme): StoryPage => ({
+const createInitialPage = (_theme: EventTheme): StoryPage => ({
     id: `page-${Math.random().toString(36).slice(2, 9)}`,
     text: "",
     fontFamily: "Playfair Display",
     fontSize: "medium",
     textAlign: "center",
     textColor: "#FFFFFF",
-    bgGradientStart: theme.bgGradientStart,
-    bgGradientEnd: theme.bgGradientEnd,
+    bgGradientStart: COLOR_THEMES[0].primary,
+    bgGradientEnd: COLOR_THEMES[0].secondary,
     transition: "fade",
     stickers: [],
 });
@@ -449,7 +449,7 @@ export default function CreatePage() {
             </div>
 
             {/* ACTION BUTTONS */}
-            <div className="flex gap-3 px-4 pb-8 pt-4 safe-area-bottom">
+            <div className="flex gap-3 px-4 pb-8 pt-4 safe-area-bottom max-w-lg mx-auto w-full">
                 <button
                     onClick={() => setIsPreviewOpen(true)}
                     className={cn(
