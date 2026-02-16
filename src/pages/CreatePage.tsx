@@ -481,7 +481,7 @@ export default function CreatePage() {
                 open={isPaymentOpen}
                 onClose={() => setIsPaymentOpen(false)}
                 event={event}
-                template={{ id: "direct-tpl", name: "Custom Story", eventId: event.id, category: "Custom", previewUrl: "", pages: [] } as Template}
+                template={{ id: "direct-tpl", name: "Custom Story", eventId: event.id, thumbnail: "", outputType: "image", mediaSlots: [], textSlots: [], layers: [], popularity: 0, createdAt: Date.now() } as Template}
                 pages={pages}
                 musicTrackId={selectedMusicId}
             />
