@@ -12,9 +12,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { CelebrationEvent, EventTheme } from "@/data/types";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { BackgroundPattern } from "@/components/BackgroundPattern";
 
 export default function Homepage() {
-  const { event, theme } = useEventTheme();
+  const allPatterns = useQuery(api.patterns.list);
+
+  const activeEvent = useQuery(api.events.getActive);
+  const { event: legacyEvent, theme: legacyTheme } = useEventTheme();
+
+  const event = activeEvent || legacyEvent;
+  const theme = activeEvent?.theme || legacyTheme;
+
   const upcomingEvents = getUpcomingEvents();
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -24,25 +34,25 @@ export default function Homepage() {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + Math.max(slides.length, 1)) % Math.max(slides.length, 1));
 
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => nextSlide(),
-    onSwipedRight: () => prevSlide(),
+    onSwipedLeft: () => slides.length > 1 && nextSlide(),
+    onSwipedRight: () => slides.length > 1 && prevSlide(),
     trackMouse: false,
     trackTouch: true,
   });
 
-  // Auto-advance slides
+  // Auto-advance slides - resets timer on any slide change (manual or auto)
   useEffect(() => {
-    if (!slides.length) return;
+    if (slides.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, currentSlide]);
 
   if (!event || !theme) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">No active event found.</p>
+        <p className="text-muted-foreground">Loading active event...</p>
       </div>
     );
   }
@@ -60,25 +70,29 @@ export default function Homepage() {
         }}
       >
         {/* Background Pattern */}
-        <BackgroundPattern pattern={theme.backgroundPattern} theme={theme} />
+        <BackgroundPattern
+          pattern={theme.backgroundPattern}
+          type={(allPatterns?.find(p => p.id === theme.backgroundPattern) as any)?.type}
+          customEmojis={(allPatterns?.find(p => p.id === theme.backgroundPattern) as any)?.emoji ? (allPatterns?.find(p => p.id === theme.backgroundPattern) as any)?.emoji.split(",") : undefined}
+        />
 
         {/* Decorative circles from original design */}
         <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-20" style={{ background: theme.accent }} />
         <div className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full opacity-15" style={{ background: theme.secondary }} />
 
         {/* Slides - CSS crossfade, no AnimatePresence */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-6 h-full">
           {slides.map((slide, index) => (
             <div
               key={index}
-              className="absolute inset-0 flex items-center justify-center px-6 transition-opacity duration-500 ease-in-out"
+              className="absolute inset-0 flex flex-col items-center justify-center px-6 transition-opacity duration-500 ease-in-out"
               style={{ opacity: index === currentSlide ? 1 : 0, pointerEvents: index === currentSlide ? "auto" : "none" }}
             >
-              <div className="space-y-6 md:space-y-8">
+              <div className="space-y-6 md:space-y-10 w-full max-w-6xl mx-auto text-center">
                 {slide.badge && (
                   <div className="inline-block">
                     <Badge
-                      className="text-xs px-4 py-1.5 rounded-full border-0"
+                      className="text-xs px-5 py-2 rounded-full border-0 whitespace-nowrap shadow-sm"
                       style={{ background: "rgba(255,255,255,0.25)", color: theme.textLight }}
                     >
                       {slide.badge}
@@ -86,78 +100,77 @@ export default function Homepage() {
                   </div>
                 )}
 
-                <h1
-                  className="text-5xl md:text-7xl font-bold leading-tight"
-                  style={{ fontFamily: "var(--font-headline)", color: theme.textLight }}
-                >
-                  {slide.headline}
-                </h1>
+                <div className="space-y-4 md:space-y-6">
+                  <h1
+                    className="text-5xl md:text-8xl font-bold leading-[1.1] tracking-tight"
+                    style={{ fontFamily: "var(--font-headline)", color: theme.textLight }}
+                  >
+                    {slide.headline}
+                  </h1>
 
-                <p
-                  className="text-lg md:text-2xl opacity-90 max-w-2xl mx-auto"
-                  style={{ color: theme.textLight }}
-                >
-                  {slide.subheadline}
-                </p>
+                  <p
+                    className="text-lg md:text-2xl opacity-90 max-w-2xl mx-auto leading-relaxed"
+                    style={{ color: theme.textLight }}
+                  >
+                    {slide.subheadline}
+                  </p>
+                </div>
 
-                {index === slides.length - 1 && (
-                  <div>
-                    <Button
-                      asChild
-                      size="lg"
-                      className="text-lg px-10 py-7 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 border-0 pulse-hover"
-                      style={{
-                        background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
-                        color: theme.textLight,
-                      }}
-                    >
-                      <Link to={`/${event.slug}/create`}>
-                        <Sparkles className="mr-2 h-6 w-6" />
-                        {theme.ctaText} ✨
-                      </Link>
-                    </Button>
-                  </div>
-                )}
+                <div className="pt-4 md:pt-8">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="text-lg px-12 py-8 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 border-0 pulse-hover h-auto"
+                    style={{
+                      background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
+                      color: theme.textLight,
+                    }}
+                  >
+                    <Link to={`/${event.slug}/create`}>
+                      <Sparkles className="mr-2 h-6 w-6" />
+                      {theme.ctaText} ✨
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Navigation Arrows (desktop) */}
-        <div className="hidden md:block">
-          <button
-            onClick={prevSlide}
-            className="absolute left-8 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all z-20"
-            style={{ color: theme.textLight }}
-          >
-            <ChevronLeft className="w-8 h-8" />
-          </button>
-
-          <button
-            onClick={nextSlide}
-            className="absolute right-8 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all z-20"
-            style={{ color: theme.textLight }}
-          >
-            <ChevronRight className="w-8 h-8" />
-          </button>
-        </div>
+        {slides.length > 1 && (
+          <>
+            <button
+              onClick={prevSlide}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <button
+              onClick={nextSlide}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
+              aria-label="Next slide"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </>
+        )}
 
         {/* Slide Indicators */}
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-3 z-20">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className="transition-all duration-500"
-              style={{
-                width: currentSlide === index ? "40px" : "10px",
-                height: "10px",
-                borderRadius: "5px",
-                backgroundColor: currentSlide === index ? theme.primary : "rgba(255,255,255,0.3)",
-              }}
-            />
-          ))}
-        </div>
+        {slides.length > 1 && (
+          <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center gap-2">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-2 h-2 rounded-full transition-all ${index === currentSlide ? "bg-white w-6" : "bg-white/40 hover:bg-white/60"
+                  }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Swipe Hint (mobile) */}
         <div
@@ -167,10 +180,10 @@ export default function Homepage() {
           <span>Swipe to navigate</span>
           <ChevronRight className="w-4 h-4 animate-pulse" />
         </div>
-      </section>
+      </section >
 
       {/* SECTION 2: HOW IT WORKS */}
-      <section className="py-24 bg-white">
+      < section className="py-24 bg-white" >
         <div className="max-w-6xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -210,58 +223,107 @@ export default function Homepage() {
             />
           </div>
         </div>
-      </section>
+      </section >
 
       {/* SECTION 3: UPCOMING EVENTS */}
-      {upcomingEvents && upcomingEvents.length > 0 && (
-        <section className="py-24 bg-gray-50">
-          <div className="max-w-6xl mx-auto px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)" }}>
-                More Celebrations Coming
-              </h2>
-              <p className="text-gray-600">Get notified when new events launch</p>
-            </motion.div>
+      {
+        upcomingEvents && upcomingEvents.length > 0 && (
+          <section className="py-24 bg-gray-50">
+            <div className="max-w-6xl mx-auto px-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mb-16"
+              >
+                <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)" }}>
+                  More Celebrations Coming
+                </h2>
+                <p className="text-gray-600">Get notified when new events launch</p>
+              </motion.div>
 
-            <div className="grid md:grid-cols-3 gap-8">
-              {upcomingEvents.slice(0, 3).map((upcoming) => (
-                <UpcomingEventCard key={upcoming.id} event={upcoming} />
-              ))}
+              <div className="grid md:grid-cols-3 gap-8">
+                {upcomingEvents.slice(0, 3).map((upcoming) => (
+                  <UpcomingEventCard key={upcoming.id} event={upcoming} />
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        )
+      }
 
       <PublicFooter />
-    </div>
+    </div >
   );
 }
 
-// Helper function to generate onboarding slides
-function generateOnboardingSlides(event: CelebrationEvent) {
-  const { theme, name, date } = event;
-  const dateStr = new Date(date).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+import { replaceUrgencyVariables } from "@/lib/utils";
 
-  return [
+// ... (existing imports)
+
+function generateOnboardingSlides(event: CelebrationEvent) {
+  const { theme, name, date, endDate } = event;
+
+  // Dynamic Badge Text
+  const defaultBadge = `✨ ${name} is ${new Date(date).toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
+  const badgeText = theme.urgencyText
+    ? `✨ ${replaceUrgencyVariables(theme.urgencyText, name, date, endDate)}`
+    : defaultBadge;
+
+  const rawSlides = [
     {
-      badge: `✨ ${name} is ${dateStr}`,
-      headline: theme.headline || `Celebrate ${name}`,
-      subheadline: "Create a beautiful personalized card for the incredible people in your life",
+      badge: badgeText,
+      headline: theme.headline,
+      subheadline: theme.subheadline,
+      isMain: true, // Always keep main slide if possible, or fallback
     },
     {
-      headline: "Your Photos. Your Words. Your Moment.",
-      subheadline: "Add your memories and heartfelt message in just a few taps",
+      badge: badgeText,
+      headline: theme.headline_2,
+      subheadline: theme.subheadline_2,
     },
     {
-      headline: "Share a Link They'll Never Forget",
-      subheadline: theme.subheadline || "Beautiful moments, shared instantly. Just ₦1,000.",
+      badge: badgeText,
+      headline: theme.headline_3,
+      subheadline: theme.subheadline_3,
     },
   ];
+
+  // Filter out empty slides (keep if it's the main slide OR has content)
+  const validSlides = rawSlides.filter((s, i) => {
+    // If it's the first slide, we might want to keep it even if empty to show *something*, 
+    // but the user said "hide specific slides if headline & subheadline are empty".
+    // "Default Fallback: If Slide 1 is also empty, use the generic... fallback"
+
+    // Check if empty
+    const isEmpty = !s.headline && !s.subheadline;
+    return !isEmpty;
+  });
+
+  // If NO slides are valid (all empty), return default fallback
+  if (validSlides.length === 0) {
+    return [{
+      badge: badgeText,
+      headline: `Celebrate ${name}`,
+      subheadline: "Create a beautiful personalized card for the incredible people in your life",
+    }];
+  }
+
+  // Map back to expected format (filling in defaults for Main slide if it was kept but partial?)
+  // Actually, if I filtered them, the ones remaining represent the user's intent.
+  // But for the Main slide (index 0 originally), if the user explicitly cleared it, it shouldn't show?
+  // The user said: "if the slide headline and subheadline are empty, then it means the slide has no content and should be hidden"
+  // And "fallback if slide 1 is empty".
+
+  return validSlides.map(s => ({
+    badge: s.badge,
+    headline: s.headline || (s.isMain ? `Celebrate ${name}` : ""), // Fallback only if we kept it but it's empty? No, we filtered empty.
+    // Wait, if validSlides.length > 0, we just return them. 
+    // But we need to ensure they have *some* text if they passed the filter? 
+    // The filter checked `!isEmpty`. So they have at least one.
+    subheadline: s.subheadline || "",
+    headline: s.headline || "",
+  }));
 }
 
 // StepCard Component
@@ -369,33 +431,5 @@ function UpcomingEventCard({ event }: { event: CelebrationEvent }) {
         </Button>
       </div>
     </motion.div>
-  );
-}
-
-// BackgroundPattern Component
-function BackgroundPattern({ pattern }: { pattern: string; theme: EventTheme }) {
-  const emojis = pattern === "floral" ? ["🌸", "🌺", "✨"] : ["❤️", "💖", "✨"];
-  // Pre-computed positions to avoid re-renders
-  const items = React.useMemo(() =>
-    Array.from({ length: 8 }, (_, i) => ({
-      left: `${(i * 13 + 5) % 100}%`,
-      delay: `${i * -3}s`,
-      duration: `${20 + (i % 3) * 8}s`,
-      emoji: emojis[i % emojis.length],
-    })),
-  [pattern]);
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {items.map((item, i) => (
-        <span
-          key={i}
-          className="absolute text-3xl md:text-5xl opacity-20 animate-float-down"
-          style={{ left: item.left, animationDelay: item.delay, animationDuration: item.duration }}
-        >
-          {item.emoji}
-        </span>
-      ))}
-    </div>
   );
 }

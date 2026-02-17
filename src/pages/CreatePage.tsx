@@ -7,30 +7,38 @@ import {
     Type,
     Palette,
     Play,
-    Send,
     X,
     Plus,
     Trash2,
     ChevronLeft,
     ChevronRight,
     Music,
-    Star as StarIcon,
+    Sparkles,
     AlignLeft,
     AlignCenter,
     AlignRight,
     Check,
+    Heart,
 } from "lucide-react";
 import { useEventTheme } from "@/contexts/ThemeContext";
-import { getTemplatesByEvent, getAllMusic } from "@/data/data-service";
+import { getTemplatesByEvent } from "@/data/data-service";
 import type { Template, StoryPage, EventTheme, MusicTrack } from "@/data/types";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import { PaymentModal } from "@/components/PaymentModal";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { StoryPreviewPlayer } from "@/components/editor/StoryPreviewPlayer";
+import { CharacterPicker } from "@/components/CharacterPicker";
+import { BackgroundPattern } from "@/components/BackgroundPattern";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 // ---------------------------------------------------------------------------
 // Constants & Types
 // ---------------------------------------------------------------------------
-const COLOR_THEMES = [
+
+// Fallback legacy themes
+const LEGACY_COLOR_THEMES = [
     { name: "Mint", primary: "#E2F0E9", secondary: "#C5E3D5" },
     { name: "Sky", primary: "#E0F2FE", secondary: "#BAE6FD" },
     { name: "Peach", primary: "#FFEDD5", secondary: "#FED7AA" },
@@ -53,14 +61,14 @@ const COLOR_THEMES = [
     { name: "Violet", primary: "#FAF5FF", secondary: "#F3E8FF" },
 ];
 
-const FONT_OPTIONS = [
-    { name: "Default", value: "Poppins" },
-    { name: "Elegant", value: "Playfair Display" },
-    { name: "Handwritten", value: "Dancing Script" },
-    { name: "Playful", value: "Pacifico" },
-    { name: "Modern", value: "Montserrat" },
-    { name: "Romantic", value: "Playfair Display" },
-    { name: "Dancing", value: "Dancing Script" },
+const DEFAULT_FONTS = [
+    { name: "Serif (Lora)", value: "Lora" },
+    { name: "Elegant (Playfair)", value: "Playfair Display" },
+    { name: "Modern (Montserrat)", value: "Montserrat" },
+    { name: "Bold (Bebas Neue)", value: "Bebas Neue" },
+    { name: "Handwritten (Dancing Script)", value: "Dancing Script" },
+    { name: "Playful (Pacifico)", value: "Pacifico" },
+    { name: "Classic (Inter)", value: "Inter" },
 ];
 
 const ALIGN_OPTIONS = [
@@ -69,17 +77,34 @@ const ALIGN_OPTIONS = [
     { id: "right", icon: <AlignRight className="w-4 h-4" /> },
 ];
 
-const STICKER_OPTIONS = ["❤️", "✨", "🎉", "🔥", "🌸", "👑", "🎂", "🎈"];
+const SLIDE_EFFECT_OPTIONS = [
+    { id: "floral", emoji: "🌸", label: "Floral", type: "falling" },
+    { id: "hearts", emoji: "💖", label: "Hearts", type: "rising" },
+    { id: "stars", emoji: "✨", label: "Stars", type: "floating" },
+    { id: "celebration", emoji: "🎉", label: "Celebration", type: "falling" },
+    { id: "geometric", emoji: "💠", label: "Geometric", type: "static" },
+    { id: "fire", emoji: "🔥", label: "Fire", type: "rising" },
+    { id: "crowns", emoji: "👑", label: "Crowns", type: "falling" },
+    { id: "balloons", emoji: "🎈", label: "Balloons", type: "rising" },
+];
 
-const createInitialPage = (_theme: EventTheme): StoryPage => ({
+// Helper: derive a darker accent from a hex colour for the radial glow
+function hexToRgba(hex: string, alpha: number) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+const createInitialPage = (primary: string, secondary: string): StoryPage => ({
     id: `page-${Math.random().toString(36).slice(2, 9)}`,
     text: "",
-    fontFamily: "Playfair Display",
+    fontFamily: "Lora",
     fontSize: "medium",
     textAlign: "center",
-    textColor: "#FFFFFF",
-    bgGradientStart: COLOR_THEMES[0].primary,
-    bgGradientEnd: COLOR_THEMES[0].secondary,
+    textColor: "#18181B",
+    bgGradientStart: primary,
+    bgGradientEnd: secondary,
     transition: "fade",
     stickers: [],
 });
@@ -88,9 +113,159 @@ const createInitialPage = (_theme: EventTheme): StoryPage => ({
 // Main CreatePage
 // ===========================================================================
 export default function CreatePage() {
-    const { event, theme } = useEventTheme();
     const navigate = useNavigate();
-    const musicTracks = getAllMusic();
+
+    // Convex data
+    const activeEvent = useQuery(api.events.getActive);
+    const musicTracksConvex = useQuery(api.music.list);
+    const allThemes = useQuery(api.themes.list);
+    const allCharacters = useQuery(api.characters.list);
+    const allFonts = useQuery(api.fonts.list);
+    const allPatterns = useQuery(api.patterns.list);
+
+    // Fallback to legacy music only if Convex is loading/empty, and filter by event settings
+    const musicTracks = (() => {
+        if (!musicTracksConvex) return [];
+        if (activeEvent?.theme?.musicTrackIds && activeEvent.theme.musicTrackIds.length > 0) {
+            return musicTracksConvex.filter(t => activeEvent.theme.musicTrackIds!.includes(t._id));
+        }
+        return musicTracksConvex;
+    })();
+
+    // Fallback/Legacy logic (will migrate fully once Convex is verified)
+    const { event, theme: legacyTheme } = useEventTheme();
+    const currentTheme = activeEvent?.theme || legacyTheme;
+
+    const templates = getTemplatesByEvent(activeEvent?._id || "evt-1");
+
+    // Compute available editor themes
+    const availableThemes = (() => {
+        // If we have themes from Convex AND the event specifies allowed themes, filter them
+        if (allThemes && activeEvent?.theme?.allowedThemeIds && activeEvent.theme.allowedThemeIds.length > 0) {
+            const filtered = allThemes.filter(t => activeEvent.theme.allowedThemeIds!.includes(t._id));
+            // If filter results in empty (edge case), fallback to all
+            return filtered.length > 0 ? filtered : allThemes;
+        }
+        // If we have themes but no restriction, show all
+        if (allThemes && allThemes.length > 0) return allThemes;
+        // Fallback to hardcoded legacy list
+        return LEGACY_COLOR_THEMES;
+    })();
+
+    // Compute available fonts
+    const availableFonts = (() => {
+        if (!allFonts) return DEFAULT_FONTS;
+
+        // Filter by event settings if present
+        let filteredFonts = allFonts;
+        if (activeEvent?.theme?.allowedFontIds && activeEvent.theme.allowedFontIds.length > 0) {
+            filteredFonts = allFonts.filter(f => activeEvent.theme.allowedFontIds!.includes(f._id));
+        }
+
+        if (filteredFonts.length === 0) return DEFAULT_FONTS;
+
+        return filteredFonts.map(f => ({
+            name: f.name + (f.isCustom ? "" : ""),
+            value: f.name,
+            isCustom: f.isCustom,
+            storageId: f.storageId,
+            url: (f as any).url,
+        }));
+    })();
+
+    // Load fonts dynamically
+    useEffect(() => {
+        if (!allFonts) return;
+
+        // 1. Google Fonts
+        const googleFonts = availableFonts.filter(f => !f.isCustom && !DEFAULT_FONTS.some(df => df.value === f.value));
+        if (googleFonts.length > 0) {
+            const linkId = 'dynamic-google-fonts';
+            if (!document.getElementById(linkId)) {
+                const link = document.createElement('link');
+                link.id = linkId;
+                link.rel = 'stylesheet';
+                const families = googleFonts.map(f => f.value.replace(/ /g, '+')).join('|');
+                link.href = `https://fonts.googleapis.com/css?family=${families}&display=swap`;
+                document.head.appendChild(link);
+            }
+        }
+
+        // 2. Custom Fonts (Convex Storage)
+        const customFonts = availableFonts.filter(f => f.isCustom && f.storageId && f.url);
+        customFonts.forEach(font => {
+            const styleId = `font-${font.storageId}`;
+            if (!document.getElementById(styleId)) {
+                const style = document.createElement('style');
+                style.id = styleId;
+                style.textContent = `
+                    @font-face {
+                        font-family: '${font.value}';
+                        src: url('${font.url}');
+                        font-weight: normal;
+                        font-style: normal;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        });
+    }, [availableFonts, allFonts]);
+
+    // Compute available characters
+    const availableCharacters = (() => {
+        if (allCharacters && activeEvent?.theme?.characterIds && activeEvent.theme.characterIds.length > 0) {
+            return allCharacters
+                .filter(c => activeEvent.theme.characterIds!.includes(c._id))
+                .map(c => c.url);
+        }
+        // Fallback to existing logic or hardcoded
+        return currentTheme.characters || [];
+    })();
+
+    // Merge patterns, preferring Dynamic (DB) over Hardcoded
+    const availablePatterns = (() => {
+        const dynamicPatterns = allPatterns?.map(p => ({
+            id: p.id,
+            emoji: p.emoji,
+            label: p.name,
+            type: p.type,
+            customEmojis: [p.emoji]
+        })) || [];
+
+        // Create a map of dynamic patterns for easy lookup
+        const dynamicMap = new Map(dynamicPatterns.map(p => [p.id, p]));
+
+        // Start with hardcoded, but if a dynamic one exists with same ID, use that instead.
+        // Actually, let's just use dynamic patterns if we have them, and only add hardcoded if distinct?
+        // Better: Use everything from DB. If DB is empty/loading, maybe fallback. 
+        // But since we have a mix, let's merge:
+
+        const merged = [...dynamicPatterns];
+
+        // Add hardcoded only if NOT in dynamic (Legacy fallback)
+        SLIDE_EFFECT_OPTIONS.forEach(hc => {
+            if (!dynamicMap.has(hc.id)) {
+                merged.push({
+                    ...hc,
+                    customEmojis: [hc.emoji]
+                });
+            }
+        });
+
+        // Filter by event settings if present
+        if (activeEvent?.theme?.patternIds && activeEvent.theme.patternIds.length > 0) {
+            return merged.filter(p => activeEvent.theme.patternIds!.includes(p.id));
+        }
+
+        return merged;
+    })();
+
+    // Helper to get custom emojis for a pattern ID
+    const getPatternEmojis = (patternId: string) => {
+        const pattern = availablePatterns.find(p => p.id === patternId);
+        // If we found it in availablePatterns, use its customEmojis (which we constructed above)
+        return (pattern as any)?.customEmojis;
+    };
 
     // State
     const [pages, setPages] = useState<StoryPage[]>([]);
@@ -101,15 +276,42 @@ export default function CreatePage() {
     // Modals
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+    const [characterPickerOpen, setCharacterPickerOpen] = useState(false);
+    // Audio handling
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
 
     // Initialize first page
     useEffect(() => {
-        if (theme && pages.length === 0) {
-            setPages([createInitialPage(theme)]);
+        // Only init if we haven't already
+        if (pages.length === 0) {
+            // Prefer the first available theme, or event theme as fallback
+            const initialPrimary = availableThemes[0]?.primary || currentTheme?.primary || "#E2F0E9";
+            const initialSecondary = availableThemes[0]?.secondary || currentTheme?.secondary || "#C5E3D5";
+
+            // Default pattern from event theme
+            const defaultPattern = activeEvent?.theme?.backgroundPattern;
+
+            setPages([{
+                ...createInitialPage(initialPrimary, initialSecondary),
+                backgroundPattern: defaultPattern,
+            }]);
         }
-    }, [theme, pages.length]);
+    }, [pages.length, availableThemes, currentTheme, activeEvent]);
+
+
+    // Load template logic (Simplified for clarity - focus on themes)
+    // ... kept seemingly redundant template loading for now to avoid breaking existing logic if any
+    useEffect(() => {
+        if (templates.length > 0 && !selectedTemplate && pages.length === 0) {
+            // This block might conflict with the one above, but the one above checks pages.length === 0 too.
+            // We'll trust the simpler init above for now.
+        }
+    }, [templates, selectedTemplate]);
+
 
     const currentPage = pages[currentPageIndex];
 
@@ -123,8 +325,15 @@ export default function CreatePage() {
     }, [currentPageIndex]);
 
     const addPage = () => {
-        if (!theme) return;
-        const newPage = createInitialPage(theme);
+        // Use current page's theme for new page
+        const newPage = createInitialPage(
+            currentPage?.bgGradientStart || "#E2F0E9",
+            currentPage?.bgGradientEnd || "#C5E3D5"
+        );
+        // Inherit pattern
+        if (currentPage?.backgroundPattern) {
+            newPage.backgroundPattern = currentPage.backgroundPattern;
+        }
         setPages((prev) => [...prev, newPage]);
         setCurrentPageIndex(pages.length);
     };
@@ -136,22 +345,13 @@ export default function CreatePage() {
         setCurrentPageIndex(newIndex);
     };
 
-    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => updateCurrentPage({ photoUrl: reader.result as string });
-            reader.readAsDataURL(file);
-        }
-    };
-
     const nextPage = () => setCurrentPageIndex((prev) => Math.min(prev + 1, pages.length - 1));
     const prevPage = () => setCurrentPageIndex((prev) => Math.max(prev - 1, 0));
 
     // -----------------------------------------------------------------------
     // Derived State / Utils
     // -----------------------------------------------------------------------
-    if (!event || !theme || !currentPage) {
+    if (!event || !currentTheme || !currentPage) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -160,41 +360,52 @@ export default function CreatePage() {
     }
 
     const hasContent = pages.some(p => p.photoUrl || p.text.trim().length > 0);
+    const activeMusicTrack = musicTracks.find((t) => t._id === selectedMusicId || t.id === selectedMusicId);
 
     // -----------------------------------------------------------------------
     // Render
     // -----------------------------------------------------------------------
     return (
-        <div
-            className="fixed inset-0 flex flex-col overflow-hidden transition-colors duration-500"
-            style={{
-                background: `linear-gradient(135deg, ${currentPage.bgGradientStart}, ${currentPage.bgGradientEnd})`,
-            }}
-        >
+        <div className="fixed inset-0 flex flex-col overflow-hidden">
+            {/* BACKGROUND — solid colour + radial accent glow from top */}
+            <div
+                className="absolute inset-0 transition-colors duration-500"
+                style={{
+                    backgroundColor: currentPage.bgGradientStart,
+                    backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(currentPage.bgGradientEnd, 0.35)}, transparent 70%)`,
+                }}
+            >
+                {currentPage.backgroundPattern && (
+                    <BackgroundPattern
+                        pattern={currentPage.backgroundPattern}
+                        customEmojis={getPatternEmojis(currentPage.backgroundPattern)}
+                        type={(availablePatterns.find(p => p.id === currentPage.backgroundPattern) as any)?.type}
+                    />
+                )}
+            </div>
+
             {/* HEADER */}
-            <header className="flex items-center justify-between px-6 py-4 z-40">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-700/60 hover:text-gray-900 transition-colors">
-                    <ArrowLeft className="w-6 h-6" />
+            <header className="relative z-20 flex items-center justify-between px-5 pt-5 pb-2">
+                <button onClick={() => navigate(-1)} className="transition-colors text-zinc-500 hover:text-zinc-900">
+                    <ArrowLeft className="w-5 h-5" />
                 </button>
 
-                <div className="text-sm font-medium text-gray-500/80">
+                <span className="text-sm font-medium text-zinc-500">
                     {currentPageIndex + 1} / {pages.length}
-                </div>
+                </span>
 
                 <button
                     onClick={deletePage}
                     disabled={pages.length <= 1}
-                    className={cn(
-                        "p-2 -mr-2 transition-all",
-                        pages.length > 1 ? "text-gray-700/60 hover:text-red-500" : "opacity-0 pointer-events-none"
-                    )}
+                    className="hover:text-red-400 disabled:cursor-not-allowed transition-colors text-zinc-400 disabled:text-zinc-200"
+                    title="Delete slide"
                 >
                     <Trash2 className="w-5 h-5" />
                 </button>
             </header>
 
             {/* CANVAS AREA */}
-            <main className="flex-1 relative flex items-center justify-center p-6">
+            <main className="flex-1 flex flex-col justify-center px-10 relative z-10">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentPageIndex}
@@ -202,51 +413,55 @@ export default function CreatePage() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="w-full max-w-lg aspect-[4/5] flex flex-col items-center justify-center text-center px-4"
+                        className="w-full flex flex-col items-center"
                     >
                         {/* Photo Slot */}
-                        <div
-                            onClick={() => fileInputRef.current?.click()}
-                            className={cn(
-                                "w-28 h-28 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 mb-8 overflow-hidden",
-                                currentPage.photoUrl ? "border-transparent" : "border-gray-500/30 bg-white/5"
-                            )}
-                        >
-                            {currentPage.photoUrl ? (
-                                <img src={currentPage.photoUrl} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                                <>
-                                    <ImageIcon className="w-8 h-8 text-gray-400 mb-1" />
-                                    <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Add Photo</span>
-                                </>
-                            )}
+                        <div className="flex justify-center mb-4">
+                            <button
+                                onClick={() => setCharacterPickerOpen(true)}
+                                className={cn(
+                                    "w-32 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors overflow-hidden",
+                                    currentPage.photoUrl
+                                        ? "border-transparent"
+                                        : "border-zinc-900/20 hover:border-zinc-900/40 text-zinc-400 hover:text-zinc-600"
+                                )}
+                            >
+                                {currentPage.photoUrl ? (
+                                    <img src={currentPage.photoUrl} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    <>
+                                        <ImageIcon className="w-8 h-8" />
+                                        <span className="text-sm font-medium">Add Photo</span>
+                                    </>
+                                )}
+                            </button>
                         </div>
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
 
                         {/* Text Editor */}
-                        <div className="w-full px-4 relative">
-                            <textarea
-                                value={currentPage.text}
-                                onChange={(e) => updateCurrentPage({ text: e.target.value.slice(0, 200) })}
-                                placeholder="Tap to write..."
-                                className="w-full bg-transparent border-none outline-none resize-none text-center text-4xl md:text-5xl font-semibold placeholder:text-gray-400/60 leading-tight"
-                                style={{
-                                    fontFamily: currentPage.fontFamily,
-                                    color: currentPage.textColor,
-                                    minHeight: "120px"
-                                }}
-                                rows={3}
-                            />
+                        <textarea
+                            value={currentPage.text}
+                            onChange={(e) => updateCurrentPage({ text: e.target.value.slice(0, 200) })}
+                            placeholder="Tap to write..."
+                            className="bg-transparent text-5xl sm:text-6xl font-medium leading-tight resize-none focus:outline-none w-full overflow-hidden text-zinc-900 placeholder-zinc-400 caret-zinc-900"
+                            style={{
+                                fontFamily: currentPage.fontFamily,
+                                textAlign: currentPage.textAlign as React.CSSProperties["textAlign"],
+                                minHeight: "60px",
+                            }}
+                            rows={3}
+                        />
 
-                            {/* Character Count Above Separator */}
-                            <div className="flex justify-end pr-1 mb-1">
-                                <span className="text-[10px] font-medium text-gray-500/60 tabular-nums uppercase tracking-widest">
-                                    {currentPage.text.length} / 200
-                                </span>
+                        {/* Progress Bar + Character Count */}
+                        <div className="mt-3 flex items-center gap-2 w-full">
+                            <div className="flex-1 h-0.5 rounded-full overflow-hidden bg-zinc-900/10">
+                                <div
+                                    className="h-full rounded-full bg-zinc-900/30 transition-all duration-200"
+                                    style={{ width: `${(currentPage.text.length / 200) * 100}%` }}
+                                />
                             </div>
-
-                            {/* Separator Line */}
-                            <div className="w-full h-[1px] bg-gray-500/20" />
+                            <span className="text-xs font-mono text-zinc-500">
+                                {currentPage.text.length}/200
+                            </span>
                         </div>
 
                         {/* Stickers on Page */}
@@ -264,47 +479,51 @@ export default function CreatePage() {
                     </motion.div>
                 </AnimatePresence>
 
-                {/* Navigation Arrows (All devices) */}
-                {currentPageIndex > 0 && (
-                    <button
-                        onClick={prevPage}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 p-4 text-white/40 hover:text-white transition-colors"
-                    >
-                        <ChevronLeft className="w-8 h-8" />
-                    </button>
-                )}
-                {currentPageIndex < pages.length - 1 && (
+                {/* Right-Edge Page Navigation */}
+                {pages.length > 1 && currentPageIndex < pages.length - 1 && (
                     <button
                         onClick={nextPage}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-4 text-white/40 hover:text-white transition-colors"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-24 flex items-center justify-center transition-colors text-zinc-400 hover:text-zinc-700"
                     >
-                        <ChevronRight className="w-8 h-8" />
+                        <ChevronRight className="w-6 h-6" />
+                    </button>
+                )}
+                {pages.length > 1 && currentPageIndex > 0 && (
+                    <button
+                        onClick={prevPage}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-24 flex items-center justify-center transition-colors text-zinc-400 hover:text-zinc-700"
+                    >
+                        <ChevronLeft className="w-6 h-6" />
                     </button>
                 )}
             </main>
 
-            {/* PAGE DOTS & NAVIGATION */}
-            <div className="flex items-center justify-center py-3 gap-2">
-                {pages.map((_, i) => (
-                    <button
-                        key={i}
-                        onClick={() => setCurrentPageIndex(i)}
-                        className={cn(
-                            "rounded-full transition-all duration-300",
-                            i === currentPageIndex ? "w-3 h-3 bg-black" : "w-2.5 h-2.5 bg-gray-400/50"
-                        )}
-                    />
-                ))}
+            {/* PAGE DOTS — pill-shaped indicators */}
+            <div className="relative z-20 flex items-center justify-center gap-1 py-2">
+                <ul className="flex items-center gap-1.5" style={{ overflowAnchor: "none" }}>
+                    {pages.map((_, i) => (
+                        <li
+                            key={i}
+                            onClick={() => setCurrentPageIndex(i)}
+                            className={cn(
+                                "rounded-full transition-all cursor-pointer",
+                                i === currentPageIndex
+                                    ? "w-8 h-6 bg-zinc-900"
+                                    : "w-4 h-6 bg-zinc-900/20 hover:bg-zinc-900/40"
+                            )}
+                        />
+                    ))}
+                </ul>
                 <button
                     onClick={addPage}
-                    className="w-5 h-5 rounded-full border-2 border-dashed border-gray-400/50 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-500 transition-colors"
+                    className="w-6 h-6 rounded-full border border-dashed transition-colors flex items-center justify-center text-sm ml-1 border-zinc-900/30 text-zinc-900/30 hover:border-zinc-900/60 hover:text-zinc-900/60"
                 >
-                    <Plus className="w-3 h-3" />
+                    +
                 </button>
             </div>
 
             {/* FLOATING TOOLBAR */}
-            <div className="relative h-20 flex items-center justify-center mb-4 px-6">
+            <div className="relative z-20 space-y-3 px-5 pb-5 pt-2">
                 {/* Inline Pickers (Popovers) */}
                 <AnimatePresence>
                     {activePicker && (
@@ -321,7 +540,7 @@ export default function CreatePage() {
                                 <>
                                     <p className="text-[10px] uppercase tracking-widest text-white/40 font-semibold mb-3 px-2">Theme</p>
                                     <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                                        {COLOR_THEMES.map(ct => (
+                                        {availableThemes.map(ct => (
                                             <button
                                                 key={ct.name}
                                                 onClick={() => {
@@ -346,7 +565,7 @@ export default function CreatePage() {
 
                             {activePicker === "font" && (
                                 <div className="space-y-0.5 min-w-[180px] p-1 max-h-72 overflow-y-auto">
-                                    {FONT_OPTIONS.map(font => (
+                                    {availableFonts.map(font => (
                                         <button
                                             key={font.name}
                                             onClick={() => {
@@ -394,14 +613,14 @@ export default function CreatePage() {
                                 <div className="space-y-1 max-h-48 overflow-y-auto p-1 min-w-[160px]">
                                     {musicTracks.map(track => (
                                         <button
-                                            key={track.id}
+                                            key={track._id}
                                             onClick={() => {
-                                                setSelectedMusicId(track.id);
+                                                setSelectedMusicId(track._id);
                                                 setActivePicker(null);
                                             }}
                                             className={cn(
                                                 "w-full text-left px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center justify-between",
-                                                selectedMusicId === track.id ? "bg-white/20 text-white" : "text-white/60 hover:bg-white/10"
+                                                selectedMusicId === track._id ? "bg-white/20 text-white" : "text-white/60 hover:bg-white/10"
                                             )}
                                         >
                                             <div className="truncate pr-4">
@@ -414,21 +633,43 @@ export default function CreatePage() {
                                 </div>
                             )}
 
-                            {activePicker === "stickers" && (
-                                <div className="grid grid-cols-4 gap-1 p-1">
-                                    {STICKER_OPTIONS.map(emoji => (
-                                        <button
-                                            key={emoji}
-                                            onClick={() => {
-                                                const newSticker = { emoji, x: 20 + Math.random() * 60, y: 10 + Math.random() * 20 };
-                                                updateCurrentPage({ stickers: [...currentPage.stickers, newSticker] });
-                                                setActivePicker(null);
-                                            }}
-                                            className="w-10 h-10 flex items-center justify-center text-xl hover:bg-white/10 rounded-lg transition-colors"
-                                        >
-                                            {emoji}
-                                        </button>
-                                    ))}
+                            {activePicker === "slideEffects" && (
+                                <div className="p-1">
+                                    <button
+                                        onClick={() => {
+                                            updateCurrentPage({ backgroundPattern: undefined });
+                                            setActivePicker(null);
+                                        }}
+                                        className={cn(
+                                            "w-full px-3 py-2 mb-1 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors",
+                                            !currentPage.backgroundPattern
+                                                ? "bg-white/20 text-white"
+                                                : "text-white/60 hover:bg-white/10 hover:text-white"
+                                        )}
+                                    >
+                                        <span className="w-6 h-6 rounded-md border border-white/20 flex items-center justify-center text-xs">✕</span>
+                                        No Pattern
+                                    </button>
+                                    <div className="grid grid-cols-4 gap-1 max-h-48 overflow-y-auto">
+                                        {availablePatterns.map(opt => (
+                                            <button
+                                                key={opt.id}
+                                                onClick={() => {
+                                                    updateCurrentPage({ backgroundPattern: opt.id });
+                                                    setActivePicker(null);
+                                                }}
+                                                className={cn(
+                                                    "w-10 h-10 flex items-center justify-center text-xl rounded-lg transition-colors",
+                                                    currentPage.backgroundPattern === opt.id
+                                                        ? "bg-white/25 ring-1 ring-white/40"
+                                                        : "hover:bg-white/10"
+                                                )}
+                                                title={opt.label}
+                                            >
+                                                {opt.emoji}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 
@@ -439,44 +680,53 @@ export default function CreatePage() {
                     )}
                 </AnimatePresence>
 
-                <div className="flex items-center gap-3">
-                    <ToolbarIcon icon={<Palette className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "theme" ? null : "theme")} active={activePicker === "theme"} />
-                    <ToolbarIcon icon={<span className="font-serif text-lg italic">F</span>} onClick={() => setActivePicker(activePicker === "font" ? null : "font")} active={activePicker === "font"} />
-                    <ToolbarIcon icon={ALIGN_OPTIONS.find(o => o.id === currentPage.textAlign)?.icon || <AlignCenter className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "align" ? null : "align")} active={activePicker === "align"} />
-                    <ToolbarIcon icon={<Music className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "music" ? null : "music")} active={activePicker === "music"} />
-                    <ToolbarIcon icon={<StarIcon className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "stickers" ? null : "stickers")} active={activePicker === "stickers"} />
+                <div className="flex gap-3 items-center justify-center">
+                    <ToolbarIcon icon={<Palette className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "theme" ? null : "theme")} active={activePicker === "theme"} title="Change theme" />
+                    <ToolbarIcon icon={<Type className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "font" ? null : "font")} active={activePicker === "font"} title="Change font" />
+                    <button
+                        onClick={() => setActivePicker(activePicker === "align" ? null : "align")}
+                        className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                            activePicker === "align" ? "bg-zinc-700 text-white" : "bg-zinc-800 hover:bg-zinc-700 text-white"
+                        )}
+                        title="Align text"
+                    >
+                        {ALIGN_OPTIONS.find(o => o.id === currentPage.textAlign)?.icon || <AlignCenter className="w-5 h-5" />}
+                    </button>
+                    <ToolbarIcon icon={<Music className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "music" ? null : "music")} active={activePicker === "music"} title="Add music" />
+                    <ToolbarIcon icon={<Sparkles className="w-5 h-5" />} onClick={() => setActivePicker(activePicker === "slideEffects" ? null : "slideEffects")} active={activePicker === "slideEffects"} title="Slide effects" />
+                </div>
+
+                {/* ACTION BUTTONS */}
+                <div className="flex gap-3 items-center">
+                    <button
+                        onClick={() => setIsPreviewOpen(true)}
+                        disabled={!hasContent}
+                        className="flex-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 text-white font-medium py-3 rounded-full transition-all flex items-center justify-center gap-2"
+                    >
+                        <Play className="w-4 h-4" />
+                        Preview
+                    </button>
+                    <button
+                        onClick={() => setIsPaymentOpen(true)}
+                        disabled={!hasContent}
+                        className="flex-1 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-30 text-white font-bold py-3 rounded-full transition-all flex items-center justify-center gap-2"
+                    >
+                        <Heart className="w-5 h-5" />
+                        Publish
+                    </button>
                 </div>
             </div>
 
-            {/* ACTION BUTTONS */}
-            <div className="flex gap-3 px-4 pb-8 pt-4 safe-area-bottom max-w-lg mx-auto w-full">
-                <button
-                    onClick={() => setIsPreviewOpen(true)}
-                    className={cn(
-                        "flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 font-semibold transition-all shadow-xl active:scale-95",
-                        hasContent
-                            ? "bg-zinc-800 text-white hover:bg-zinc-900"
-                            : "bg-white/10 backdrop-blur-md border border-white/10 text-white/40 shadow-none"
-                    )}
-                >
-                    <Play className="w-5 h-5 fill-current" />
-                    Preview
-                </button>
-                <button
-                    onClick={() => setIsPaymentOpen(true)}
-                    className={cn(
-                        "flex-1 py-4 rounded-2xl flex items-center justify-center gap-2 font-semibold transition-all shadow-xl active:scale-95",
-                        hasContent
-                            ? "bg-zinc-900 text-white hover:bg-black"
-                            : "bg-white/10 backdrop-blur-md border border-white/10 text-white/40 shadow-none"
-                    )}
-                >
-                    <Send className="w-5 h-5" />
-                    Publish
-                </button>
-            </div>
-
             {/* MODALS */}
+            <CharacterPicker
+                isOpen={characterPickerOpen}
+                onClose={() => setCharacterPickerOpen(false)}
+                onSelect={(url) => updateCurrentPage({ photoUrl: url })}
+                characters={availableCharacters}
+                theme={{ primary: currentTheme.primary, secondary: currentTheme.secondary }}
+            />
+
             <PaymentModal
                 open={isPaymentOpen}
                 onClose={() => setIsPaymentOpen(false)}
@@ -493,22 +743,37 @@ export default function CreatePage() {
                 onClose={() => setIsPreviewOpen(false)}
             />
 
+            {activeMusicTrack?.url && (
+                <audio
+                    ref={audioRef}
+                    src={activeMusicTrack.url}
+                    loop
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                />
+            )}
+
             <style>{`
         header, main, footer { user-select: none; }
-        textarea::placeholder { color: rgba(156, 163, 175, 0.4); }
-        textarea:focus { box-shadow: none; }
+        textarea::placeholder { color: rgb(161, 161, 170); }
+        textarea:focus { box-shadow: none; outline: none; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 4px; }
       `}</style>
         </div>
     );
 }
 
-function ToolbarIcon({ icon, onClick, active }: { icon: React.ReactNode; onClick: () => void; active?: boolean }) {
+function ToolbarIcon({ icon, onClick, active, title }: { icon: React.ReactNode; onClick: () => void; active?: boolean; title?: string }) {
     return (
         <button
             onClick={onClick}
+            title={title}
             className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center transition-all transform active:scale-90",
-                active ? "bg-gray-900 text-white" : "bg-gray-800/90 text-white/80 hover:bg-gray-900 hover:text-white"
+                "w-11 h-11 rounded-xl backdrop-blur-sm border flex items-center justify-center transition-all",
+                active
+                    ? "bg-zinc-700 border-zinc-600 text-white"
+                    : "bg-zinc-800 border-zinc-700 text-white/80 hover:text-white hover:bg-zinc-700"
             )}
         >
             {icon}

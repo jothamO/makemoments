@@ -11,8 +11,14 @@ export interface EventTheme {
   backgroundPattern: string;
   headline: string;
   subheadline: string;
+  headline_2?: string;
+  subheadline_2?: string;
+  headline_3?: string;
+  subheadline_3?: string;
   ctaText: string;
   urgencyText: string;
+  characters?: string[];
+  musicTrackIds?: string[];
 }
 
 export interface CelebrationEvent {
@@ -79,6 +85,7 @@ export interface StoryPage {
   bgGradientStart: string;
   bgGradientEnd: string;
   transition: SlideTransition;
+  backgroundPattern?: string;
   stickers: { emoji: string; x: number; y: number }[];
 }
 

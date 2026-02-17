@@ -1,3 +1,6 @@
+import { BackgroundPattern } from "@/components/BackgroundPattern";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import type { StoryPage } from "@/data/types";
 
 interface StoryCanvasProps {
@@ -12,6 +15,9 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
   const fontSizeMap = { small: "text-base", medium: "text-2xl", large: "text-4xl" };
   const alignMap = { left: "text-left", center: "text-center", right: "text-right" };
 
+  const allPatterns = useQuery(api.patterns.list);
+  const patternDetails = allPatterns?.find(p => p.id === page.backgroundPattern);
+
   return (
     <div
       className="relative w-full h-full rounded-2xl overflow-hidden flex flex-col"
@@ -19,6 +25,14 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
         background: `linear-gradient(160deg, ${page.bgGradientStart}, ${page.bgGradientEnd})`,
       }}
     >
+      {/* Background Pattern */}
+      {page.backgroundPattern && (
+        <BackgroundPattern
+          pattern={page.backgroundPattern}
+          type={(patternDetails as any)?.type}
+          customEmojis={(patternDetails as any)?.emoji ? (patternDetails as any)?.emoji.split(",") : undefined}
+        />
+      )}
       {/* Photo area */}
       {page.photoUrl ? (
         <div

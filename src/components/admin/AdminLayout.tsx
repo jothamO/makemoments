@@ -19,6 +19,7 @@ const navItems = [
   { title: "Templates", url: "/admin/templates", icon: Layout },
   { title: "Sales", url: "/admin/sales", icon: DollarSign },
   { title: "Celebrations", url: "/admin/celebrations", icon: Heart },
+  { title: "Files", url: "/admin/files", icon: Settings },
 ];
 
 function AdminSidebar() {

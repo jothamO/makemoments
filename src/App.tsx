@@ -18,6 +18,7 @@ import AdminTemplates from "./pages/admin/Templates";
 import AdminTemplateEditor from "./pages/admin/TemplateEditor";
 import AdminSales from "./pages/admin/Sales";
 import AdminCelebrations from "./pages/admin/Celebrations";
+import AdminFiles from "./pages/admin/FilesPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import NotFound from "./pages/NotFound";
 
@@ -29,7 +30,7 @@ const App = () => (
       <ThemeProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/" element={<Homepage />} />
             <Route path="/create" element={<CreateRedirect />} />
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="templates/:id/edit" element={<AdminTemplateEditor />} />
               <Route path="sales" element={<AdminSales />} />
               <Route path="celebrations" element={<AdminCelebrations />} />
+              <Route path="files" element={<AdminFiles />} />
             </Route>
 
             {/* Celebration view - must be after admin routes */}
