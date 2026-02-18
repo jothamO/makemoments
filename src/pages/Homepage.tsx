@@ -28,7 +28,8 @@ export default function Homepage() {
   const upcomingEvents = getUpcomingEvents();
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const slides = event ? generateOnboardingSlides(event) : [];
+  const normalizedEvent = event && !('id' in event) && '_id' in event ? { ...event, id: (event as any)._id } as CelebrationEvent : event as CelebrationEvent | null;
+  const slides = normalizedEvent ? generateOnboardingSlides(normalizedEvent) : [];
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % Math.max(slides.length, 1));
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + Math.max(slides.length, 1)) % Math.max(slides.length, 1));
@@ -340,7 +341,6 @@ function generateOnboardingSlides(event: CelebrationEvent) {
     // But we need to ensure they have *some* text if they passed the filter? 
     // The filter checked `!isEmpty`. So they have at least one.
     subheadline: s.subheadline || "",
-    headline: s.headline || "",
   }));
 }
 
