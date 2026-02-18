@@ -1,65 +1,41 @@
 
-# Fix Homepage Lag, Event-Based Routing, and Editor Improvements
 
-## 1. Fix Hero Section Slide Transition Lag
+# Fix Build Errors
 
-**Problem**: The `AnimatePresence mode="wait"` with `scale` transforms on the hero slides causes visible lag during transitions. Additionally, 15 continuously-animating emoji elements in `BackgroundPattern` add GPU pressure.
+All errors are type mismatches from the recent changes. Here are the fixes:
 
-**Solution**:
-- Replace Framer Motion slide transitions with CSS-only opacity crossfade (no scale transforms, no `AnimatePresence` remounting)
-- Use simple CSS `transition: opacity 0.5s` on slides instead of Framer Motion's `motion.div` with key-based remounting
-- Reduce `BackgroundPattern` emoji count from 15 to 8 and use CSS animations instead of Framer Motion for the floating emojis
-- Remove the `scale` properties from initial/animate/exit (the scale 0.98 to 1.02 causes layout recalculations)
+## 1. `convex/init.ts` line 155 — Missing `type` field on globalPatterns seed data
 
-**File**: `src/pages/Homepage.tsx`
+Each pattern object needs a `type` property (e.g. `"falling"`, `"floating"`, etc.). Add `type: "falling"` (or appropriate value) to each pattern in the seed array.
 
----
+## 2. `src/pages/CreatePage.tsx` — Font type issues (lines 167-210)
 
-## 2. Redirect /create to /{active-event-slug}/create
+The `availableFonts` mapping returns `{ name, value, isCustom, storageId, url }` but the base type is `{ name: string; value: string }`. Fix by defining a proper extended type or using type assertions consistently. The simplest fix: type the mapped result explicitly with an interface that includes `isCustom`, `storageId`, and `url` as optional fields.
 
-**Problem**: The `/create` route is static and doesn't reflect the active event.
+## 3. `src/pages/CreatePage.tsx` line 248 — Pattern `type` is `string` not union
 
-**Solution**:
-- Change `/create` route to redirect to `/{event.slug}/create` using the active event
-- Add a new route `/:eventSlug/create` that renders the `CreatePage` component
-- In `CreatePage`, read `eventSlug` from URL params and load that event's data (falling back to active event)
-- Update the CTA link on the homepage from `/create` to `/${event.slug}/create`
+When building merged patterns, cast `type` to the union type: `type: p.type as "falling" | "floating" | "rising" | "static"`.
 
-**Files**: `src/App.tsx`, `src/pages/CreatePage.tsx`, `src/pages/Homepage.tsx`
+## 4. `src/pages/CreatePage.tsx` lines 363, 630 — `t.id` doesn't exist on Convex docs
 
----
+Convex uses `_id` not `id`. Replace `t.id` with `t._id` on both lines.
 
-## 3. Fix Preview/Publish Buttons Cut Off on Wider Screens
+## 5. `src/pages/Homepage.tsx` line 31 — Convex event missing `id` property
 
-**Problem**: The action buttons container has no max-width, so on wide screens they stretch and may clip.
+The `generateOnboardingSlides` function expects `CelebrationEvent` which has `id`. The Convex event has `_id`. Fix by mapping: pass `{ ...activeEvent, id: activeEvent._id }` or update `generateOnboardingSlides` to accept either shape.
 
-**Solution**:
-- Add `max-w-lg mx-auto w-full` to the action buttons container (line 452) so they stay centered and bounded on wider screens
-- This matches the canvas max-width for visual consistency
+## 6. `src/pages/Homepage.tsx` line 343 — Duplicate `headline` property
 
-**File**: `src/pages/CreatePage.tsx` (line 452)
+The `return validSlides.map(...)` block has `headline` defined twice (lines 338 and 343). Remove the duplicate on line 343.
 
----
+## Summary
 
-## 4. Default Card Color to First Theme Picker Color (Mint)
+| File | Line(s) | Fix |
+|------|---------|-----|
+| `convex/init.ts` | 148-153 | Add `type` field to each pattern |
+| `src/pages/CreatePage.tsx` | 155-173 | Add proper typing for font objects with optional `isCustom`, `storageId`, `url` |
+| `src/pages/CreatePage.tsx` | 248 | Cast pattern `type` to union literal |
+| `src/pages/CreatePage.tsx` | 363, 630 | Change `t.id` to `t._id` |
+| `src/pages/Homepage.tsx` | 31 | Normalize Convex event to include `id` |
+| `src/pages/Homepage.tsx` | 343 | Remove duplicate `headline` property |
 
-**Problem**: `createInitialPage()` uses the event theme's `bgGradientStart`/`bgGradientEnd`, applying the event's colors by default.
-
-**Solution**:
-- Change `createInitialPage()` to use `COLOR_THEMES[0]` values instead of the event theme:
-  - `bgGradientStart: "#E2F0E9"` (Mint primary)
-  - `bgGradientEnd: "#C5E3D5"` (Mint secondary)
-- This means new pages start with the first color in the editor's theme selector
-
-**File**: `src/pages/CreatePage.tsx` (lines 74-86)
-
----
-
-## Technical Summary
-
-| Change | File(s) | Lines |
-|--------|---------|-------|
-| Optimize hero transitions | Homepage.tsx | ~60-200 |
-| Event-based routing | App.tsx, CreatePage.tsx, Homepage.tsx | Multiple |
-| Button max-width fix | CreatePage.tsx | ~452 |
-| Default to Mint theme | CreatePage.tsx | ~74-86 |
