@@ -142,14 +142,14 @@ export const seed = mutation({
         }
 
         const globalPatterns = [
-            { id: "floral", name: "Floral", emoji: "🌸" },
-            { id: "hearts", name: "Hearts", emoji: "💖" },
-            { id: "stars", name: "Stars", emoji: "✨" },
-            { id: "celebration", name: "Celebration", emoji: "🎉" },
-            { id: "geometric", name: "Geometric", emoji: "💠" },
-            { id: "fire", name: "Fire", emoji: "🔥" },
-            { id: "crowns", name: "Crowns", emoji: "👑" },
-            { id: "balloons", name: "Balloons", emoji: "🎈" },
+            { id: "floral", name: "Floral", emoji: "🌸", type: "falling" as const },
+            { id: "hearts", name: "Hearts", emoji: "💖", type: "rising" as const },
+            { id: "stars", name: "Stars", emoji: "✨", type: "floating" as const },
+            { id: "celebration", name: "Celebration", emoji: "🎉", type: "falling" as const },
+            { id: "geometric", name: "Geometric", emoji: "💠", type: "static" as const },
+            { id: "fire", name: "Fire", emoji: "🔥", type: "rising" as const },
+            { id: "crowns", name: "Crowns", emoji: "👑", type: "falling" as const },
+            { id: "balloons", name: "Balloons", emoji: "🎈", type: "rising" as const },
         ];
         for (const pattern of globalPatterns) {
             await ctx.db.insert("globalPatterns", { ...pattern, createdAt: now });

@@ -167,10 +167,10 @@ export default function CreatePage() {
         return filteredFonts.map(f => ({
             name: f.name + (f.isCustom ? "" : ""),
             value: f.name,
-            isCustom: f.isCustom,
-            storageId: f.storageId,
-            url: (f as any).url,
-        }));
+            isCustom: f.isCustom as boolean | undefined,
+            storageId: f.storageId as string | undefined,
+            url: (f as any).url as string | undefined,
+        } as { name: string; value: string; isCustom?: boolean; storageId?: string; url?: string }));
     })();
 
     // Load fonts dynamically
@@ -178,7 +178,7 @@ export default function CreatePage() {
         if (!allFonts) return;
 
         // 1. Google Fonts
-        const googleFonts = availableFonts.filter(f => !f.isCustom && !DEFAULT_FONTS.some(df => df.value === f.value));
+        const googleFonts = availableFonts.filter(f => !(f as any).isCustom && !DEFAULT_FONTS.some(df => df.value === f.value));
         if (googleFonts.length > 0) {
             const linkId = 'dynamic-google-fonts';
             if (!document.getElementById(linkId)) {
@@ -192,16 +192,16 @@ export default function CreatePage() {
         }
 
         // 2. Custom Fonts (Convex Storage)
-        const customFonts = availableFonts.filter(f => f.isCustom && f.storageId && f.url);
+        const customFonts = availableFonts.filter(f => (f as any).isCustom && (f as any).storageId && (f as any).url);
         customFonts.forEach(font => {
-            const styleId = `font-${font.storageId}`;
+            const styleId = `font-${(font as any).storageId}`;
             if (!document.getElementById(styleId)) {
                 const style = document.createElement('style');
                 style.id = styleId;
                 style.textContent = `
                     @font-face {
                         font-family: '${font.value}';
-                        src: url('${font.url}');
+                        src: url('${(font as any).url}');
                         font-weight: normal;
                         font-style: normal;
                     }
@@ -247,6 +247,7 @@ export default function CreatePage() {
             if (!dynamicMap.has(hc.id)) {
                 merged.push({
                     ...hc,
+                    type: hc.type as "falling" | "floating" | "rising" | "static",
                     customEmojis: [hc.emoji]
                 });
             }
@@ -360,7 +361,7 @@ export default function CreatePage() {
     }
 
     const hasContent = pages.some(p => p.photoUrl || p.text.trim().length > 0);
-    const activeMusicTrack = musicTracks.find((t) => t._id === selectedMusicId || t.id === selectedMusicId);
+    const activeMusicTrack = musicTracks.find((t) => t._id === selectedMusicId);
 
     // -----------------------------------------------------------------------
     // Render
@@ -627,7 +628,7 @@ export default function CreatePage() {
                                                 <div className="truncate">{track.name}</div>
                                                 <div className="opacity-40 text-[10px]">{track.artist}</div>
                                             </div>
-                                            {selectedMusicId === track.id && <Check className="w-3 h-3" />}
+                                            {selectedMusicId === track._id && <Check className="w-3 h-3" />}
                                         </button>
                                     ))}
                                 </div>
