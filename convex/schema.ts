@@ -19,7 +19,9 @@ export default defineSchema({
             textLight: v.string(),
             headlineFont: v.string(),
             bodyFont: v.string(),
-            backgroundPattern: v.string(),
+            backgroundPattern: v.string(), // ID key like 'hearts'
+            backgroundPatternColor: v.optional(v.string()),
+            backgroundPatternOpacity: v.optional(v.number()),
             headline: v.string(),
             subheadline: v.string(),
             headline_2: v.optional(v.string()),

@@ -29,8 +29,8 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
       {page.backgroundPattern && (
         <BackgroundPattern
           pattern={page.backgroundPattern}
-          type={(patternDetails as any)?.type}
-          customEmojis={(patternDetails as any)?.emoji ? (patternDetails as any)?.emoji.split(",") : undefined}
+          type={patternDetails?.type}
+          customEmojis={patternDetails?.emoji ? patternDetails?.emoji.split(",") : undefined}
         />
       )}
       {/* Photo area */}

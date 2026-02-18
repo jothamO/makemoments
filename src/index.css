@@ -156,6 +156,7 @@
   0% {
     transform: translateY(-10%) rotate(0deg);
   }
+
   100% {
     transform: translateY(110vh) rotate(360deg);
   }
@@ -163,4 +164,90 @@
 
 .animate-float-down {
   animation: float-down 20s linear infinite;
+}
+
+/* 
+   Three-Speed Parallax Animation System 
+   Slow (Background), Medium (Midground), Fast (Foreground)
+*/
+@keyframes pattern-rising {
+  0% {
+    transform: translateY(1000px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pattern-falling {
+  0% {
+    transform: translateY(-1000px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pattern-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(50px, 50px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* Rising Variants */
+.animate-pattern-rising-slow {
+  animation: pattern-rising 120s linear infinite;
+  will-change: transform;
+}
+
+.animate-pattern-rising-med {
+  animation: pattern-rising 75s linear infinite;
+  will-change: transform;
+}
+
+.animate-pattern-rising-fast {
+  animation: pattern-rising 40s linear infinite;
+  will-change: transform;
+}
+
+/* Falling Variants */
+.animate-pattern-falling-slow {
+  animation: pattern-falling 120s linear infinite;
+  will-change: transform;
+}
+
+.animate-pattern-falling-med {
+  animation: pattern-falling 75s linear infinite;
+  will-change: transform;
+}
+
+.animate-pattern-falling-fast {
+  animation: pattern-falling 40s linear infinite;
+  will-change: transform;
+}
+
+/* Drift Variants */
+.animate-pattern-drift-slow {
+  animation: pattern-drift 100s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-pattern-drift-med {
+  animation: pattern-drift 60s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-pattern-drift-fast {
+  animation: pattern-drift 30s ease-in-out infinite;
+  will-change: transform;
 }

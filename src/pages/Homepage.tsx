@@ -49,6 +49,24 @@ export default function Homepage() {
     return () => clearInterval(timer);
   }, [slides.length, currentSlide]);
 
+  const patternConfig = allPatterns?.find(p => p.id === theme?.backgroundPattern);
+  const patternEmojis = React.useMemo(() => {
+    const emojiString = patternConfig?.emoji;
+    return emojiString ? emojiString.split(",") : undefined;
+  }, [patternConfig?.emoji]);
+
+  // Debug pattern rendering
+  useEffect(() => {
+    if (theme?.backgroundPattern) {
+      console.log("Homepage Pattern Debug:", {
+        id: theme?.backgroundPattern,
+        config: patternConfig,
+        resolvedType: patternConfig?.type,
+        resolvedEmoji: patternConfig?.emoji
+      });
+    }
+  }, [theme?.backgroundPattern, patternConfig]);
+
   if (!event || !theme) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -72,8 +90,8 @@ export default function Homepage() {
         {/* Background Pattern */}
         <BackgroundPattern
           pattern={theme.backgroundPattern}
-          type={(allPatterns?.find(p => p.id === theme.backgroundPattern) as any)?.type}
-          customEmojis={(allPatterns?.find(p => p.id === theme.backgroundPattern) as any)?.emoji ? (allPatterns?.find(p => p.id === theme.backgroundPattern) as any)?.emoji.split(",") : undefined}
+          type={patternConfig?.type}
+          customEmojis={patternEmojis}
         />
 
         {/* Decorative circles from original design */}

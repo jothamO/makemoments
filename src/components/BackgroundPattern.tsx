@@ -1,156 +1,121 @@
-import { motion } from "framer-motion";
-import { useEffect, useState, useMemo } from "react";
+import { BACKGROUND_PATTERNS } from '@/lib/backgroundPatterns';
+import { useMemo } from 'react';
 
 interface BackgroundPatternProps {
-    pattern: string; // This is the ID
-    customEmojis?: string[]; // Legacy: array of strings. New: array with one comma-sep string maybe?
-    type?: "falling" | "rising" | "floating" | "static"; // New prop
+    pattern: string;
+    color?: string;
+    opacity?: number;
+    animated?: boolean;
+    customEmojis?: string[]; // Legacy
+    type?: string;         // Legacy
 }
 
-export function BackgroundPattern({ pattern, customEmojis, type = "falling" }: BackgroundPatternProps) {
-    const [elements, setElements] = useState<{ id: number; x: number; y: number; delay: number; duration: number; emoji: string; scale: number; drift: number; rotationDuration: number; rotationDir: number }[]>([]);
+// Map legacy emoji-based IDs to new SVG/CSS patterns
+const LEGACY_PATTERN_MAP: Record<string, string> = {
+    'hearts': 'hearts',
+    'stars': 'stars',
+    'dots': 'dots',
+    'grid': 'grid',
+    'waves': 'waves',
+    'confetti': 'confetti',
+    'minimal': 'minimal',
+    'fire': 'fire',
+    'falling-flowers': 'flowers',
+    'floral': 'flowers',
+    'celebration': 'confetti',
+    'balloons': 'balloons',
+    'geometric': 'grid',
+    'halloween': 'halloween',
+    'crowns': 'crowns',
+    'sparkles': 'stars',
+    'ghost': 'halloween',
+    'pumpkin': 'halloween',
+};
 
-    // 1. Determine the emoji set
-    const emojis = useMemo(() => {
-        // If customEmojis passed (dynamic from DB), use them
-        // The DB might return ["👻,🎃"] or ["👻", "🎃"] depending on how we parse it upstream
-        // Let's handle both array of strings and comma-separated strings
-        if (customEmojis && customEmojis.length > 0) {
-            // Flatten and split any comma-separated strings
-            return customEmojis.flatMap(e => e.split(',').map(s => s.trim()));
+/**
+ * BackgroundPattern Component (v3 Parallax)
+ * 
+ * Renders three overlapping layers of SVG/CSS patterns at different speeds
+ * and scales to create an organic particle/depth effect.
+ */
+export function BackgroundPattern({
+    pattern,
+    color,
+    opacity = 0.15,
+    animated = true
+}: BackgroundPatternProps) {
+    // 1. Resolve the pattern (handle legacy IDs and fallbacks)
+    let actualPattern = pattern;
+    if (pattern in LEGACY_PATTERN_MAP) {
+        actualPattern = LEGACY_PATTERN_MAP[pattern];
+    }
+    const patternKey = (actualPattern in BACKGROUND_PATTERNS) ? actualPattern : 'minimal';
+    const patternDef = BACKGROUND_PATTERNS[patternKey];
+
+    // 2. Convert SVG path/text to data URL
+    const backgroundImage = useMemo(() => {
+        if (patternDef.type === 'svg-pattern' && patternDef.svg) {
+            const encoded = encodeURIComponent(patternDef.svg)
+                .replace(/'/g, '%27')
+                .replace(/"/g, '%22');
+            return `url("data:image/svg+xml,${encoded}")`;
         }
+        return (patternDef.css as React.CSSProperties).backgroundImage;
+    }, [patternDef]);
 
-        // Fallback hardcoded (legacy support)
-        if (pattern === "floral" || pattern === "falling-flowers") return ["🌸", "🌺", "🌹", "🌷"];
-        if (pattern === "hearts") return ["💖", "💗", "💓", "💝"];
-        if (pattern === "stars") return ["⭐", "🌟", "✨"];
-        if (pattern === "celebration") return ["🎉", "🎊", "🎈"];
-        if (pattern === "geometric") return ["💠", "🔶", "🔷"];
-        if (pattern === "fire") return ["🔥", "🧡", "💥"];
-        if (pattern === "crowns") return ["👑", "💎", "👸"];
-        if (pattern === "balloons") return ["🎈", "🪁", "🔮"];
-        if (pattern === "halloween") return ["👻", "🎃", "🕸️"];
+    if (patternDef.type === 'none') return null;
 
-        return ["✨"];
-    }, [pattern, customEmojis]);
+    // 3. Layer Configuration (Particle Depth System)
+    const layers = [
+        {
+            key: 'bg',
+            scale: 0.5,
+            speed: 'slow',
+            opacity: opacity * 0.4,
+            filter: 'brightness(0.6) contrast(1.2) blur(1px)'
+        },
+        {
+            key: 'mid',
+            scale: 0.8,
+            speed: 'med',
+            opacity: opacity * 0.7,
+            filter: 'brightness(0.8)'
+        },
+        {
+            key: 'fg',
+            scale: 1.2,
+            speed: 'fast',
+            opacity: opacity,
+            filter: 'none'
+        }
+    ];
 
-    // 2. Determine Animation Variants
-    // We generate random elements, but their animation depends on 'type'
-    useEffect(() => {
-        const count = 20; // Increased count for better density
-        const newElements = Array.from({ length: count }, (_, i) => ({
-            id: i,
-            x: Math.random() * 100, // Horizontal position
-            y: Math.random() * 100, // Vertical position (for floating/static)
-            delay: Math.random() * 20,
-            duration: 10 + Math.random() * 20, // Slower, more varied duration
-            scale: 0.5 + Math.random() * 1.0, // More varied scale
-            emoji: emojis[i % emojis.length],
-            drift: (Math.random() - 0.5) * 50, // Random Horizontal Drift (-25px to 25px equivalent)
-            rotationDuration: 15 + Math.random() * 30, // Slow, varying rotation
-            rotationDir: Math.random() > 0.5 ? 1 : -1,
-        }));
-        setElements(newElements);
-    }, [emojis]); // Re-run if emojis change
-
-    // Render based on type
     return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-            {elements.map((el) => {
-                // Falling: Top -> Bottom with Sway
-                if (type === "falling") {
-                    return (
-                        <motion.div
-                            key={el.id}
-                            className="absolute text-3xl opacity-20 sm:opacity-30"
-                            initial={{ top: "-10%", left: `${el.x}%`, x: 0, rotate: 0 }}
-                            animate={{
-                                top: "110%",
-                                x: [0, el.drift, 0], // Gentle sway
-                                rotate: 360 * el.rotationDir
-                            }}
-                            transition={{
-                                top: { duration: el.duration, repeat: Infinity, delay: el.delay, ease: "linear" },
-                                x: { duration: el.duration / 2, repeat: Infinity, ease: "easeInOut", repeatType: "reverse" },
-                                rotate: { duration: el.rotationDuration, repeat: Infinity, ease: "linear" }
-                            }}
-                        >
-                            <div style={{ transform: `scale(${el.scale})` }}>{el.emoji}</div>
-                        </motion.div>
-                    );
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+            {layers.map((layer) => {
+                let animationClass = '';
+                if (animated && patternDef.animation && patternDef.animation !== 'static') {
+                    animationClass = `animate-pattern-${patternDef.animation}-${layer.speed}`;
                 }
 
-                // Rising: Bottom -> Top with Sway
-                if (type === "rising") {
-                    return (
-                        <motion.div
-                            key={el.id}
-                            className="absolute text-3xl opacity-20 sm:opacity-30"
-                            initial={{ top: "110%", left: `${el.x}%`, x: 0, rotate: 0 }}
-                            animate={{
-                                top: "-10%",
-                                x: [0, el.drift, 0],
-                                rotate: 360 * el.rotationDir
-                            }}
-                            transition={{
-                                top: { duration: el.duration, repeat: Infinity, delay: el.delay, ease: "linear" },
-                                x: { duration: el.duration / 2, repeat: Infinity, ease: "easeInOut", repeatType: "reverse" },
-                                rotate: { duration: el.rotationDuration, repeat: Infinity, ease: "linear" }
-                            }}
-                        >
-                            <div style={{ transform: `scale(${el.scale})` }}>{el.emoji}</div>
-                        </motion.div>
-                    );
-                }
-
-                // Floating: Random drift + pulse
-                if (type === "floating") {
-                    return (
-                        <motion.div
-                            key={el.id}
-                            className="absolute text-3xl opacity-20 sm:opacity-30"
-                            style={{ left: `${el.x}%`, top: `${el.y}%` }}
-                            animate={{
-                                y: [0, -30, 0],
-                                x: [0, 20, -20, 0],
-                                scale: [el.scale, el.scale * 1.2, el.scale],
-                                opacity: [0.2, 0.4, 0.2]
-                            }}
-                            transition={{
-                                duration: 8 + Math.random() * 5,
-                                repeat: Infinity,
-                                delay: el.delay,
-                                ease: "easeInOut"
-                            }}
-                        >
-                            {el.emoji}
-                        </motion.div>
-                    );
-                }
-
-                // Static: Just placed (maybe slow rotation)
-                if (type === "static") {
-                    return (
-                        <motion.div
-                            key={el.id}
-                            className="absolute text-3xl opacity-10 sm:opacity-20"
-                            style={{ left: `${el.x}%`, top: `${el.y}%` }}
-                            animate={{
-                                rotate: [0, 10 * el.rotationDir, 0, -10 * el.rotationDir, 0],
-                                scale: [el.scale, el.scale * 1.1, el.scale]
-                            }}
-                            transition={{
-                                duration: 10 + Math.random() * 10,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                            }}
-                        >
-                            {el.emoji}
-                        </motion.div>
-                    );
-                }
-
-                return null;
+                return (
+                    <div
+                        key={layer.key}
+                        className={`absolute inset-0 ${animationClass}`}
+                        style={{
+                            ...patternDef.css,
+                            backgroundImage,
+                            backgroundSize: patternDef.css.backgroundSize ?
+                                `calc(${patternDef.css.backgroundSize} * ${layer.scale})` : undefined,
+                            color: color || 'rgba(255,255,255,0.4)',
+                            opacity: layer.opacity,
+                            mixBlendMode: 'overlay',
+                            filter: layer.filter,
+                            // Performance optimization: 
+                            // transform is already handled by animation classes in index.css
+                        }}
+                    />
+                );
             })}
         </div>
     );

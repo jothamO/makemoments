@@ -9,6 +9,8 @@ export interface EventTheme {
   headlineFont: string;
   bodyFont: string;
   backgroundPattern: string;
+  backgroundPatternColor?: string;
+  backgroundPatternOpacity?: number;
   headline: string;
   subheadline: string;
   headline_2?: string;
