@@ -1,26 +1,59 @@
+import { useMemo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getDashboardStats, getAllCelebrations, getAllSales } from "@/data/data-service";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { DollarSign, Heart, Calendar, TrendingUp } from "lucide-react";
+import { DollarSign, Heart, Calendar, TrendingUp, Loader2 } from "lucide-react";
 
 const AdminDashboard = () => {
-  const stats = getDashboardStats();
-  const celebrations = getAllCelebrations();
-  const sales = getAllSales();
+  const celebrations = useQuery(api.celebrations.list) || [];
+  const events = useQuery(api.events.getAll) || [];
+
+  const stats = useMemo(() => {
+    const now = Date.now();
+    const todayStart = new Date().setHours(0, 0, 0, 0);
+    const paidCelebrations = celebrations.filter((c) => c.paymentStatus === "paid");
+    const todayRevenue = paidCelebrations
+      .filter((c) => c.createdAt >= todayStart)
+      .reduce((a, c) => a + (c.totalPaid || 0), 0);
+    const activeEvent = events.find((e) => e.status === "active");
+
+    return {
+      todayRevenue,
+      totalCelebrations: celebrations.length,
+      activeEvent: activeEvent?.name || "None",
+      conversionRate: celebrations.length > 0
+        ? Math.round((paidCelebrations.length / celebrations.length) * 100)
+        : 0,
+    };
+  }, [celebrations, events]);
 
   // Revenue chart data (last 7 days)
-  const chartData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    d.setHours(0, 0, 0, 0);
-    const nextDay = d.getTime() + 86400000;
-    const daySales = sales.filter((s) => s.date >= d.getTime() && s.date < nextDay);
-    return {
-      name: d.toLocaleDateString("en", { weekday: "short" }),
-      revenue: daySales.reduce((a, s) => a + s.amount, 0),
-    };
-  });
+  const chartData = useMemo(() => {
+    const paidCelebrations = celebrations.filter((c) => c.paymentStatus === "paid");
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0, 0, 0, 0);
+      const nextDay = d.getTime() + 86400000;
+      const dayCelebrations = paidCelebrations.filter(
+        (c) => c.createdAt >= d.getTime() && c.createdAt < nextDay
+      );
+      return {
+        name: d.toLocaleDateString("en", { weekday: "short" }),
+        revenue: dayCelebrations.reduce((a, c) => a + (c.totalPaid || 0), 0),
+      };
+    });
+  }, [celebrations]);
+
+  if (!celebrations.length && !events.length) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+      </div>
+    );
+  }
 
   const metrics = [
     { title: "Today's Revenue", value: `₦${stats.todayRevenue.toLocaleString()}`, icon: DollarSign, color: "text-green-600" },
@@ -75,18 +108,30 @@ const AdminDashboard = () => {
                 <TableHead>Slug</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Views</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {celebrations.slice(0, 10).map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.slug}</TableCell>
-                  <TableCell>{c.email}</TableCell>
-                  <TableCell>₦{c.totalPaid.toLocaleString()}</TableCell>
-                  <TableCell>{c.views}</TableCell>
-                </TableRow>
-              ))}
+              {celebrations
+                .sort((a, b) => b.createdAt - a.createdAt)
+                .slice(0, 10)
+                .map((c) => (
+                  <TableRow key={c._id}>
+                    <TableCell className="font-medium">{c.slug}</TableCell>
+                    <TableCell>{c.email}</TableCell>
+                    <TableCell>{c.currency === "USD" ? "$" : "₦"}{(c.totalPaid || 0).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <span className={`text-xs font-medium ${c.paymentStatus === "paid" ? "text-green-600"
+                          : c.paymentStatus === "failed" ? "text-red-500"
+                            : "text-amber-500"
+                        }`}>
+                        {c.paymentStatus}
+                      </span>
+                    </TableCell>
+                    <TableCell>{c.views || 0}</TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </CardContent>

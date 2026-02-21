@@ -1,0 +1,281 @@
+[
+  {
+    "monthName": "January",
+    "name": "New Year's Day",
+    "baseColor": "#0d1b2a",
+    "glowColor": "#4fc3f7",
+    "tier": 1,
+    "regions": "🌍 Global",
+    "kind": "recurring"
+  },
+  {
+    "monthName": "January",
+    "name": "MLK Day",
+    "baseColor": "#1a0a00",
+    "glowColor": "#d4830a",
+    "tier": 4,
+    "regions": "🇺🇸 US + Global",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "February",
+    "name": "Valentine's Day",
+    "baseColor": "#1a0010",
+    "glowColor": "#ff2d55",
+    "tier": 1,
+    "regions": "🌍 Global",
+    "kind": "recurring"
+  },
+  {
+    "monthName": "February",
+    "name": "Black History Month",
+    "baseColor": "#0a0a00",
+    "glowColor": "#cc0000",
+    "tier": 4,
+    "regions": "🌍 US · UK · CA · NG",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "March",
+    "name": "International Women's Day",
+    "baseColor": "#1a0020",
+    "glowColor": "#c840e0",
+    "tier": 2,
+    "regions": "🌍 US · UK · NG · IN",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "March",
+    "name": "Eid al-Fitr",
+    "baseColor": "#001a10",
+    "glowColor": "#00c896",
+    "tier": 2,
+    "regions": "🌍 NG · ME · ID · PK",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "March",
+    "name": "St. Patrick's Day",
+    "baseColor": "#001200",
+    "glowColor": "#00a550",
+    "tier": 4,
+    "regions": "🌍 US · IE · UK · CA",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "April",
+    "name": "Easter",
+    "baseColor": "#0f1a00",
+    "glowColor": "#a8e063",
+    "tier": 2,
+    "regions": "🌍 Global Christian",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "April",
+    "name": "Earth Day",
+    "baseColor": "#001510",
+    "glowColor": "#00e5a0",
+    "tier": 4,
+    "regions": "🌍 Global · Gen Z",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "May",
+    "name": "Mother's Day",
+    "baseColor": "#1a0015",
+    "glowColor": "#ff6eb4",
+    "tier": 4,
+    "regions": "🏆 #1 Priority",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "May",
+    "name": "Graduation Season",
+    "baseColor": "#0a0a00",
+    "glowColor": "#f5c518",
+    "tier": 2,
+    "regions": "🌍 Global Students",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "May",
+    "name": "Memorial Day",
+    "baseColor": "#00001a",
+    "glowColor": "#4169e1",
+    "tier": 4,
+    "regions": "🇺🇸 US Military",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "June",
+    "name": "Pride Month",
+    "baseColor": "",
+    "glowColor": "#ff6b6b",
+    "tier": 2,
+    "regions": "🌍 Global LGBTQ+",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "June",
+    "name": "Father's Day",
+    "baseColor": "#0a1520",
+    "glowColor": "#1e90ff",
+    "tier": 1,
+    "regions": "🌍 Global",
+    "kind": "recurring"
+  },
+  {
+    "monthName": "July",
+    "name": "Independence Day",
+    "baseColor": "#0a0010",
+    "glowColor": "#ff4136",
+    "tier": 4,
+    "regions": "🇺🇸 US",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "July",
+    "name": "Summer Vacation",
+    "baseColor": "#001530",
+    "glowColor": "#00b4d8",
+    "tier": 4,
+    "regions": "🌍 Northern Hemisphere",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "August",
+    "name": "Back to School",
+    "baseColor": "#0a1000",
+    "glowColor": "#ffa500",
+    "tier": 2,
+    "regions": "🌍 Global Parents",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "August",
+    "name": "International Youth Day",
+    "baseColor": "#000a1a",
+    "glowColor": "#7c3aed",
+    "tier": 4,
+    "regions": "🌍 Gen Z Global",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "September",
+    "name": "Labor Day",
+    "baseColor": "#100a00",
+    "glowColor": "#e07b00",
+    "tier": 4,
+    "regions": "🇺🇸 US Professionals",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "September",
+    "name": "World Gratitude Day",
+    "baseColor": "#001a15",
+    "glowColor": "#2dd4bf",
+    "tier": 4,
+    "regions": "🌍 Global",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "October",
+    "name": "Nigeria Independence Day",
+    "baseColor": "#001800",
+    "glowColor": "#00a550",
+    "tier": 4,
+    "regions": "🇳🇬 Nigeria Priority",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "October",
+    "name": "Breast Cancer Awareness Month",
+    "baseColor": "#1a0020",
+    "glowColor": "#ff69b4",
+    "tier": 4,
+    "regions": "🌍 Global",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "October",
+    "name": "Halloween",
+    "baseColor": "#050005",
+    "glowColor": "#ff6a00",
+    "tier": 2,
+    "regions": "🇺🇸 US · UK · CA",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "November",
+    "name": "Thanksgiving",
+    "baseColor": "#150800",
+    "glowColor": "#d4670a",
+    "tier": 2,
+    "regions": "🇺🇸 US",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "November",
+    "name": "Black Friday · Cyber Monday",
+    "baseColor": "#000000",
+    "glowColor": "#f5c518",
+    "tier": 4,
+    "regions": "🌍 Global Shoppers",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "December",
+    "name": "Detty December",
+    "baseColor": "",
+    "glowColor": "#ff00aa",
+    "tier": 4,
+    "regions": "🇳🇬 Nigeria Priority",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "December",
+    "name": "Hanukkah",
+    "baseColor": "#00001f",
+    "glowColor": "#4169e1",
+    "tier": 4,
+    "regions": "🌍 Jewish Communities",
+    "kind": "one-time"
+  },
+  {
+    "monthName": "December",
+    "name": "Christmas",
+    "baseColor": "#001a00",
+    "glowColor": "#ff2020",
+    "tier": 1,
+    "regions": "🌍 Global Christian",
+    "kind": "recurring"
+  },
+  {
+    "monthName": "December",
+    "name": "New Year's Eve · Year in Review",
+    "baseColor": "#05050f",
+    "glowColor": "#d4af37",
+    "tier": 1,
+    "regions": "🌍 Everyone",
+    "kind": "recurring"
+  },
+  {
+    "monthName": "Evergreen",
+    "name": "Birthday",
+    "baseColor": "#0a0a0a",
+    "glowColor": "#f5c518",
+    "tier": 1,
+    "regions": "🌍 Global Everyone",
+    "kind": "evergreen"
+  },
+  {
+    "monthName": "Evergreen",
+    "name": "Anniversary",
+    "baseColor": "#0a0005",
+    "glowColor": "#ff2d55",
+    "tier": 1,
+    "regions": "🌍 Global Everyone",
+    "kind": "evergreen"
+  }
+]

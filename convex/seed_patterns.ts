@@ -8,13 +8,13 @@ export const seedPatterns = mutation({
             { id: "balloons", name: "Balloons", emoji: "🎈,🪁,🔮", type: "rising" },
             { id: "hearts", name: "Hearts", emoji: "💖,💗,💓,💝", type: "rising" },
             { id: "floral", name: "Floral", emoji: "🌸,🌺,🌹,🌷", type: "falling" },
-            { id: "stars", name: "Stars", emoji: "⭐,🌟,✨", type: "floating" },
+            { id: "stars", name: "Stars", emoji: "⭐,🌟,✨", type: "drift" },
             { id: "celebration", name: "Celebration", emoji: "🎉,🎊,🎈", type: "falling" },
             { id: "geometric", name: "Geometric", emoji: "💠,🔶,🔷", type: "static" },
-            { id: "halloween", name: "Halloween", emoji: "👻,🎃,🕸️", type: "floating" },
+            { id: "halloween", name: "Halloween", emoji: "👻,🎃,🕸️", type: "drift" },
             // Fix legacy data
-            { id: "ghost", name: "Ghost", emoji: "👻", type: "floating" },
-            { id: "pumpkin", name: "Pumpkin", emoji: "🎃", type: "floating" },
+            { id: "ghost", name: "Ghost", emoji: "👻", type: "drift" },
+            { id: "pumpkin", name: "Pumpkin", emoji: "🎃", type: "drift" },
         ];
 
         for (const p of patterns) {
@@ -27,14 +27,14 @@ export const seedPatterns = mutation({
                 await ctx.db.insert("globalPatterns", {
                     id: p.id,
                     name: p.name,
-                    emoji: p.emoji,
+                    emojis: p.emoji.split(",").map(e => e.trim()),
                     type: p.type as any,
                     createdAt: Date.now(),
                 });
             } else {
                 // Update existing to ensure type/emoji are fresh
                 await ctx.db.patch(existing._id, {
-                    emoji: p.emoji,
+                    emojis: p.emoji.split(",").map(e => e.trim()),
                     type: p.type as any,
                 });
             }

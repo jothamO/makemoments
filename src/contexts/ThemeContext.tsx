@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { getActiveEvent } from "@/data/data-service";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import type { CelebrationEvent, EventTheme } from "@/data/types";
 
 interface ThemeContextValue {
@@ -31,6 +32,7 @@ function hexToHsl(hex: string): string {
 }
 
 function loadFont(fontName: string) {
+  if (!fontName || typeof fontName !== "string") return;
   const id = `font-${fontName.replace(/\s/g, "-")}`;
   if (document.getElementById(id)) return;
   const link = document.createElement("link");
@@ -41,30 +43,26 @@ function loadFont(fontName: string) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const activeEvent = useQuery(api.events.getActive);
   const [event, setEvent] = useState<CelebrationEvent | null>(null);
 
   useEffect(() => {
-    const active = getActiveEvent();
-    if (active) setEvent(active);
-  }, []);
+    if (activeEvent) setEvent(activeEvent as any);
+  }, [activeEvent]);
 
   useEffect(() => {
     if (!event) return;
-    const t = event.theme;
+    const t = event.theme || {};
     const root = document.documentElement;
 
-    root.style.setProperty("--color-primary", hexToHsl(t.primary));
-    root.style.setProperty("--color-secondary", hexToHsl(t.secondary));
-    root.style.setProperty("--color-accent", hexToHsl(t.accent));
-    root.style.setProperty("--color-bg-gradient-start", t.bgGradientStart);
-    root.style.setProperty("--color-bg-gradient-end", t.bgGradientEnd);
-    root.style.setProperty("--color-text-dark", t.textDark);
-    root.style.setProperty("--color-text-light", t.textLight);
-    root.style.setProperty("--font-headline", `"${t.headlineFont}", serif`);
-    root.style.setProperty("--font-body", `"${t.bodyFont}", sans-serif`);
+    const headlineFont = (t as any).headlineFont || "Inter";
+    const bodyFont = (t as any).bodyFont || "Inter";
 
-    loadFont(t.headlineFont);
-    loadFont(t.bodyFont);
+    root.style.setProperty("--font-headline", `"${headlineFont}", serif`);
+    root.style.setProperty("--font-body", `"${bodyFont}", sans-serif`);
+
+    if (headlineFont) loadFont(headlineFont);
+    if (bodyFont) loadFont(bodyFont);
   }, [event]);
 
   return (

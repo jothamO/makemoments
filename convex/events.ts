@@ -1,41 +1,203 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
+async function resolveEventAssets(ctx: any, event: any) {
+    const theme = event.theme || {};
+
+    // 1. Resolve Music
+    const musicTracks = theme.musicTrackIds?.length > 0
+        ? await Promise.all(theme.musicTrackIds.map((id: any) => ctx.db.get(id)))
+        : [];
+
+    // 2. Resolve Characters
+    const characters = theme.characterIds?.length > 0
+        ? await Promise.all(theme.characterIds.map((id: any) => ctx.db.get(id)))
+        : [];
+
+    // 3. Resolve Fonts
+    const fonts = theme.allowedFontIds?.length > 0
+        ? await Promise.all(theme.allowedFontIds.map((id: any) => ctx.db.get(id)))
+        : [];
+
+    // 4. Resolve Patterns
+    const patterns = theme.patternIds?.length > 0
+        ? await ctx.db.query("globalPatterns").collect().then((all: any[]) =>
+            all.filter(p => theme.patternIds.includes(p.id))
+        )
+        : [];
+
+    // 5. Resolve Themes (Backdrops)
+    const themes = theme.allowedThemeIds?.length > 0
+        ? await Promise.all(theme.allowedThemeIds.map((id: any) => ctx.db.get(id)))
+        : [];
+
+    return {
+        ...event,
+        resolvedAssets: {
+            musicTracks: musicTracks.filter(Boolean),
+            characters: characters.filter(Boolean),
+            fonts: fonts.filter(Boolean),
+            patterns: patterns.filter(Boolean),
+            themes: themes.filter(Boolean),
+        }
+    };
+}
+
 export const getActive = query({
     handler: async (ctx) => {
         const now = Date.now();
-        return await ctx.db
+        const activeEvents = await ctx.db
             .query("events")
             .filter((q) =>
                 q.and(
                     q.lte(q.field("launchDate"), now),
-                    q.gte(q.field("endDate"), now)
+                    q.or(
+                        q.eq(q.field("kind"), "evergreen"),
+                        q.gte(q.field("endDate"), now)
+                    ),
+                    q.eq(q.field("status"), "active")
                 )
             )
-            .first();
+            .collect();
+
+        if (activeEvents.length === 0) return null;
+
+        // Priority Logic: 
+        // 1. Tier (1 > 2 > 3 > 4)
+        // 2. Closest celebration date (for timed events)
+        // 3. Most recent launchDate (for evergreens)
+        const sorted = activeEvents.sort((a, b) => {
+            const aTier = a.tier ?? 4;
+            const bTier = b.tier ?? 4;
+            if (aTier !== bTier) return aTier - bTier;
+
+            // Same tier tie-breakers
+            const aIsTimed = (a.kind ?? "one-time") !== "evergreen";
+            const bIsTimed = (b.kind ?? "one-time") !== "evergreen";
+
+            if (aIsTimed && bIsTimed) {
+                // Both timed: pick the one closest to their target celebration date
+                return Math.abs(a.date - now) - Math.abs(b.date - now);
+            }
+
+            // Fallback to launchDate freshness
+            return b.launchDate - a.launchDate;
+        });
+
+        const winner = sorted[0];
+        return await resolveEventAssets(ctx, winner);
     },
 });
 
-export const getUpcoming = query({
-    handler: async (ctx) => {
-        const now = Date.now();
-        return await ctx.db
-            .query("events")
-            .filter((q) => q.gt(q.field("launchDate"), now))
-            .order("asc")
-            .take(4);
-    },
-});
-
-export const getBySlug = query({
+export const getBySlugWithAssets = query({
     args: { slug: v.string() },
     handler: async (ctx, args) => {
-        return await ctx.db
+        const event = await ctx.db
             .query("events")
             .withIndex("by_slug", (q) => q.eq("slug", args.slug))
             .first();
+
+        if (!event) return { status: "NOT_FOUND" };
+
+        const now = Date.now();
+        const isExpired = now > event.endDate || event.status === "ended";
+        const isUpcoming = now < event.launchDate || event.status === "upcoming";
+
+        if (isExpired) return { status: "EXPIRED", event };
+        if (isUpcoming) return { status: "UPCOMING", event };
+
+        const resolvedEvent = await resolveEventAssets(ctx, event);
+        return { status: "SUCCESS", event: resolvedEvent };
     },
 });
+
+export const getLibrary = query({
+    handler: async (ctx) => {
+        const now = Date.now();
+        const activeEvents = await ctx.db
+            .query("events")
+            .filter((q) =>
+                q.and(
+                    q.lte(q.field("launchDate"), now),
+                    q.gte(q.field("endDate"), now),
+                    q.eq(q.field("status"), "active")
+                )
+            )
+            .collect();
+
+        const upcomingEvents = await ctx.db
+            .query("events")
+            .filter((q) =>
+                q.and(
+                    q.gt(q.field("launchDate"), now),
+                    q.eq(q.field("status"), "upcoming")
+                )
+            )
+            .collect();
+
+        // 1. Determine the Hero (Spotlight) to exclude it from library
+        const sortedActive = [...activeEvents].sort((a, b) => {
+            const aTier = a.tier ?? 4;
+            const bTier = b.tier ?? 4;
+            if (aTier !== bTier) return aTier - bTier;
+            const aIsTimed = (a.kind ?? "one-time") !== "evergreen";
+            const bIsTimed = (b.kind ?? "one-time") !== "evergreen";
+            if (aIsTimed && bIsTimed) return Math.abs(a.date - now) - Math.abs(b.date - now);
+            return b.launchDate - a.launchDate;
+        });
+        const heroId = sortedActive[0]?._id;
+
+        const libraryEvents = activeEvents.filter(e => e._id !== heroId);
+
+        // Grouping logic (Limit 3 per section)
+        const popularNow = libraryEvents
+            .filter(e => (e.kind ?? "one-time") === "recurring" || (e.kind ?? "one-time") === "one-time")
+            .slice(0, 3);
+
+        const evergreen = activeEvents
+            .filter(e => (e.kind ?? "one-time") === "evergreen" && e._id !== heroId)
+            .slice(0, 3);
+
+        const comingSoon = upcomingEvents.slice(0, 3);
+
+        // Resolve assets for all library items
+        const resolveBatch = async (items: any[]) =>
+            Promise.all(items.map(item => resolveEventAssets(ctx, item)));
+
+        return {
+            popularNow: await resolveBatch(popularNow),
+            evergreen: await resolveBatch(evergreen),
+            comingSoon: await resolveBatch(comingSoon),
+        };
+    },
+});
+
+export const handleRecurringEvents = mutation({
+    handler: async (ctx) => {
+        const now = Date.now();
+        const expiredRecurring = await ctx.db
+            .query("events")
+            .filter((q) =>
+                q.and(
+                    q.lt(q.field("endDate"), now),
+                    q.eq(q.field("kind"), "recurring"),
+                    q.eq(q.field("status"), "active")
+                )
+            )
+            .collect();
+
+        for (const event of expiredRecurring) {
+            const ONE_YEAR = 1000 * 60 * 60 * 24 * 365;
+            await ctx.db.patch(event._id, {
+                date: event.date + ONE_YEAR,
+                launchDate: event.launchDate + ONE_YEAR,
+                endDate: event.endDate + ONE_YEAR,
+                status: "upcoming",
+            });
+        }
+    },
+});
+
 
 export const getAll = query({
     handler: async (ctx) => {
@@ -58,6 +220,8 @@ export const create = mutation({
         launchDate: v.number(),
         endDate: v.number(),
         status: v.union(v.literal("upcoming"), v.literal("active"), v.literal("ended")),
+        tier: v.optional(v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4))),
+        kind: v.optional(v.union(v.literal("recurring"), v.literal("one-time"), v.literal("evergreen"))),
         theme: v.any(),
     },
     handler: async (ctx, args) => {
@@ -96,6 +260,8 @@ export const update = mutation({
         launchDate: v.optional(v.number()),
         endDate: v.optional(v.number()),
         status: v.optional(v.union(v.literal("upcoming"), v.literal("active"), v.literal("ended"))),
+        tier: v.optional(v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4))),
+        kind: v.optional(v.union(v.literal("recurring"), v.literal("one-time"), v.literal("evergreen"))),
         theme: v.optional(v.any()),
     },
     handler: async (ctx, args) => {

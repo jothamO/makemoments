@@ -26,16 +26,6 @@
     --radius: 0.5rem;
 
     /* Dynamic theme tokens (overridden by ThemeProvider) */
-    --color-primary: 340 82% 63%;
-    --color-secondary: 12 100% 74%;
-    --color-accent: 45 100% 65%;
-    --color-bg-gradient-start: #FF4081;
-    --color-bg-gradient-end: #FF8C7A;
-    --color-text-dark: #2D1B30;
-    --color-text-light: #FFFFFF;
-    --font-headline: "Poppins", sans-serif;
-    --font-body: "Poppins", sans-serif;
-
     /* Admin tokens */
     --admin-bg: 220 14% 96%;
     --admin-sidebar: 0 0% 100%;
@@ -93,9 +83,17 @@
   }
 }
 
-/* Smooth animations */
+/* ── Native-feel resets ─────────────────────────────────── */
 * {
+  -webkit-tap-highlight-color: transparent;  /* Kill grey tap flash on mobile */
   scroll-behavior: smooth;
+}
+
+/* Story viewer / preview containers should feel app-like */
+.story-viewer {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;  /* Disable double-tap zoom, keep scroll */
 }
 
 /* Custom gradient backgrounds */
@@ -249,5 +247,16 @@
 
 .animate-pattern-drift-fast {
   animation: pattern-drift 30s ease-in-out infinite;
-  will-change: transform;
+}
+
+@keyframes music-bar {
+
+  0%,
+  100% {
+    height: 30%;
+  }
+
+  50% {
+    height: 100%;
+  }
 }

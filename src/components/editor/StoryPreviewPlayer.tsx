@@ -1,109 +1,170 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, animate } from "framer-motion";
 import { X } from "lucide-react";
-import type { StoryPage } from "@/data/types";
+import { StoryPage, MusicTrack } from "@/data/types";
+import { hexToRgba, cn } from "@/lib/utils";
+import { BackgroundPattern } from "@/components/BackgroundPattern";
+import {
+    EXPRESSIVE_EASE,
+    CONTENT_TRANSITION,
+    SLIDE_DURATION_MS,
+} from "@/lib/animation";
 
 interface StoryPreviewPlayerProps {
     pages: StoryPage[];
     open: boolean;
     onClose: () => void;
+    musicTrack?: MusicTrack;
 }
 
-const SLIDE_DURATION = 5000; // ms per slide
-
-export function StoryPreviewPlayer({ pages, open, onClose }: StoryPreviewPlayerProps) {
+export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPreviewPlayerProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [progress, setProgress] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
-    const animFrameRef = useRef<number | null>(null);
-    const startTimeRef = useRef<number>(0);
-    const pausedAtRef = useRef<number>(0);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Reset state when opened
+    // ── JS-driven progress bar refs ──────────────────────────
+    const progressBarRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const activeAnimRef = useRef<ReturnType<typeof animate> | null>(null);
+    const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const pauseStartRef = useRef<number>(0);
+    const remainingRef = useRef<number>(SLIDE_DURATION_MS);
+
+    // ── Start a progress bar fill for the given slide ────────
+    const startProgressBar = useCallback((index: number, durationMs: number) => {
+        // Stop any previous animation
+        if (activeAnimRef.current) {
+            activeAnimRef.current.stop();
+        }
+        if (slideTimerRef.current) {
+            clearTimeout(slideTimerRef.current);
+        }
+
+        const bar = progressBarRefs.current[index];
+        if (!bar) return;
+
+        // Get current width percentage as starting point
+        const currentWidth = bar.style.width ? parseFloat(bar.style.width) / 100 : 0;
+
+        // Use Framer's animate() on a DOM ref for frame-accurate, pausable progress
+        activeAnimRef.current = animate(currentWidth, 1, {
+            duration: durationMs / 1000,
+            ease: "linear",
+            onUpdate: (v) => {
+                bar.style.width = `${v * 100}%`;
+            },
+        });
+
+        remainingRef.current = durationMs;
+
+        // Advance slide after duration
+        slideTimerRef.current = setTimeout(() => {
+            advanceSlide(index);
+        }, durationMs);
+    }, []);
+
+    // ── Advance to next slide or loop ────────────────────────
+    const advanceSlide = useCallback((fromIndex: number) => {
+        const nextIndex = (fromIndex + 1) % pages.length;
+
+        // Mark the completed bar at 100%
+        const completedBar = progressBarRefs.current[fromIndex];
+        if (completedBar) completedBar.style.width = "100%";
+
+        if (nextIndex === 0 && audioRef.current) {
+            // Looped — restart music
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(() => { });
+            // Reset all bars
+            progressBarRefs.current.forEach((b) => {
+                if (b) b.style.width = "0%";
+            });
+        }
+
+        setCurrentIndex(nextIndex);
+        remainingRef.current = SLIDE_DURATION_MS;
+    }, [pages.length]);
+
+    // ── Kick off progress whenever currentIndex changes ──────
+    useEffect(() => {
+        if (!open || isPaused || !pages.length) return;
+        startProgressBar(currentIndex, remainingRef.current);
+        return () => {
+            if (activeAnimRef.current) activeAnimRef.current.stop();
+            if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+        };
+    }, [currentIndex, open, isPaused, startProgressBar, pages.length]);
+
+    // ── Reset everything when opened / closed ────────────────
     useEffect(() => {
         if (open) {
             setCurrentIndex(0);
-            setProgress(0);
             setIsPaused(false);
-            startTimeRef.current = performance.now();
-            pausedAtRef.current = 0;
+            remainingRef.current = SLIDE_DURATION_MS;
+            // Reset all bars
+            progressBarRefs.current.forEach((b) => {
+                if (b) b.style.width = "0%";
+            });
+            if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch((e) => console.log("Preview audio blocked:", e));
+            }
         } else {
-            if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+            if (activeAnimRef.current) activeAnimRef.current.stop();
+            if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+            if (audioRef.current) audioRef.current.pause();
         }
     }, [open]);
 
-    // Animation loop for progress
-    const tick = useCallback(() => {
-        if (!open || isPaused) return;
+    // ── Pause logic (instant via onTouchStart / onMouseDown) ─
+    const handlePause = useCallback(() => {
+        if (isPaused) return;
+        setIsPaused(true);
+        pauseStartRef.current = performance.now();
 
-        const elapsed = performance.now() - startTimeRef.current;
-        const fraction = Math.min(elapsed / SLIDE_DURATION, 1);
-        setProgress(fraction);
+        if (activeAnimRef.current) activeAnimRef.current.pause();
+        if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+        if (audioRef.current) audioRef.current.pause();
+    }, [isPaused]);
 
-        if (fraction >= 1) {
-            // Advance to next slide or close
-            if (currentIndex < pages.length - 1) {
-                setCurrentIndex(prev => prev + 1);
-                setProgress(0);
-                startTimeRef.current = performance.now();
-            } else {
-                onClose();
-                return;
-            }
-        }
-        animFrameRef.current = requestAnimationFrame(tick);
-    }, [open, isPaused, currentIndex, pages.length, onClose]);
+    const handleResume = useCallback(() => {
+        if (!isPaused) return;
+        const pausedFor = performance.now() - pauseStartRef.current;
+        remainingRef.current = Math.max(0, remainingRef.current - pausedFor);
+        setIsPaused(false);
 
-    useEffect(() => {
-        if (open && !isPaused) {
-            animFrameRef.current = requestAnimationFrame(tick);
-        }
-        return () => {
-            if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-        };
-    }, [open, isPaused, tick]);
+        if (activeAnimRef.current) activeAnimRef.current.play();
+        if (audioRef.current) audioRef.current.play().catch(() => { });
 
-    // Reset timer on slide change
-    useEffect(() => {
-        if (open) {
-            startTimeRef.current = performance.now();
-            setProgress(0);
-        }
-    }, [currentIndex, open]);
+        // Re-schedule the advance timer with the remaining time
+        if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+        slideTimerRef.current = setTimeout(() => {
+            advanceSlide(currentIndex);
+        }, remainingRef.current);
+    }, [isPaused, currentIndex, advanceSlide]);
 
-    // Handle tap navigation
+    // ── Tap navigation (left / right halves) ─────────────────
     const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const isLeftHalf = x < rect.width / 2;
 
         if (isLeftHalf) {
-            // Go back
             if (currentIndex > 0) {
-                setCurrentIndex(prev => prev - 1);
+                // Reset current bar
+                const bar = progressBarRefs.current[currentIndex];
+                if (bar) bar.style.width = "0%";
+                remainingRef.current = SLIDE_DURATION_MS;
+                setCurrentIndex((prev) => prev - 1);
             }
         } else {
-            // Go forward
             if (currentIndex < pages.length - 1) {
-                setCurrentIndex(prev => prev + 1);
+                const bar = progressBarRefs.current[currentIndex];
+                if (bar) bar.style.width = "100%";
+                remainingRef.current = SLIDE_DURATION_MS;
+                setCurrentIndex((prev) => prev + 1);
             } else {
                 onClose();
             }
-        }
-    };
-
-    // Pause on long press
-    const handlePointerDown = () => {
-        pausedAtRef.current = performance.now();
-        setIsPaused(true);
-    };
-
-    const handlePointerUp = () => {
-        if (isPaused) {
-            // Adjust start time to account for pause duration
-            const pauseDuration = performance.now() - pausedAtRef.current;
-            startTimeRef.current += pauseDuration;
-            setIsPaused(false);
         }
     };
 
@@ -118,28 +179,42 @@ export function StoryPreviewPlayer({ pages, open, onClose }: StoryPreviewPlayerP
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[100] bg-black flex flex-col"
+                    className="fixed inset-0 z-[100] flex flex-col story-viewer"
+                    style={{
+                        backgroundColor: page.bgGradientStart,
+                        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || "#ffffff", page.type === 'dark' ? 0.4 : 0.25)}, transparent 70%)`,
+                        transition: "background-color 0.5s, background-image 0.5s",
+                    }}
                 >
-                    {/* Progress Bars */}
+                    {page.backgroundPattern && (
+                        <BackgroundPattern patternId={page.backgroundPattern} />
+                    )}
+
+                    {/* ── Progress Bars ───────────────────────────── */}
                     <div className="flex gap-1 px-3 pt-4 pb-2 z-20">
                         {pages.map((_, i) => (
-                            <div key={i} className="flex-1 h-[3px] bg-white/20 rounded-full overflow-hidden">
-                                <motion.div
-                                    className="h-full bg-white rounded-full"
+                            <div
+                                key={i}
+                                className={cn(
+                                    "flex-1 h-[3px] rounded-full overflow-hidden",
+                                    page.type === 'dark' ? "bg-white/20" : "bg-black/10"
+                                )}
+                            >
+                                <div
+                                    ref={(el) => { progressBarRefs.current[i] = el; }}
+                                    className={cn(
+                                        "h-full rounded-full",
+                                        page.type === 'dark' ? "bg-white" : "bg-black"
+                                    )}
                                     style={{
-                                        width:
-                                            i < currentIndex
-                                                ? "100%"
-                                                : i === currentIndex
-                                                    ? `${progress * 100}%`
-                                                    : "0%",
+                                        width: i < currentIndex ? "100%" : "0%",
                                     }}
                                 />
                             </div>
                         ))}
                     </div>
 
-                    {/* Close Button */}
+                    {/* ── Close Button ────────────────────────────── */}
                     <button
                         onClick={onClose}
                         className="absolute top-5 right-4 z-30 p-2 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-black/50 transition-colors"
@@ -147,60 +222,70 @@ export function StoryPreviewPlayer({ pages, open, onClose }: StoryPreviewPlayerP
                         <X className="w-5 h-5" />
                     </button>
 
-                    {/* Slide Content */}
+                    {/* ── Slide Content ───────────────────────────── */}
                     <div
                         className="flex-1 relative cursor-pointer select-none"
                         onClick={handleTap}
-                        onPointerDown={handlePointerDown}
-                        onPointerUp={handlePointerUp}
-                        onPointerLeave={handlePointerUp}
+                        onMouseDown={handlePause}
+                        onMouseUp={handleResume}
+                        onMouseLeave={handleResume}
+                        onTouchStart={handlePause}
+                        onTouchEnd={handleResume}
                     >
-                        <AnimatePresence mode="wait">
+                        <AnimatePresence initial={false} mode="wait">
                             <motion.div
                                 key={currentIndex}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 1.05 }}
+                                transition={CONTENT_TRANSITION}
                                 className="absolute inset-0 flex items-center justify-center"
-                                style={{
-                                    background: `linear-gradient(135deg, ${page.bgGradientStart}, ${page.bgGradientEnd})`,
-                                }}
                             >
                                 <div className="text-center px-8 max-w-lg">
+                                    {/* Photo — enters first */}
                                     {page.photoUrl && (
-                                        <img
+                                        <motion.img
                                             src={page.photoUrl}
                                             alt=""
                                             className="w-36 h-36 mx-auto rounded-3xl mb-8 shadow-2xl object-cover"
+                                            initial={{ opacity: 0, y: 12 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ ...CONTENT_TRANSITION, delay: 0.0 }}
                                         />
                                     )}
-                                    <h1
+                                    {/* Headline — enters second */}
+                                    <motion.h1
                                         className="text-4xl md:text-5xl font-bold leading-tight"
                                         style={{
                                             fontFamily: page.fontFamily,
                                             color: page.textColor || "#FFFFFF",
                                         }}
+                                        initial={{ opacity: 0, y: 16 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
                                     >
                                         {page.text || ""}
-                                    </h1>
+                                    </motion.h1>
                                 </div>
 
-                                {/* Stickers */}
+                                {/* Stickers — staggered entrance */}
                                 {page.stickers.map((s, idx) => (
-                                    <div
+                                    <motion.div
                                         key={idx}
                                         className="absolute text-5xl pointer-events-none select-none"
                                         style={{ left: `${s.x}%`, top: `${s.y}%` }}
+                                        initial={{ opacity: 0, scale: 0.6 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ ...CONTENT_TRANSITION, delay: 0.15 + idx * 0.05 }}
                                     >
                                         {s.emoji}
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </motion.div>
                         </AnimatePresence>
                     </div>
 
-                    {/* Paused Indicator */}
+                    {/* ── Paused Indicator ────────────────────────── */}
                     <AnimatePresence>
                         {isPaused && (
                             <motion.div
@@ -218,6 +303,14 @@ export function StoryPreviewPlayer({ pages, open, onClose }: StoryPreviewPlayerP
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {musicTrack?.url && (
+                        <audio
+                            ref={audioRef}
+                            src={musicTrack.url}
+                            loop={false}
+                        />
+                    )}
                 </motion.div>
             )}
         </AnimatePresence>

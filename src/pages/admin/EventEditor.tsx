@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,15 +10,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Palette, Music, Layout, Save, Globe, Sparkles, Smartphone, Monitor, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { CharacterPicker, MusicPicker, ThemePresetPicker, FontPicker, PatternPicker } from "@/components/admin/GlobalAssetPickers";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
+import { EventHero } from "@/components/public/EventHero";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { replaceUrgencyVariables } from "@/lib/utils";
+import { replaceUrgencyVariables, hexToRgba, getContrastColor, cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { CONTENT_TRANSITION, TAP_SCALE } from "@/lib/animation";
+
+
+const HEADLINE_FONTS = [
+  "Playfair Display", "Inter", "Dancing Script", "Lora",
+  "Quicksand", "Comic Neue", "Pacifico", "Satisfy",
+  "Sacramento", "Great Vibes"
+];
+
+const BODY_FONTS = [
+  "Montserrat", "Inter", "Lora", "System-ui", "Serif", "Sans-serif"
+];
+
 
 const EventEditor = () => {
   const { id } = useParams();
@@ -34,6 +49,8 @@ const EventEditor = () => {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [status, setStatus] = useState("upcoming");
+  const [tier, setTier] = useState<number>(4);
+  const [kind, setKind] = useState("one-time");
   const [activeTab, setActiveTab] = useState("general");
   const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile");
 
@@ -43,19 +60,27 @@ const EventEditor = () => {
   const [endDate, setEndDate] = useState<Date>(new Date(Date.now() + 2592000000));
 
   const [theme, setTheme] = useState<any>({
-    primary: "#E2F0E9", secondary: "#C5E3D5", accent: "#2D3436",
-    bgGradientStart: "#E2F0E9", bgGradientEnd: "#C5E3D5",
-    textDark: "#18181B", textLight: "#FFFFFF",
+    baseColor: "#E2F0E9",
+    glowColor: "#22c55e",
+    type: "light",
     headlineFont: "Playfair Display", bodyFont: "Montserrat",
     headline: "", subheadline: "", ctaText: "Create Now", urgencyText: "",
-    characterIds: [], musicIds: [], patternIds: [], allowedThemeIds: []
+    characterIds: [], musicTrackIds: [], patternIds: [], allowedThemeIds: [], allowedFontIds: [],
+    textMode: "auto"
   });
+
+  // Derived colors for preview
+  const textColor = theme.type === "dark" ? "#FFFFFF" : "#18181B";
+  const buttonTextColor = theme.type === "dark" ? "#000000" : "#FFFFFF"; // Contrast for buttons
+  const isDark = theme.type === "dark";
 
   useEffect(() => {
     if (event) {
       setName(event.name);
       setSlug(event.slug);
       setStatus(event.status);
+      setTier(event.tier || 4);
+      setKind(event.kind || "one-time");
       setTheme(event.theme);
       if (event.date) setEventDate(new Date(event.date));
       if (event.launchDate) setLaunchDate(new Date(event.launchDate));
@@ -70,6 +95,8 @@ const EventEditor = () => {
         name,
         slug,
         status: finalStatus as any,
+        tier: tier as any,
+        kind: kind as any,
         theme,
         date: eventDate.getTime(),
         launchDate: launchDate.getTime(),
@@ -168,6 +195,32 @@ const EventEditor = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
+                      <Label>Tier</Label>
+                      <Select value={tier.toString()} onValueChange={v => setTier(parseInt(v))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Tier 1 (Spotlight Peak)</SelectItem>
+                          <SelectItem value="2">Tier 2 (Major)</SelectItem>
+                          <SelectItem value="3">Tier 3 (Contextual)</SelectItem>
+                          <SelectItem value="4">Tier 4 (Minor)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Kind</Label>
+                      <Select value={kind} onValueChange={setKind}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="recurring">Recurring (Annual)</SelectItem>
+                          <SelectItem value="one-time">One-Time</SelectItem>
+                          <SelectItem value="evergreen">Evergreen (Always Active)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
                       <Label>Status</Label>
                       <Select value={status} onValueChange={setStatus}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -215,23 +268,25 @@ const EventEditor = () => {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div className="space-y-2">
-                      <Label>End Date (Archive)</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar mode="single" selected={endDate} onSelect={(date) => date && setEndDate(date)} initialFocus />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                    {kind !== "evergreen" && (
+                      <div className="space-y-2">
+                        <Label>End Date (Archive)</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar mode="single" selected={endDate} onSelect={(date) => date && setEndDate(date)} initialFocus />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -247,39 +302,31 @@ const EventEditor = () => {
                   {/* Branding Colors */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Primary Color</Label>
+                      <Label>Base Color (Background)</Label>
                       <div className="flex gap-2">
-                        <div className="w-10 h-10 rounded border shrink-0" style={{ backgroundColor: theme.primary }} />
-                        <Input value={theme.primary} onChange={e => setTheme({ ...theme, primary: e.target.value })} />
+                        <Input type="color" className="p-1 h-9 w-12" value={theme.baseColor} onChange={e => setTheme({ ...theme, baseColor: e.target.value })} />
+                        <Input value={theme.baseColor} onChange={e => setTheme({ ...theme, baseColor: e.target.value })} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Secondary Color</Label>
+                      <Label>Glow Color (Radial Halo)</Label>
                       <div className="flex gap-2">
-                        <div className="w-10 h-10 rounded border shrink-0" style={{ backgroundColor: theme.secondary }} />
-                        <Input value={theme.secondary} onChange={e => setTheme({ ...theme, secondary: e.target.value })} />
+                        <Input type="color" className="p-1 h-9 w-12" value={theme.glowColor} onChange={e => setTheme({ ...theme, glowColor: e.target.value })} />
+                        <Input value={theme.glowColor} onChange={e => setTheme({ ...theme, glowColor: e.target.value })} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Accent Color</Label>
-                      <div className="flex gap-2">
-                        <div className="w-10 h-10 rounded border shrink-0" style={{ backgroundColor: theme.accent }} />
-                        <Input value={theme.accent} onChange={e => setTheme({ ...theme, accent: e.target.value })} />
-                      </div>
+                      <Label>Theme Type</Label>
+                      <Select value={theme.type || "light"} onValueChange={(val) => setTheme({ ...theme, type: val })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="light">Light (Dark Text)</SelectItem>
+                          <SelectItem value="dark">Dark (Light Text)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Background Gradient Start</Label>
-                      <div className="flex gap-2">
-                        <div className="w-10 h-10 rounded border shrink-0" style={{ backgroundColor: theme.bgGradientStart }} />
-                        <Input value={theme.bgGradientStart} onChange={e => setTheme({ ...theme, bgGradientStart: e.target.value })} />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Background Gradient End</Label>
-                      <div className="flex gap-2">
-                        <div className="w-10 h-10 rounded border shrink-0" style={{ backgroundColor: theme.bgGradientEnd }} />
-                        <Input value={theme.bgGradientEnd} onChange={e => setTheme({ ...theme, bgGradientEnd: e.target.value })} />
-                      </div>
+                      {/* Spacer */}
                     </div>
                     <div className="col-span-2 space-y-2">
                       <Label>Background Pattern</Label>
@@ -288,7 +335,7 @@ const EventEditor = () => {
                         <SelectContent>
                           {allPatterns?.map((pattern) => (
                             <SelectItem key={pattern._id} value={pattern.id}>
-                              {pattern.name} {pattern.emoji}
+                              {pattern.name} {pattern.emojis?.[0]}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -299,24 +346,35 @@ const EventEditor = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Headline Font</Label>
-                      <Input value={theme.headlineFont} onChange={e => setTheme({ ...theme, headlineFont: e.target.value })} />
+                      <Select value={theme.headlineFont || HEADLINE_FONTS[0]} onValueChange={(val) => setTheme({ ...theme, headlineFont: val })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {HEADLINE_FONTS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>Body Font</Label>
-                      <Input value={theme.bodyFont} onChange={e => setTheme({ ...theme, bodyFont: e.target.value })} />
+                      <Select value={theme.bodyFont || BODY_FONTS[0]} onValueChange={(val) => setTheme({ ...theme, bodyFont: val })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {BODY_FONTS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Text Dark Color</Label>
-                      <div className="flex gap-2">
-                        <div className="w-10 h-10 rounded border shrink-0" style={{ backgroundColor: theme.textDark }} />
-                        <Input value={theme.textDark} onChange={e => setTheme({ ...theme, textDark: e.target.value })} />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Text Light Color</Label>
-                      <div className="flex gap-2">
-                        <div className="w-10 h-10 rounded border shrink-0" style={{ backgroundColor: theme.textLight }} />
-                        <Input value={theme.textLight} onChange={e => setTheme({ ...theme, textLight: e.target.value })} />
+                      <Label>Text Color Mode</Label>
+                      <Select value={theme.textMode || "auto"} onValueChange={(val) => setTheme({ ...theme, textMode: val })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">Auto (from Theme Type)</SelectItem>
+                          <SelectItem value="light">Always Light</SelectItem>
+                          <SelectItem value="dark">Always Dark</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex gap-2 items-center mt-2">
+                        <div className="w-8 h-8 rounded border shrink-0" style={{ backgroundColor: textColor }} />
+                        <span className="text-[10px] text-zinc-500">Current Preview</span>
                       </div>
                     </div>
                   </div>
@@ -476,99 +534,151 @@ const EventEditor = () => {
                   className="relative overflow-hidden shadow-2xl border-black/5 ring-1 ring-black/5 bg-white transition-all duration-300 rounded-xl"
                   style={{
                     width: previewMode === "mobile" ? "275px" : "360px",
-                    height: previewMode === "mobile" ? "600px" : "225px",
+                    height: previewMode === "mobile" ? "600px" : "300px",
                   }}
                 >
                   <div
                     style={{
                       width: previewMode === "mobile" ? "390px" : "1280px",
-                      height: previewMode === "mobile" ? "844px" : "800px",
+                      height: previewMode === "mobile" ? "844px" : "1066px",
                       transform: `scale(${previewMode === "mobile" ? 0.705 : 0.281})`,
                       transformOrigin: "top left",
                     }}
                     className="absolute inset-0 flex flex-col"
                   >
-                    <div
-                      className="flex-1 flex flex-col items-center justify-center p-8 text-center relative"
-                      style={{ background: `linear-gradient(135deg, ${theme.bgGradientStart}, ${theme.bgGradientEnd})` }}
+                    <EventHero
+                      theme={theme}
+                      isScaled={true}
                     >
-                      {/* Background Pattern */}
-                      <BackgroundPattern
-                        pattern={theme.backgroundPattern || "sparkles"}
-                        // Fetch the pattern details to pass the correct type/emoji
-                        type={(allPatterns?.find(p => p.id === theme.backgroundPattern) as any)?.type}
-                        customEmojis={(allPatterns?.find(p => p.id === theme.backgroundPattern) as any)?.emoji ? (allPatterns?.find(p => p.id === theme.backgroundPattern) as any)?.emoji.split(",") : undefined}
-                      />
-
-                      {/* Decorative circles */}
-                      <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full opacity-20 pointer-events-none" style={{ background: theme.accent }} />
-                      <div className="absolute -bottom-16 -left-16 w-72 h-72 rounded-full opacity-15 pointer-events-none" style={{ background: theme.secondary }} />
-
-                      <div className="relative z-10 flex flex-col items-center w-full max-w-4xl mx-auto mt-20">
-                        <div className="inline-block mb-8">
-                          <div
-                            className="text-sm px-6 py-2 rounded-full border-0 font-medium whitespace-nowrap shadow-sm backdrop-blur-md"
-                            style={{ background: "rgba(255,255,255,0.25)", color: theme.textLight }}
+                      {/* Exact mirror of Homepage hero content */}
+                      <div className="w-full relative h-full flex items-center justify-center">
+                        <AnimatePresence initial={false} mode="wait">
+                          <motion.div
+                            key={currentPreviewSlide}
+                            initial={{ opacity: 0, scale: 0.97, y: 12 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 1.03, y: -12 }}
+                            transition={CONTENT_TRANSITION}
+                            className="absolute inset-0 flex flex-col items-center justify-center px-6"
+                            style={{ zIndex: 30 }}
                           >
-                            {activeSlide.badge}
+                            <div className={`w-full max-w-6xl mx-auto text-center flex flex-col items-center ${previewMode === "mobile" ? "space-y-6" : "space-y-10"}`}>
+                              {activeSlide?.badge && (
+                                <motion.div
+                                  className="inline-block"
+                                  initial={{ opacity: 0, y: 8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ ...CONTENT_TRANSITION, delay: 0.0 }}
+                                >
+                                  <Badge
+                                    className="text-xs px-5 py-2 rounded-full border-0 whitespace-nowrap shadow-sm"
+                                    style={{
+                                      background: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.6)",
+                                      color: "inherit",
+                                      fontFamily: theme.bodyFont
+                                    }}
+                                  >
+                                    {activeSlide.badge}
+                                  </Badge>
+                                </motion.div>
+                              )}
+
+                              <div className={`flex flex-col items-center ${previewMode === "mobile" ? "space-y-4" : "space-y-6"}`}>
+                                <motion.h1
+                                  className={`font-bold leading-[1.1] tracking-tight text-center ${previewMode === "mobile" ? "text-3xl" : "text-8xl"}`}
+                                  style={{ fontFamily: theme.headlineFont }}
+                                  initial={{ opacity: 0, y: 16 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
+                                >
+                                  {activeSlide?.headline}
+                                </motion.h1>
+
+                                <motion.p
+                                  className={`opacity-90 max-w-2xl mx-auto leading-relaxed text-center ${previewMode === "mobile" ? "text-base" : "text-2xl"}`}
+                                  style={{ fontFamily: theme.bodyFont }}
+                                  initial={{ opacity: 0, y: 16 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ ...CONTENT_TRANSITION, delay: 0.15 }}
+                                >
+                                  {activeSlide?.subheadline}
+                                </motion.p>
+                              </div>
+
+                              <motion.div
+                                className={`flex justify-center ${previewMode === "mobile" ? "pt-4" : "pt-8"}`}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ ...CONTENT_TRANSITION, delay: 0.2 }}
+                              >
+                                <Button
+                                  size="lg"
+                                  className="text-lg px-12 py-8 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 border-0 pulse-hover h-auto"
+                                  style={{
+                                    backgroundColor: theme.primary || theme.glowColor || "#000",
+                                    color: theme.textMode === "light" ? "#FFFFFF" :
+                                      theme.textMode === "dark" ? "#000000" :
+                                        getContrastColor(theme.primary || theme.glowColor || "#000")
+                                  }}
+                                >
+                                  <Sparkles className="mr-2 h-6 w-6" />
+                                  {theme.ctaText || "Create Now"} ✨
+                                </Button>
+                              </motion.div>
+                            </div>
+                          </motion.div>
+                        </AnimatePresence>
+
+                        {/* Navigation Arrows (inside preview, glassmorphism) */}
+                        {previewSlides.length > 1 && (
+                          <>
+                            <motion.button
+                              onClick={prevPreviewSlide}
+                              whileTap={TAP_SCALE}
+                              className="absolute left-4 top-1/2 -translate-y-1/2 z-40 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all"
+                              aria-label="Previous slide"
+                            >
+                              <ChevronLeft className="w-6 h-6" />
+                            </motion.button>
+                            <motion.button
+                              onClick={nextPreviewSlide}
+                              whileTap={TAP_SCALE}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all"
+                              aria-label="Next slide"
+                            >
+                              <ChevronRight className="w-6 h-6" />
+                            </motion.button>
+                          </>
+                        )}
+
+                        {/* Slide Indicators with layoutId */}
+                        {previewSlides.length > 1 && (
+                          <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center gap-2">
+                            {previewSlides.map((_, i) => (
+                              <button
+                                key={i}
+                                onClick={() => setCurrentPreviewSlide(i)}
+                                className="relative w-2 h-2 rounded-full transition-all bg-white/40 hover:bg-white/60"
+                                style={{ width: i === currentPreviewSlide ? 24 : 8 }}
+                                aria-label={`Go to slide ${i + 1}`}
+                              >
+                                {i === currentPreviewSlide && (
+                                  <motion.div
+                                    layoutId="admin-slide-indicator"
+                                    className="absolute inset-0 rounded-full bg-white"
+                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                  />
+                                )}
+                              </button>
+                            ))}
                           </div>
-                        </div>
-
-                        <h1
-                          className={cn("font-bold mb-6 leading-tight px-4 drop-shadow-sm", previewMode === "mobile" ? "text-4xl" : "text-6xl")}
-                          style={{ fontFamily: theme.headlineFont, color: theme.textLight }}
-                        >
-                          {activeSlide.headline}
-                        </h1>
-
-                        <p
-                          className={cn("opacity-90 mb-10 px-6 leading-relaxed max-w-2xl drop-shadow-sm", previewMode === "mobile" ? "text-base" : "text-xl")}
-                          style={{ fontFamily: theme.bodyFont, color: theme.textLight }}
-                        >
-                          {activeSlide.subheadline}
-                        </p>
-
-                        <Button
-                          className={cn("rounded-full font-bold shadow-2xl transition-transform active:scale-95 border-0 hover:opacity-90", previewMode === "mobile" ? "px-8 py-6 text-lg" : "px-10 py-8 text-xl")}
-                          style={{
-                            background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
-                            color: theme.textLight
-                          }}
-                        >
-                          <Sparkles className={cn("mr-3", previewMode === "mobile" ? "h-5 w-5" : "h-6 w-6")} />
-                          {theme.ctaText || "Create Now"} ✨
-                        </Button>
+                        )}
                       </div>
-
-                      {/* Slide Indicators inside Preview */}
-                      <div className="absolute bottom-12 left-0 right-0 flex justify-center gap-3 z-20">
-                        {previewSlides.map((_, i) => (
-                          <div
-                            key={i}
-                            className={`rounded-full transition-all shadow-sm ${i === currentPreviewSlide ? "bg-white w-8" : "bg-white/40"}`}
-                            style={{ height: "8px", width: i === currentPreviewSlide ? "32px" : "8px" }}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                    </EventHero>
                   </div>
                 </div>
-
-                {/* Navigation Arrows (Outside) */}
-                <button
-                  onClick={prevPreviewSlide}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full pr-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <div className="p-2 rounded-full bg-white shadow-md border hover:bg-zinc-50"><ChevronLeft className="h-4 w-4" /></div>
-                </button>
-                <button
-                  onClick={nextPreviewSlide}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full pl-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <div className="p-2 rounded-full bg-white shadow-md border hover:bg-zinc-50"><ChevronRight className="h-4 w-4" /></div>
-                </button>
               </div>
-              <p className="text-[10px] text-zinc-400 text-center italic">Hover preview to navigate slides</p>
+              <p className="text-[10px] text-zinc-400 text-center italic">Click arrows or indicators to navigate slides</p>
             </div>
           </aside>
         )}

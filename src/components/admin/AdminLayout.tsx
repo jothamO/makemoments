@@ -11,15 +11,18 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, Calendar, Layout, DollarSign, Heart, Settings } from "lucide-react";
+import { LayoutDashboard, Calendar, Layout, DollarSign, Heart, Settings, Wallet, FolderOpen, Mail as MailIcon, Users as UsersIcon } from "lucide-react";
 
 const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Events", url: "/admin/events", icon: Calendar },
-  { title: "Templates", url: "/admin/templates", icon: Layout },
-  { title: "Sales", url: "/admin/sales", icon: DollarSign },
   { title: "Celebrations", url: "/admin/celebrations", icon: Heart },
-  { title: "Files", url: "/admin/files", icon: Settings },
+  { title: "Events", url: "/admin/events", icon: Calendar },
+  { title: "Files", url: "/admin/files", icon: FolderOpen },
+  { title: "Mail", url: "/admin/mail", icon: MailIcon },
+  { title: "Payments", url: "/admin/payments", icon: Wallet },
+  { title: "Pricing", url: "/admin/pricing", icon: DollarSign },
+  { title: "Sales", url: "/admin/sales", icon: DollarSign },
+  { title: "Users", url: "/admin/users", icon: UsersIcon },
 ];
 
 function AdminSidebar() {

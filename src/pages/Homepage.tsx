@@ -1,13 +1,13 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 import { ChevronLeft, ChevronRight, Sparkles, Bell } from "lucide-react";
 import { useEventTheme } from "@/contexts/ThemeContext";
-import { getUpcomingEvents } from "@/data/data-service";
 import { PublicHeader } from "@/components/public/Header";
 import { PublicFooter } from "@/components/public/Footer";
+import { EventHero } from "@/components/public/EventHero";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,17 +15,19 @@ import type { CelebrationEvent, EventTheme } from "@/data/types";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
+import { hexToRgba, getContrastColor } from "@/lib/utils";
+import { EXPRESSIVE_EASE, CONTENT_TRANSITION, TAP_SCALE } from "@/lib/animation";
 
 export default function Homepage() {
   const allPatterns = useQuery(api.patterns.list);
 
   const activeEvent = useQuery(api.events.getActive);
+  const libraryData = useQuery(api.events.getLibrary);
   const { event: legacyEvent, theme: legacyTheme } = useEventTheme();
 
   const event = activeEvent || legacyEvent;
   const theme = activeEvent?.theme || legacyTheme;
 
-  const upcomingEvents = getUpcomingEvents();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const normalizedEvent = event && !('id' in event) && '_id' in event ? { ...event, id: (event as any)._id } as CelebrationEvent : event as CelebrationEvent | null;
@@ -50,11 +52,12 @@ export default function Homepage() {
     return () => clearInterval(timer);
   }, [slides.length, currentSlide]);
 
-  const patternConfig = allPatterns?.find(p => p.id === theme?.backgroundPattern);
+  const selectedPatternId = theme?.backgroundPattern || (activeEvent?.theme?.patternIds && activeEvent.theme.patternIds[0]);
+  const patternConfig = allPatterns?.find(p => (p.id === selectedPatternId || p._id === selectedPatternId));
+
   const patternEmojis = React.useMemo(() => {
-    const emojiString = patternConfig?.emoji;
-    return emojiString ? emojiString.split(",") : undefined;
-  }, [patternConfig?.emoji]);
+    return patternConfig?.emojis;
+  }, [patternConfig?.emojis]);
 
   // Debug pattern rendering
   useEffect(() => {
@@ -80,134 +83,155 @@ export default function Homepage() {
     <div className="min-h-screen flex flex-col" style={{ fontFamily: "var(--font-body)" }}>
       <PublicHeader />
 
-      {/* SECTION 1: ONBOARDING SLIDES - Full Viewport Height */}
-      <section
-        {...swipeHandlers}
-        className="relative h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden gradient-hero"
-        style={{
-          background: `linear-gradient(135deg, ${theme.bgGradientStart} 0%, ${theme.bgGradientEnd} 100%)`,
-        }}
+      <EventHero
+        theme={theme as any}
+        className="h-[calc(100vh-64px)]"
       >
-        {/* Background Pattern */}
-        <BackgroundPattern
-          pattern={theme.backgroundPattern}
-          type={patternConfig?.type}
-          customEmojis={patternEmojis}
-        />
-
-        {/* Decorative circles from original design */}
-        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-20" style={{ background: theme.accent }} />
-        <div className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full opacity-15" style={{ background: theme.secondary }} />
-
-        {/* Slides - CSS crossfade, no AnimatePresence */}
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-6 h-full">
-          {slides.map((slide, index) => (
-            <div
-              key={index}
-              className="absolute inset-0 flex flex-col items-center justify-center px-6 transition-opacity duration-500 ease-in-out"
-              style={{ opacity: index === currentSlide ? 1 : 0, pointerEvents: index === currentSlide ? "auto" : "none" }}
+        <div {...swipeHandlers} className="w-full relative h-full flex items-center justify-center">
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              key={currentSlide}
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 1.03, y: -12 }}
+              transition={CONTENT_TRANSITION}
+              className="absolute inset-0 flex flex-col items-center justify-center px-6"
+              style={{ zIndex: 30 }}
             >
-              <div className="space-y-6 md:space-y-10 w-full max-w-6xl mx-auto text-center">
-                {slide.badge && (
-                  <div className="inline-block">
+              <div className="space-y-6 md:space-y-10 w-full max-w-6xl mx-auto text-center flex flex-col items-center">
+                {slides[currentSlide]?.badge && (
+                  <motion.div
+                    className="inline-block"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...CONTENT_TRANSITION, delay: 0.0 }}
+                  >
                     <Badge
                       className="text-xs px-5 py-2 rounded-full border-0 whitespace-nowrap shadow-sm"
-                      style={{ background: "rgba(255,255,255,0.25)", color: theme.textLight }}
+                      style={{
+                        background: theme.type === 'dark' ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.6)",
+                        color: "inherit",
+                        fontFamily: (theme as any).bodyFont
+                      }}
                     >
-                      {slide.badge}
+                      {slides[currentSlide].badge}
                     </Badge>
-                  </div>
+                  </motion.div>
                 )}
 
-                <div className="space-y-4 md:space-y-6">
-                  <h1
-                    className="text-5xl md:text-8xl font-bold leading-[1.1] tracking-tight"
-                    style={{ fontFamily: "var(--font-headline)", color: theme.textLight }}
+                <div className="space-y-4 md:space-y-6 flex flex-col items-center">
+                  <motion.h1
+                    className="text-3xl sm:text-5xl md:text-8xl font-bold leading-[1.1] tracking-tight text-center"
+                    style={{ fontFamily: (theme as any).headlineFont }}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
                   >
-                    {slide.headline}
-                  </h1>
+                    {slides[currentSlide]?.headline}
+                  </motion.h1>
 
-                  <p
-                    className="text-lg md:text-2xl opacity-90 max-w-2xl mx-auto leading-relaxed"
-                    style={{ color: theme.textLight }}
+                  <motion.p
+                    className="text-base sm:text-lg md:text-2xl opacity-90 max-w-2xl mx-auto leading-relaxed text-center"
+                    style={{ fontFamily: (theme as any).bodyFont }}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...CONTENT_TRANSITION, delay: 0.15 }}
                   >
-                    {slide.subheadline}
-                  </p>
+                    {slides[currentSlide]?.subheadline}
+                  </motion.p>
                 </div>
 
-                <div className="pt-4 md:pt-8">
+                <motion.div
+                  className="pt-4 md:pt-8 flex justify-center"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ ...CONTENT_TRANSITION, delay: 0.2 }}
+                >
                   <Button
                     asChild
                     size="lg"
                     className="text-lg px-12 py-8 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 border-0 pulse-hover h-auto"
                     style={{
-                      background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
-                      color: theme.textLight,
+                      backgroundColor: (theme as any).primary || (theme as any).glowColor || "#000",
+                      color: (theme as any).textMode === "light" ? "#FFFFFF" :
+                        (theme as any).textMode === "dark" ? "#000000" :
+                          getContrastColor((theme as any).primary || (theme as any).glowColor),
                     }}
                   >
                     <Link to={`/${event.slug}/create`}>
                       <Sparkles className="mr-2 h-6 w-6" />
-                      {theme.ctaText} ✨
+                      {(theme as any).ctaText || "Create Now"} ✨
                     </Link>
                   </Button>
-                </div>
+                </motion.div>
               </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Navigation Arrows (desktop) */}
+          {slides.length > 1 && (
+            <>
+              <motion.button
+                onClick={prevSlide}
+                whileTap={TAP_SCALE}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
+                aria-label="Previous slide"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </motion.button>
+              <motion.button
+                onClick={nextSlide}
+                whileTap={TAP_SCALE}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
+                aria-label="Next slide"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </motion.button>
+            </>
+          )}
+
+          {/* Slide Indicators */}
+          {slides.length > 1 && (
+            <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center gap-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className="relative w-2 h-2 rounded-full transition-all bg-white/40 hover:bg-white/60"
+                  style={{ width: index === currentSlide ? 24 : 8 }}
+                  aria-label={`Go to slide ${index + 1}`}
+                >
+                  {index === currentSlide && (
+                    <motion.div
+                      layoutId="hero-slide-indicator"
+                      className="absolute inset-0 rounded-full bg-white"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Navigation Arrows (desktop) */}
-        {slides.length > 1 && (
-          <>
-            <button
-              onClick={prevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
-              aria-label="Next slide"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </>
-        )}
-
-        {/* Slide Indicators */}
-        {slides.length > 1 && (
-          <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center gap-2">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all ${index === currentSlide ? "bg-white w-6" : "bg-white/40 hover:bg-white/60"
-                  }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
+          {/* Swipe Hint (mobile) */}
+          <div
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm opacity-60 md:hidden flex items-center gap-2"
+            style={{ color: theme.textLight }}
+          >
+            <span>Swipe to navigate</span>
+            <ChevronRight className="w-4 h-4 animate-pulse" />
           </div>
-        )}
-
-        {/* Swipe Hint (mobile) */}
-        <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm opacity-60 md:hidden flex items-center gap-2"
-          style={{ color: theme.textLight }}
-        >
-          <span>Swipe to navigate</span>
-          <ChevronRight className="w-4 h-4 animate-pulse" />
         </div>
-      </section >
+      </EventHero>
 
       {/* SECTION 2: HOW IT WORKS */}
-      < section className="py-24 bg-white" >
+      <section className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={CONTENT_TRANSITION}
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)", color: theme.primary }}>
@@ -222,8 +246,8 @@ export default function Homepage() {
             <StepCard
               number="1"
               icon="🎨"
-              title="Choose Template"
-              description="Pick from our beautiful curated designs"
+              title="Pick your Theme"
+              description="Choose from our beautiful curated event themes"
               accentColor={theme.primary}
             />
             <StepCard
@@ -242,37 +266,78 @@ export default function Homepage() {
             />
           </div>
         </div>
-      </section >
+      </section>
 
-      {/* SECTION 3: UPCOMING EVENTS */}
-      {
-        upcomingEvents && upcomingEvents.length > 0 && (
-          <section className="py-24 bg-gray-50">
-            <div className="max-w-6xl mx-auto px-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-center mb-16"
-              >
-                <h2 className="text-3xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)" }}>
-                  More Celebrations Coming
-                </h2>
-                <p className="text-gray-600">Get notified when new events launch</p>
-              </motion.div>
+      {/* SECTION 3: CELEBRATION LIBRARY */}
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={CONTENT_TRANSITION}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)" }}>
+              Celebration Library
+            </h2>
+            <p className="text-gray-600">Explore our curated collection of memories and magic</p>
+          </motion.div>
 
-              <div className="grid md:grid-cols-3 gap-8">
-                {upcomingEvents.slice(0, 3).map((upcoming) => (
-                  <UpcomingEventCard key={upcoming.id} event={upcoming} />
-                ))}
+          <div className="space-y-20">
+            {/* 1. Popular Now */}
+            {libraryData?.popularNow && libraryData.popularNow.length > 0 && (
+              <div className="space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-px bg-zinc-200 flex-1" />
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Popular Now</h3>
+                  <div className="h-px bg-zinc-200 flex-1" />
+                </div>
+                <div className="grid md:grid-cols-3 gap-8">
+                  {libraryData.popularNow.map((libEvent: any) => (
+                    <LibraryEventCard key={libEvent._id} event={libEvent} />
+                  ))}
+                </div>
               </div>
-            </div>
-          </section>
-        )
-      }
+            )}
+
+            {/* 2. Evergreen */}
+            {libraryData?.evergreen && libraryData.evergreen.length > 0 && (
+              <div className="space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-px bg-zinc-200 flex-1" />
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Evergreen Favorites</h3>
+                  <div className="h-px bg-zinc-200 flex-1" />
+                </div>
+                <div className="grid md:grid-cols-3 gap-8">
+                  {libraryData.evergreen.map((libEvent: any) => (
+                    <LibraryEventCard key={libEvent._id} event={libEvent} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 3. Coming Soon */}
+            {libraryData?.comingSoon && libraryData.comingSoon.length > 0 && (
+              <div className="space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-px bg-zinc-200 flex-1" />
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Coming Soon</h3>
+                  <div className="h-px bg-zinc-200 flex-1" />
+                </div>
+                <div className="grid md:grid-cols-3 gap-8 opacity-70 grayscale-[0.5]">
+                  {libraryData.comingSoon.map((libEvent: any) => (
+                    <LibraryEventCard key={libEvent._id} event={libEvent} isUpcoming />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
       <PublicFooter />
-    </div >
+    </div>
   );
 }
 
@@ -357,6 +422,7 @@ function StepCard({ number, icon, title, description, accentColor }: {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
+      transition={CONTENT_TRANSITION}
       className="text-center group"
     >
       <div
@@ -379,75 +445,70 @@ function StepCard({ number, icon, title, description, accentColor }: {
   );
 }
 
-// UpcomingEventCard Component
-function UpcomingEventCard({ event }: { event: CelebrationEvent }) {
+// LibraryEventCard Component
+function LibraryEventCard({ event, isUpcoming = false }: { event: any; isUpcoming?: boolean }) {
   const dateStr = new Date(event.date).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  const theme = event.theme;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full border border-gray-100"
+    <div
+      className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full border border-gray-100 group"
     >
-      {/* Event Preview */}
+      {/* Event Preview Area */}
       <div
-        className="h-40 flex items-center justify-center p-8 relative overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${event.theme.bgGradientStart}, ${event.theme.bgGradientEnd})`,
-        }}
+        className="h-44 flex items-center justify-center p-6 relative overflow-hidden"
+        style={{ backgroundColor: theme.baseColor }}
       >
-        {/* Background Decorative Emojis */}
-        <div className="absolute inset-0 opacity-10 flex flex-wrap gap-4 p-4 text-2xl select-none">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <span key={i}>{i % 2 === 0 ? "🌸" : "✨"}</span>
-          ))}
-        </div>
-
-        <h3
-          className="text-2xl font-bold text-center relative z-10"
+        {/* Soft Gradient Glow */}
+        <div
+          className="absolute inset-0 opacity-40"
           style={{
-            fontFamily: event.theme.headlineFont,
-            color: event.theme.textLight,
+            background: `radial-gradient(circle at center, ${theme.glowColor} 0%, transparent 70%)`
           }}
-        >
-          {event.name}
-        </h3>
+        />
+
+        <div className="relative z-10 text-center">
+          <h3
+            className="text-2xl font-bold px-4 drop-shadow-sm"
+            style={{
+              fontFamily: theme.headlineFont,
+              color: theme.textColor || (theme.type === 'dark' ? '#fff' : '#18181b')
+            }}
+          >
+            {event.name}
+          </h3>
+          {isUpcoming && <Badge className="mt-2 bg-zinc-900 text-white border-0">Coming Soon</Badge>}
+        </div>
       </div>
 
-      {/* Event Info */}
-      <div className="p-8 flex flex-col flex-grow">
-        <div className="flex items-center gap-2 mb-4">
-          <Badge variant="outline" className="rounded-full font-medium" style={{ color: event.theme.primary, borderColor: event.theme.primary }}>
-            {dateStr}
-          </Badge>
-        </div>
-
-        <h4 className="text-xl font-bold mb-3" style={{ fontFamily: "var(--font-headline)" }}>
-          {event.theme.headline}
+      <div className="p-6 flex flex-col flex-grow text-center">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 mb-2">{dateStr}</p>
+        <h4 className="text-lg font-bold mb-3 leading-tight" style={{ fontFamily: "var(--font-headline)" }}>
+          {theme.headline || `Celebrate ${event.name}`}
         </h4>
+        <p className="text-zinc-500 text-xs mb-6 line-clamp-2 flex-grow">
+          {theme.subheadline || "Create a beautiful personalized card for this special moment."}
+        </p>
 
-        <p className="text-gray-500 text-sm mb-6 flex-grow">{event.theme.subheadline}</p>
-
-        <Button
-          className="w-full py-6 rounded-full font-semibold transition-all border-2 flex items-center justify-center gap-2 border-input bg-background hover:bg-accent hover:text-accent-foreground"
-          style={{
-            borderColor: event.theme.primary,
-            color: event.theme.primary,
-          }}
-          onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
-            e.currentTarget.style.backgroundColor = event.theme.primary;
-            e.currentTarget.style.color = 'white';
-          }}
-          onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = event.theme.primary;
-          }}
-        >
-          <Bell className="w-4 h-4" />
-          Notify Me
-        </Button>
+        {isUpcoming ? (
+          <Button variant="outline" className="w-full rounded-full border-zinc-200 text-zinc-500 hover:bg-zinc-50 pointer-events-none">
+            <Bell className="w-3 h-3 mr-2" /> Notify Me
+          </Button>
+        ) : (
+          <Button
+            asChild
+            className="w-full rounded-full shadow-lg hover:shadow-xl transform active:scale-95 transition-all duration-300 border-0"
+            style={{
+              backgroundColor: theme.glowColor || "#000",
+              color: getContrastColor(theme.glowColor || "#000")
+            }}
+          >
+            <Link to={`/${event.slug}/create`}>
+              <Sparkles className="w-3 h-3 mr-2" /> Create Now
+            </Link>
+          </Button>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 }

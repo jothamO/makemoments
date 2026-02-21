@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import type { StoryPage, SlideTransition } from "@/data/types";
 import { StoryCanvas } from "@/components/editor/StoryCanvas";
+import { Link } from "react-router-dom";
 
 const transitionVariants: Record<SlideTransition, { initial: Record<string, number | string>; animate: Record<string, number | string>; exit: Record<string, number | string> }> = {
   fade: {
@@ -30,6 +31,7 @@ const transitionVariants: Record<SlideTransition, { initial: Record<string, numb
 interface StoryViewerProps {
   pages: StoryPage[];
   showWatermark?: boolean;
+  glowColor?: string;
   autoPlay?: boolean;
   autoPlayInterval?: number;
   onClose?: () => void;
@@ -40,6 +42,7 @@ interface StoryViewerProps {
 export function StoryViewer({
   pages,
   showWatermark = false,
+  glowColor = "#ec4899",
   autoPlay = true,
   autoPlayInterval = 5000,
   onClose,
@@ -120,7 +123,7 @@ export function StoryViewer({
             transition={{ duration: 0.4 }}
             className="absolute inset-0 p-4"
           >
-            <StoryCanvas page={page} showWatermark={showWatermark} />
+            <StoryCanvas page={page} />
           </motion.div>
         </AnimatePresence>
 
@@ -135,6 +138,26 @@ export function StoryViewer({
       {/* Share on last page */}
       {showShareOnLast && current === pages.length - 1 && shareContent && (
         <div className="p-4 z-10">{shareContent}</div>
+      )}
+
+      {/* Watermark */}
+      {showWatermark && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.5 }}
+          transition={{ delay: 2, duration: 0.6 }}
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20"
+        >
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full backdrop-blur-md bg-white/90 no-underline hover:bg-white transition-colors"
+            style={{ textDecoration: "none" }}
+          >
+            <span className="text-[11px] font-medium" style={{ color: glowColor }}>
+              Created with makemoments.xyz
+            </span>
+          </Link>
+        </motion.div>
       )}
     </div>
   );

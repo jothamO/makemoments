@@ -7,18 +7,19 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import Homepage from "./pages/Homepage";
 import CreatePage from "./pages/CreatePage";
 import { Navigate } from "react-router-dom";
-import { getActiveEvent } from "@/data/data-service";
-import TemplateGallery from "./pages/TemplateGallery";
-import StoryEditor from "./pages/StoryEditor";
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 import CelebrationView from "./pages/CelebrationView";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminEvents from "./pages/admin/Events";
 import AdminEventEditor from "./pages/admin/EventEditor";
-import AdminTemplates from "./pages/admin/Templates";
-import AdminTemplateEditor from "./pages/admin/TemplateEditor";
 import AdminSales from "./pages/admin/Sales";
 import AdminCelebrations from "./pages/admin/Celebrations";
 import AdminFiles from "./pages/admin/FilesPage";
+import AdminPricing from "./pages/admin/Pricing";
+import AdminPayments from "./pages/admin/Payments";
+import AdminMail from "./pages/admin/Mail";
+import AdminUsers from "./pages/admin/Users";
 import AdminLayout from "./components/admin/AdminLayout";
 import NotFound from "./pages/NotFound";
 
@@ -35,8 +36,7 @@ const App = () => (
             <Route path="/" element={<Homepage />} />
             <Route path="/create" element={<CreateRedirect />} />
             <Route path="/:eventSlug/create" element={<CreatePage />} />
-            <Route path="/create/:eventSlug" element={<TemplateGallery />} />
-            <Route path="/create/:eventSlug/:templateId" element={<StoryEditor />} />
+            <Route path="/:eventSlug/create" element={<CreatePage />} />
 
             {/* Admin */}
             <Route path="/admin" element={<AdminLayout />}>
@@ -44,12 +44,14 @@ const App = () => (
               <Route path="events" element={<AdminEvents />} />
               <Route path="events/new" element={<AdminEventEditor />} />
               <Route path="events/:id/edit" element={<AdminEventEditor />} />
-              <Route path="templates" element={<AdminTemplates />} />
-              <Route path="templates/new" element={<AdminTemplateEditor />} />
-              <Route path="templates/:id/edit" element={<AdminTemplateEditor />} />
+              <Route path="events/:id/edit" element={<AdminEventEditor />} />
               <Route path="sales" element={<AdminSales />} />
               <Route path="celebrations" element={<AdminCelebrations />} />
               <Route path="files" element={<AdminFiles />} />
+              <Route path="pricing" element={<AdminPricing />} />
+              <Route path="payments" element={<AdminPayments />} />
+              <Route path="mail" element={<AdminMail />} />
+              <Route path="users" element={<AdminUsers />} />
             </Route>
 
             {/* Celebration view - must be after admin routes */}
@@ -63,7 +65,7 @@ const App = () => (
 );
 
 function CreateRedirect() {
-  const activeEvent = getActiveEvent();
+  const activeEvent = useQuery(api.events.getActive);
   if (activeEvent) {
     return <Navigate to={`/${activeEvent.slug}/create`} replace />;
   }

@@ -1,49 +1,84 @@
-import type { StoryPage, FontSize, SlideTransition } from "@/data/types";
-import { StickerPicker } from "./StickerPicker";
+import type { StoryPage, FontSize } from "@/data/types";
 import { FontPicker } from "./FontPicker";
 import { TextAlignPicker } from "./TextAlignPicker";
-import { TransitionPicker } from "./TransitionPicker";
 import { MusicPicker } from "./MusicPicker";
-import { BackgroundPicker } from "./BackgroundPicker";
+import { BackdropPicker } from "./BackdropPicker";
+import { PatternsPicker } from "./PatternsPicker";
+import { cn } from "@/lib/utils";
+import type { EventTheme } from "@/data/types";
 
 interface EditorToolbarProps {
   page: StoryPage;
   musicTrackId?: string;
+  isPlaying?: boolean;
+  onTogglePlay?: () => void;
+  activeColor?: string;
+  allowedThemeIds?: string[];
+  allowedFontIds?: string[];
+  allowedMusicIds?: string[];
+  allowedPatternIds?: string[];
   onPageUpdate: (updates: Partial<StoryPage>) => void;
   onMusicChange: (trackId: string | undefined) => void;
-  onStickerAdd: (emoji: string) => void;
+  onBackdropSelect: (theme: Partial<EventTheme>) => void;
+  className?: string;
 }
 
-export function EditorToolbar({ page, musicTrackId, onPageUpdate, onMusicChange, onStickerAdd }: EditorToolbarProps) {
+export function EditorToolbar({
+  page,
+  musicTrackId,
+  isPlaying,
+  onTogglePlay,
+  activeColor,
+  allowedThemeIds,
+  allowedFontIds,
+  allowedMusicIds,
+  allowedPatternIds,
+  onPageUpdate,
+  onMusicChange,
+  onBackdropSelect,
+  className
+}: EditorToolbarProps) {
   return (
-    <div className="flex items-center justify-around px-4 py-2">
-      <StickerPicker onSelect={onStickerAdd} />
-      <FontPicker
-        fontFamily={page.fontFamily}
-        fontSize={page.fontSize}
-        onFontChange={(f) => onPageUpdate({ fontFamily: f })}
-        onSizeChange={(s: FontSize) => onPageUpdate({ fontSize: s })}
-      />
-      <TextAlignPicker
-        value={page.textAlign}
-        onChange={(a) => onPageUpdate({ textAlign: a })}
-      />
-      <TransitionPicker
-        value={page.transition}
-        onChange={(t: SlideTransition) => onPageUpdate({ transition: t })}
-      />
-      <MusicPicker
-        selectedId={musicTrackId}
-        onSelect={onMusicChange}
-      />
-      <BackgroundPicker
-        gradientStart={page.bgGradientStart}
-        gradientEnd={page.bgGradientEnd}
-        textColor={page.textColor}
-        onStartChange={(c) => onPageUpdate({ bgGradientStart: c })}
-        onEndChange={(c) => onPageUpdate({ bgGradientEnd: c })}
-        onTextColorChange={(c) => onPageUpdate({ textColor: c })}
-      />
+    <div className={cn("fixed bottom-10 left-0 right-0 flex justify-center z-50 pointer-events-none", className)}>
+      <div className="w-[268px] bg-white/5 backdrop-blur-3xl rounded-2xl p-2 flex items-center justify-between pointer-events-auto border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
+
+        <BackdropPicker onSelect={onBackdropSelect} currentPrimary={page.bgGradientStart} whitelist={allowedThemeIds} />
+
+        {/* 2. Font */}
+        <FontPicker
+          fontFamily={page.fontFamily}
+          fontSize={page.fontSize}
+          whitelist={allowedFontIds}
+          onFontChange={(f) => onPageUpdate({ fontFamily: f })}
+          onSizeChange={(s: FontSize) => onPageUpdate({ fontSize: s })}
+        />
+
+        {/* 3. Align */}
+        <TextAlignPicker
+          value={page.textAlign}
+          onChange={(a) => onPageUpdate({ textAlign: a })}
+        />
+
+        {/* 4. Music */}
+        <MusicPicker
+          selectedId={musicTrackId}
+          isPlaying={isPlaying}
+          onTogglePlay={onTogglePlay || (() => { })}
+          activeColor={activeColor}
+          whitelist={allowedMusicIds}
+          onSelect={onMusicChange}
+        />
+
+        {/* 5. Patterns */}
+        <PatternsPicker
+          currentPattern={page.backgroundPattern}
+          activeColor={activeColor}
+          whitelist={allowedPatternIds}
+          onSelect={(id) => onPageUpdate({ backgroundPattern: id })}
+        />
+
+      </div>
     </div>
   );
 }
+

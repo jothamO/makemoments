@@ -1,153 +1,623 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Dialog, DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { createCelebration } from "@/data/data-service";
-import type { CelebrationEvent, Template, StoryPage } from "@/data/types";
-import { CreditCard } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import type { CelebrationEvent, StoryPage } from "@/data/types";
+import { CreditCard, Loader2, Check, Link2, UserPlus, Copy, ExternalLink, Share2 } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { usePaystackPayment } from "react-paystack";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface PaymentModalProps {
   open: boolean;
   onClose: () => void;
   event: CelebrationEvent;
-  template: Template;
   pages: StoryPage[];
   musicTrackId?: string;
 }
 
-const BASE_PRICE = 1000;
-const UPSELL_PRICE = 500;
+// Parse Convex error to user-friendly string
+function parseError(e: unknown): string {
+  if (!(e instanceof Error)) return "Something went wrong";
+  const msg = e.message;
+  const m1 = msg.match(/Uncaught Error:\s*(.+?)\s*at handler/);
+  if (m1) return m1[1].trim();
+  const m2 = msg.match(/Server Error\s+(?:Uncaught Error:\s*)?(.+)/);
+  if (m2) {
+    const cleaned = m2[1].replace(/\s*at handler\s*\(.*?\)/, "").replace(/\s*Called by client$/, "").trim();
+    if (cleaned) return cleaned;
+  }
+  return msg;
+}
 
-export function PaymentModal({ open, onClose, event, template, pages, musicTrackId }: PaymentModalProps) {
+export function PaymentModal({ open, onClose, event, pages, musicTrackId }: PaymentModalProps) {
   const navigate = useNavigate();
+  const { currency, symbol, gateway, isNigeria } = useCurrency();
+
   const [email, setEmail] = useState("");
   const [removeWatermark, setRemoveWatermark] = useState(false);
-  const [hasMusic, setHasMusic] = useState(false);
   const [customLink, setCustomLink] = useState(false);
+  const [customSlug, setCustomSlug] = useState("");
   const [hdDownload, setHdDownload] = useState(false);
+  const [createAccount, setCreateAccount] = useState(false);
+  const [username, setUsername] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paystack">("stripe");
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  const upsellCount = [removeWatermark, hasMusic, customLink, hdDownload].filter(Boolean).length;
-  const total = BASE_PRICE + upsellCount * UPSELL_PRICE;
+  // Payment tracking
+  const [celebrationId, setCelebrationId] = useState<string | null>(null);
+  const [confirmedSlug, setConfirmedSlug] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  const handlePay = () => {
-    if (!email) return;
+  // ── Queries ──
+  const globalPricing = useQuery(api.pricing.list) || [];
+  const musicTracks = useQuery(api.music.list) || [];
+  const fonts = useQuery(api.fonts.list) || [];
+  const patterns = useQuery(api.patterns.list) || [];
+  const characters = useQuery(api.characters.list) || [];
+  const exchangeRates = useQuery(api.exchangeRates.list) || [];
+  const gatewayConfig = useQuery(api.gatewayConfig.get);
+
+  // Real-time payment status polling
+  const paymentStatus = useQuery(
+    api.payments.getPaymentStatus,
+    celebrationId ? { celebrationId: celebrationId as any } : "skip"
+  );
+
+  // Detect when server confirms payment
+  useEffect(() => {
+    if (paymentStatus?.paid && paymentStatus.slug) {
+      setConfirmedSlug(paymentStatus.slug);
+      setProcessing(false);
+    }
+  }, [paymentStatus]);
+
+  // ── Mutations ──
+  const initializePayment = useMutation(api.payments.initializePayment);
+
+  // ── Theme ──
+  const glowColor = (event.theme as any)?.glowColor || event.theme.secondary || "#ec4899";
+
+  // ── Exchange rate ──
+  const exchangeRate = useMemo(() => {
+    if (isNigeria) return 1;
+    const rate = exchangeRates.find(
+      (r) => r.fromCurrency === "USD" && r.toCurrency === currency
+    );
+    return rate?.rate ?? 1;
+  }, [exchangeRates, currency, isNigeria]);
+
+  // ── Prices ──
+  const prices = useMemo(() => {
+    const p: Record<string, number> = {
+      base: isNigeria ? 1000 : 0.99,
+      themes: 0,
+      fonts: 0,
+      music: 0,
+      patterns: 0,
+      characters: 0,
+      hdDownload: 0,
+      extraSlide: 0,
+      removeWatermark: 0,
+      customLink: 0,
+    };
+    globalPricing.forEach((gp) => {
+      p[gp.category] = isNigeria ? gp.prices.ngn : gp.prices.usd;
+    });
+    return p;
+  }, [globalPricing, isNigeria]);
+
+  // ── Detect premium addons ──
+  const detectedAddons = useMemo(() => {
+    const addons: { key: string; label: string; price: number; auto: boolean }[] = [];
+
+    if (musicTrackId) {
+      const track = musicTracks.find((m) => m._id === musicTrackId);
+      if (track?.isPremium && prices.music > 0) {
+        addons.push({ key: "music", label: track.name || "Premium Music", price: prices.music, auto: true });
+      }
+    }
+
+    const uniqueFonts = Array.from(new Set(pages.map((p) => p.fontFamily)));
+    const premiumFonts = fonts.filter((f) => uniqueFonts.includes(f.fontFamily) && f.isPremium);
+    if (premiumFonts.length > 0 && prices.fonts > 0) {
+      addons.push({ key: "fonts", label: "Elegant font", price: prices.fonts, auto: true });
+    }
+
+    const uniquePatterns = Array.from(new Set(pages.map((p) => p.backgroundPattern).filter(Boolean)));
+    const premiumPatterns = patterns.filter((p) => uniquePatterns.includes(p.id) && p.isPremium);
+    if (premiumPatterns.length > 0 && prices.patterns > 0) {
+      addons.push({ key: "patterns", label: "Effects ✨", price: prices.patterns, auto: true });
+    }
+
+    const emojisUsed = Array.from(new Set(pages.flatMap((p) => p.stickers.map((s) => s.emoji))));
+    const premiumChars = characters.filter((c) => emojisUsed.includes(c.name) && c.isPremium);
+    if (premiumChars.length > 0 && prices.characters > 0) {
+      addons.push({ key: "characters", label: "Premium Illustrations", price: prices.characters, auto: true });
+    }
+
+    return addons;
+  }, [musicTrackId, musicTracks, pages, fonts, patterns, characters, prices]);
+
+  // ── Prices for upsells ──
+  const customLinkPrice = prices.customLink ?? 0;
+  const hdPrice = prices.hdDownload ?? 0;
+  const extraSlidePrice = prices.extraSlide ?? 0;
+  const watermarkPrice = prices.removeWatermark ?? 0;
+
+  // ── Extra slides ──
+  const extraSlides = Math.max(0, pages.length - 7);
+
+  // ── Total ──
+  const { total, breakdown } = useMemo(() => {
+    let currentTotal = prices.base;
+    const items: { label: string; price: number }[] = [{ label: "Base Card", price: prices.base }];
+
+    // Extra slides
+    if (extraSlides > 0) {
+      const slideCost = extraSlides * extraSlidePrice;
+      currentTotal += slideCost;
+      items.push({ label: `${extraSlides} extra slide${extraSlides > 1 ? "s" : ""}`, price: slideCost });
+    }
+
+    detectedAddons.forEach((addon) => {
+      currentTotal += addon.price;
+      items.push({ label: addon.label, price: addon.price });
+    });
+
+    if (removeWatermark && watermarkPrice > 0) { currentTotal += watermarkPrice; items.push({ label: "No watermark", price: watermarkPrice }); }
+    if (customLink && customLinkPrice > 0) { currentTotal += customLinkPrice; items.push({ label: "Custom link", price: customLinkPrice }); }
+    if (hdDownload && hdPrice > 0) { currentTotal += hdPrice; items.push({ label: "HD Download", price: hdPrice }); }
+
+    const displayTotal = isNigeria ? currentTotal : currentTotal * exchangeRate;
+    return { total: displayTotal, breakdown: items };
+  }, [prices, detectedAddons, removeWatermark, customLink, hdDownload, extraSlides, extraSlidePrice, hdPrice, customLinkPrice, isNigeria, exchangeRate]);
+
+  // ── Format price ──
+  const formatPrice = (amount: number, raw = false) => {
+    const displayAmount = raw || isNigeria ? amount : amount * exchangeRate;
+    if (isNigeria) return `₦${displayAmount.toLocaleString()}`;
+    return `${symbol}${displayAmount.toFixed(2)}`;
+  };
+
+  // ── Slug ──
+  const autoSlug = useMemo(() => {
+    const firstText = pages.find((p) => p.text)?.text || "card";
+    return `${firstText.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 20)}-${Date.now().toString(36)}`;
+  }, [pages]);
+
+  const displaySlug = customLink && customSlug ? customSlug : autoSlug;
+
+  // ── Validation ──
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isCustomLinkValid = !customLink || customSlug.trim().length > 0;
+  const canPay = isValidEmail && isCustomLinkValid && !processing;
+
+  // ── Paystack config ──
+  const paystackPublicKey = (gatewayConfig as any)?.paystackPublicKey || "";
+  const paystackConfig = {
+    reference: `mm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    email,
+    amount: Math.round(total * 100), // Paystack expects kobo
+    publicKey: paystackPublicKey,
+    currency: isNigeria ? "NGN" : currency,
+  };
+
+  const initPaystack = usePaystackPayment(paystackConfig);
+
+  // ── Pay ──
+  const handlePay = async () => {
+    if (!canPay) return;
     setProcessing(true);
-    setTimeout(() => {
-      const firstText = pages.find((p) => p.text)?.text || "card";
-      const slug = `${firstText.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 20)}-${Date.now().toString(36)}`;
-      createCelebration({
-        templateId: template.id,
-        eventId: event.id,
+    setPaymentError(null);
+
+    try {
+      const slug = customLink && customSlug
+        ? customSlug.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "")
+        : autoSlug;
+
+      const result = await initializePayment({
+        eventId: event.id as any,
         slug,
         email,
         pages,
-        musicTrackId: hasMusic ? musicTrackId : undefined,
+        musicTrackId: musicTrackId as any || undefined,
         removeWatermark,
-        hasMusic,
+        hasMusic: !!musicTrackId,
         customLink,
+        customSlug: customLink ? slug : undefined,
         hdDownload,
         totalPaid: total,
-        paymentStatus: "paid",
+        currency,
+        gateway,
+        paymentReference: paystackConfig.reference,
       });
+
+      setCelebrationId(result.celebrationId);
+
+      if (gateway === "paystack" && paystackPublicKey) {
+        initPaystack({
+          onSuccess: () => { }, // Server-side verification via webhook
+          onClose: () => {
+            setProcessing(false);
+            setPaymentError("Payment was cancelled. You can try again.");
+          },
+        } as any);
+      } else {
+        // Stripe or no gateway configured — placeholder
+        toast({ title: "Gateway not configured", description: "Please configure payment keys in admin." });
+        setProcessing(false);
+      }
+    } catch (error) {
+      console.error(error);
       setProcessing(false);
-      onClose();
-      navigate(`/${slug}`);
-    }, 1500);
+      setPaymentError(parseError(error));
+    }
   };
 
-  const t = event.theme;
-  const firstPage = pages[0];
+  // ── Copy link ──
+  const handleCopy = async () => {
+    const url = `https://makemoments.xyz/${confirmedSlug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Fallback
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // ── Addon cards ──
+  const allAddonCards = [
+    ...detectedAddons.map((a) => ({ ...a, checked: true, toggleable: false })),
+    ...(watermarkPrice > 0 ? [{ key: "watermark", label: "No watermark", price: watermarkPrice, auto: false, checked: removeWatermark, toggleable: true }] : []),
+    ...(hdPrice > 0 ? [{ key: "hd", label: "HD Download", price: hdPrice, auto: false, checked: hdDownload, toggleable: true }] : []),
+  ];
+
+  const toggleAddon = (key: string) => {
+    switch (key) {
+      case "watermark": setRemoveWatermark((v) => !v); break;
+      case "hd": setHdDownload((v) => !v); break;
+    }
+  };
+
+  // ── Reset on close ──
+  const handleClose = () => {
+    if (confirmedSlug) {
+      // Reset everything if closing after success
+      setCelebrationId(null);
+      setConfirmedSlug(null);
+      setPaymentError(null);
+    }
+    onClose();
+  };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle style={{ fontFamily: "var(--font-headline)" }}>Complete Your Card</DialogTitle>
-          <DialogDescription>Add extras and pay to share your creation</DialogDescription>
-        </DialogHeader>
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+      <DialogPortal>
+        <DialogOverlay className="bg-black/60 backdrop-blur-sm" />
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          className="fixed left-[50%] top-[50%] z-50 w-[calc(100%-2rem)] max-w-md translate-x-[-50%] translate-y-[-50%] rounded-3xl border border-white/10 bg-zinc-900/95 backdrop-blur-2xl p-6 shadow-2xl outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] duration-200 max-h-[90vh] overflow-y-auto"
+        >
+          <DialogPrimitive.Title className="sr-only">Complete your Moment</DialogPrimitive.Title>
 
-        <div className="space-y-5 mt-2">
-          {/* Preview thumbnail */}
-          {firstPage && (
-            <div
-              className="aspect-video rounded-lg flex items-center justify-center overflow-hidden"
-              style={{ background: `linear-gradient(135deg, ${firstPage.bgGradientStart}, ${firstPage.bgGradientEnd})` }}
-            >
-              {firstPage.photoUrl ? (
-                <img src={firstPage.photoUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <p className="text-sm px-4 text-center" style={{ color: firstPage.textColor, fontFamily: firstPage.fontFamily }}>
-                  {firstPage.text || template.name}
-                </p>
-              )}
-            </div>
-          )}
+          {/* Close button */}
+          <button
+            onClick={handleClose}
+            className="absolute right-4 top-4 text-white/40 hover:text-white/80 transition-colors text-lg leading-none z-10"
+          >
+            ✕
+          </button>
 
-          {/* Upsells */}
-          <div className="space-y-3">
-            <p className="text-sm font-medium">Extras</p>
-            {[
-              { label: "Remove watermark", checked: removeWatermark, set: setRemoveWatermark },
-              { label: "Add music track", checked: hasMusic, set: setHasMusic },
-              { label: "Custom link", checked: customLink, set: setCustomLink },
-              { label: "HD Download", checked: hdDownload, set: setHdDownload },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Checkbox checked={item.checked} onCheckedChange={(v) => item.set(!!v)} />
-                  <Label className="text-sm cursor-pointer">{item.label}</Label>
-                </div>
-                <span className="text-sm text-muted-foreground">+₦{UPSELL_PRICE.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Email */}
-          <div>
-            <Label className="text-sm mb-1 block">Email address</Label>
-            <Input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-
-          {/* Payment method toggle */}
-          <div className="flex gap-2">
-            {(["stripe", "paystack"] as const).map((m) => (
-              <Button
-                key={m}
-                variant={paymentMethod === m ? "default" : "outline"}
-                size="sm"
-                className="flex-1 capitalize"
-                onClick={() => setPaymentMethod(m)}
+          <AnimatePresence mode="wait">
+            {confirmedSlug ? (
+              /* ═══ SUCCESS SCREEN ═══ */
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center py-4"
               >
-                {m}
-              </Button>
-            ))}
-          </div>
+                {/* Checkmark */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                  className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                  style={{ backgroundColor: `${glowColor}20` }}
+                >
+                  <Check className="w-8 h-8" style={{ color: glowColor }} />
+                </motion.div>
 
-          {/* Total & Pay */}
-          <div className="flex items-center justify-between pt-2 border-t">
-            <span className="font-bold text-lg">₦{total.toLocaleString()}</span>
-            <Button
-              disabled={!email || processing}
-              className="rounded-full px-6 border-0"
-              style={{ background: `linear-gradient(135deg, ${t.primary}, ${t.secondary})`, color: t.textLight }}
-              onClick={handlePay}
-            >
-              <CreditCard className="mr-2 h-4 w-4" />
-              {processing ? "Processing..." : "Pay with Card"}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
+                {/* Headline */}
+                <motion.h2
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-2xl font-bold text-white mb-1"
+                >
+                  Your moment is live! 🎉
+                </motion.h2>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-sm text-white/40 mb-6"
+                >
+                  Share this link with someone special
+                </motion.p>
+
+                {/* Link card + Copy */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="w-full rounded-2xl p-4 mb-4"
+                  style={{ backgroundColor: `${glowColor}10`, border: `1px solid ${glowColor}30` }}
+                >
+                  <p className="text-xs text-white/40 mb-2">Your link</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-white font-medium truncate">
+                      makemoments.xyz/<span style={{ color: glowColor }}>{confirmedSlug}</span>
+                    </span>
+                    <button
+                      onClick={handleCopy}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${copied
+                        ? "bg-green-500 text-white"
+                        : "text-white"
+                        }`}
+                      style={!copied ? { backgroundColor: glowColor } : undefined}
+                    >
+                      {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      {copied ? "Copied!" : "Copy"}
+                    </button>
+                  </div>
+                </motion.div>
+
+                {/* View button */}
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  onClick={() => {
+                    handleClose();
+                    navigate(`/${confirmedSlug}`);
+                  }}
+                  className="w-full h-12 rounded-2xl text-white font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all mb-4"
+                  style={{ background: `linear-gradient(135deg, ${glowColor}, ${glowColor}cc)` }}
+                >
+                  <ExternalLink className="w-4 h-4" /> View your Moment →
+                </motion.button>
+
+                {/* Share row */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                  className="flex items-center gap-3"
+                >
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`I made this for you ❤️ https://makemoments.xyz/${confirmedSlug}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-600/20 text-green-400 text-xs font-medium hover:bg-green-600/30 transition-colors"
+                  >
+                    <Share2 className="w-3 h-3" /> WhatsApp
+                  </a>
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent("I made this for you ❤️")}&url=${encodeURIComponent(`https://makemoments.xyz/${confirmedSlug}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600/20 text-blue-400 text-xs font-medium hover:bg-blue-600/30 transition-colors"
+                  >
+                    <Share2 className="w-3 h-3" /> X / Twitter
+                  </a>
+                </motion.div>
+
+                {/* Create another */}
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  onClick={() => {
+                    handleClose();
+                    navigate(`/create/${event.slug || ""}`);
+                  }}
+                  className="mt-4 text-xs underline decoration-dotted text-white/30 hover:text-white/60 transition-colors"
+                >
+                  Create another →
+                </motion.button>
+              </motion.div>
+            ) : (
+              /* ═══ PAYMENT FORM ═══ */
+              <motion.div key="form" initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {/* Title */}
+                <h2 className="text-center text-xl font-semibold" style={{ color: glowColor }}>
+                  Complete your Moment
+                </h2>
+
+                {/* Total */}
+                <p className="text-center text-3xl font-bold text-white mt-2">
+                  {formatPrice(total, true)}
+                </p>
+
+                {/* Link preview */}
+                <p className="text-center text-xs text-white/40 mt-1">
+                  Your link: makemoments.xyz/<span className="text-white/60 underline decoration-dotted">{displaySlug}</span>
+                </p>
+
+                {/* Addon grid */}
+                <div className="grid grid-cols-2 gap-2 mt-5">
+                  {allAddonCards.map((addon) => (
+                    <button
+                      key={addon.key}
+                      onClick={() => addon.toggleable && toggleAddon(addon.key)}
+                      className={`relative rounded-xl px-3 py-3 text-left transition-all border ${addon.checked
+                        ? "border-white/20"
+                        : "border-white/5 hover:border-white/10"
+                        }`}
+                      style={{
+                        backgroundColor: addon.checked ? `${glowColor}15` : "rgba(255,255,255,0.03)",
+                      }}
+                    >
+                      <div
+                        className={`absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all ${addon.checked ? "text-white" : "border border-white/20"
+                          }`}
+                        style={{ backgroundColor: addon.checked ? glowColor : "transparent" }}
+                      >
+                        {addon.checked && <Check className="w-3 h-3" />}
+                      </div>
+                      <span className="text-sm text-white/90 font-medium block pr-6">{addon.label}</span>
+                      <span className="text-xs text-white/40 mt-0.5 block">+ {formatPrice(addon.price)}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Extra slides notice */}
+                {extraSlides > 0 && (
+                  <div className="mt-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5">
+                    <p className="text-xs text-white/50">
+                      <span className="text-white/70 font-medium">{extraSlides} extra slide{extraSlides > 1 ? "s" : ""}</span> — {formatPrice(extraSlides * extraSlidePrice)} added
+                    </p>
+                  </div>
+                )}
+
+                {/* Email */}
+                <div className="mt-5">
+                  <label className="text-xs text-white/40 font-medium mb-1.5 block">Your email</label>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/25 rounded-xl h-11 focus-visible:ring-1"
+                    style={{ borderColor: isValidEmail && email ? `${glowColor}40` : undefined }}
+                  />
+                </div>
+
+                {/* Create account */}
+                <button
+                  onClick={() => setCreateAccount((v) => !v)}
+                  className={`mt-3 w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-left ${createAccount
+                    ? "border-white/20"
+                    : "border-white/5 hover:border-white/10"
+                    }`}
+                  style={{ backgroundColor: createAccount ? `${glowColor}10` : "rgba(255,255,255,0.02)" }}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${createAccount ? "text-white" : "border border-white/20"
+                      }`}
+                    style={{ backgroundColor: createAccount ? glowColor : "transparent" }}
+                  >
+                    {createAccount ? <Check className="w-3 h-3" /> : <UserPlus className="w-3 h-3 text-white/30" />}
+                  </div>
+                  <span className="text-sm text-white/70">Create an account</span>
+                </button>
+
+                {createAccount && (
+                  <div className="mt-2">
+                    <Input
+                      type="text"
+                      placeholder="Choose a username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/25 rounded-xl h-11 focus-visible:ring-1"
+                    />
+                  </div>
+                )}
+
+                {/* Custom link */}
+                <button
+                  onClick={() => setCustomLink((v) => !v)}
+                  className={`mt-3 w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all ${customLink
+                    ? "border-white/20"
+                    : "border-white/5 hover:border-white/10"
+                    }`}
+                  style={{ backgroundColor: customLink ? `${glowColor}10` : "rgba(255,255,255,0.02)" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${customLink ? "text-white" : "border border-white/20"
+                        }`}
+                      style={{ backgroundColor: customLink ? glowColor : "transparent" }}
+                    >
+                      {customLink ? <Check className="w-3 h-3" /> : <Link2 className="w-3 h-3 text-white/30" />}
+                    </div>
+                    <span className="text-sm text-white/70">Custom link</span>
+                  </div>
+                  <span className="text-xs text-white/40">{customLinkPrice > 0 ? `+ ${formatPrice(customLinkPrice)}` : "Free"}</span>
+                </button>
+
+                {customLink && (
+                  <div className="mt-2">
+                    <label className="text-xs text-white/40 font-medium mb-1.5 block">Choose your custom link</label>
+                    <div className="flex items-center bg-white/5 border border-white/10 rounded-xl h-11 px-3 focus-within:ring-1"
+                      style={{ borderColor: customSlug ? `${glowColor}40` : undefined }}
+                    >
+                      <span className="text-xs text-white/30 mr-1 flex-shrink-0">makemoments.xyz/</span>
+                      <input
+                        type="text"
+                        placeholder="mymoment"
+                        value={customSlug}
+                        onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                        className="bg-transparent border-none outline-none text-white text-sm flex-1 placeholder:text-white/25"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment error notification (red pill) */}
+                {paymentError && (
+                  <p className="mt-4 text-sm text-red-400 bg-red-500/10 rounded-xl px-3 py-2 border border-red-500/20 text-center">
+                    {paymentError}
+                  </p>
+                )}
+
+                {/* Pay button */}
+                <button
+                  disabled={!canPay}
+                  onClick={handlePay}
+                  className="mt-5 w-full h-12 rounded-2xl text-white font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98]"
+                  style={{
+                    background: canPay
+                      ? `linear-gradient(135deg, ${glowColor}, ${glowColor}cc)`
+                      : undefined,
+                    backgroundColor: canPay ? undefined : "rgba(255,255,255,0.05)",
+                  }}
+                >
+                  {processing ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <CreditCard className="h-5 w-5" />
+                  )}
+                  {processing
+                    ? "Processing..."
+                    : `Pay ${formatPrice(total, true)}`}
+                </button>
+
+                <p className="text-[10px] text-center text-white/25 mt-2">
+                  Secure payment powered by {gateway === "paystack" ? "Paystack" : "Stripe"}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </DialogPrimitive.Content>
+      </DialogPortal>
     </Dialog>
   );
 }

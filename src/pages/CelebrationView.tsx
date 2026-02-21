@@ -1,21 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { getCelebrationBySlug, getEventById, incrementViews } from "@/data/data-service";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { StoryViewer } from "@/components/story/StoryViewer";
 import { Copy, Share2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const CelebrationView = () => {
   const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
-  const celebration = slug ? getCelebrationBySlug(slug) : undefined;
-  const event = celebration ? getEventById(celebration.eventId) : undefined;
+  const celebration = useQuery(api.celebrations.getBySlug, slug ? { slug } : "skip");
+  const event = useQuery(api.events.getById, celebration?.eventId ? { id: celebration.eventId } : "skip");
+  const incrementViews = useMutation(api.celebrations.incrementViews);
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    if (slug) incrementViews(slug);
+    if (slug) {
+      incrementViews({ slug }).catch(() => { });
+    }
   }, [slug]);
+
+  if (celebration === undefined || event === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!celebration || !event) {
     return (
@@ -25,7 +38,8 @@ const CelebrationView = () => {
     );
   }
 
-  const t = event.theme;
+  const t = event.theme as any;
+  const glowColor = t?.glowColor || t?.secondary || "#ec4899";
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -89,8 +103,9 @@ const CelebrationView = () => {
 
   return (
     <StoryViewer
-      pages={celebration.pages}
+      pages={celebration.pages as any}
       showWatermark={!celebration.removeWatermark}
+      glowColor={glowColor}
       autoPlay
       showShareOnLast
       shareContent={shareButtons}

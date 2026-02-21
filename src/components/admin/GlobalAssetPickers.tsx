@@ -3,7 +3,11 @@ import { api } from "../../../convex/_generated/api";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Music, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Music, Loader2, Play } from "lucide-react";
+import { useState, useRef } from "react";
+import { cn } from "@/lib/utils";
+
 
 interface AssetPickerProps {
     selectedIds: string[];
@@ -46,6 +50,29 @@ export const CharacterPicker = ({ selectedIds, onToggle }: AssetPickerProps) => 
 
 export const MusicPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
     const tracks = useQuery(api.music.list);
+    const [playingId, setPlayingId] = useState<string | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    const togglePlay = (e: React.MouseEvent, trackId: string, url?: string) => {
+        e.stopPropagation();
+        if (!url) return;
+        if (playingId === trackId) {
+            audioRef.current?.pause();
+            setPlayingId(null);
+        } else {
+            if (audioRef.current) {
+                audioRef.current.src = url;
+                audioRef.current.play();
+                setPlayingId(trackId);
+            } else {
+                const audio = new Audio(url);
+                audio.play();
+                audio.onended = () => setPlayingId(null);
+                audioRef.current = audio;
+                setPlayingId(trackId);
+            }
+        }
+    };
 
     if (!tracks) return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>;
 
@@ -58,9 +85,25 @@ export const MusicPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
                     onClick={() => onToggle(track._id)}
                 >
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-zinc-100 flex items-center justify-center">
-                            <Music className="h-5 w-5 text-zinc-500" />
-                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all",
+                                playingId === track._id ? "bg-rose-50 text-rose-600" : "bg-zinc-100 text-zinc-500"
+                            )}
+                            onClick={(e) => togglePlay(e, track._id, track.url)}
+                        >
+                            {playingId === track._id ? (
+                                <div className="flex gap-0.5 items-end h-3">
+                                    <div className="w-0.5 bg-current animate-[music-bar_0.6s_ease-in-out_infinite]" style={{ height: '40%' }} />
+                                    <div className="w-0.5 bg-current animate-[music-bar_0.8s_ease-in-out_infinite]" style={{ height: '100%' }} />
+                                    <div className="w-0.5 bg-current animate-[music-bar_0.7s_ease-in-out_infinite]" style={{ height: '60%' }} />
+                                </div>
+                            ) : (
+                                <Music className="h-5 w-5" />
+                            )}
+                        </Button>
                         <div>
                             <p className="text-sm font-semibold text-zinc-900">{track.name}</p>
                             <p className="text-[10px] text-zinc-500 uppercase tracking-wide">{track.artist}</p>
@@ -75,6 +118,7 @@ export const MusicPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
         </div>
     );
 };
+
 
 export const ThemePresetPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
     const themes = useQuery(api.themes.list);
@@ -92,7 +136,12 @@ export const ThemePresetPicker = ({ selectedIds, onToggle }: AssetPickerProps) =
                     <CardContent className="p-3 flex flex-col items-center gap-2">
                         <div
                             className="w-full aspect-video rounded-lg border border-black/5"
-                            style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }}
+                            style={{
+                                background: `
+                                    radial-gradient(circle at 50% 0%, ${theme.glowColor || "#ffffff"}, transparent 70%),
+                                    ${theme.baseColor || "#ffffff"}
+                                `
+                            }}
                         />
                         <div className="flex items-center gap-2 w-full">
                             <Checkbox
@@ -152,11 +201,11 @@ export const PatternPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
             {patterns.map((pattern) => (
                 <div
-                    key={pattern.id}
+                    key={pattern._id}
                     className={`relative cursor-pointer transition-all hover:ring-2 hover:ring-primary/20 rounded-xl border p-3 flex flex-col items-center gap-2 ${selectedIds.includes(pattern.id) ? 'ring-2 ring-primary bg-primary/5 border-primary' : 'bg-white'}`}
                     onClick={() => onToggle(pattern.id)}
                 >
-                    <div className="text-3xl">{pattern.emoji}</div>
+                    <div className="text-3xl">{pattern.emojis?.join(" ")}</div>
                     <div className="flex items-center gap-2 w-full justify-center">
                         <Checkbox
                             id={`pattern-${pattern.id}`}

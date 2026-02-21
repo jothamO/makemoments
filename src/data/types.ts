@@ -4,6 +4,8 @@ export interface EventTheme {
   accent: string;
   bgGradientStart: string;
   bgGradientEnd: string;
+  baseColor?: string;
+  glowColor?: string;
   textDark: string;
   textLight: string;
   headlineFont: string;
@@ -21,6 +23,8 @@ export interface EventTheme {
   urgencyText: string;
   characters?: string[];
   musicTrackIds?: string[];
+  type?: "light" | "dark";
+  textMode?: "auto" | "light" | "dark";
 }
 
 export interface CelebrationEvent {
@@ -35,43 +39,7 @@ export interface CelebrationEvent {
   createdAt: number;
 }
 
-export interface MediaSlot {
-  id: string;
-  label: string;
-  type: "photo" | "video";
-  position: { x: number; y: number; width: number; height: number };
-  required: boolean;
-}
 
-export interface TextSlotStyle {
-  fontSize: number;
-  fontFamily: string;
-  color: string;
-}
-
-export interface TextSlot {
-  id: string;
-  label: string;
-  placeholder: string;
-  maxLength: number;
-  position: { x: number; y: number; width: number; height: number };
-  style: TextSlotStyle;
-}
-
-export interface Template {
-  id: string;
-  eventId: string;
-  name: string;
-  thumbnail: string;
-  outputType: "image" | "video";
-  mediaSlots: MediaSlot[];
-  textSlots: TextSlot[];
-  layers: string[];
-  popularity: number;
-  createdAt: number;
-  /** Default pages used when this template is selected in the story editor */
-  defaultPages?: StoryPage[];
-}
 
 export type SlideTransition = "fade" | "slide" | "zoom" | "flip";
 export type FontSize = "small" | "medium" | "large";
@@ -86,9 +54,11 @@ export interface StoryPage {
   textColor: string;
   bgGradientStart: string;
   bgGradientEnd: string;
+  glowColor?: string;
   transition: SlideTransition;
   backgroundPattern?: string;
   stickers: { emoji: string; x: number; y: number }[];
+  type?: "light" | "dark";
 }
 
 export interface MusicTrack {
@@ -102,7 +72,6 @@ export interface MusicTrack {
 
 export interface Celebration {
   id: string;
-  templateId: string;
   eventId: string;
   slug: string;
   email: string;
@@ -128,7 +97,6 @@ export interface SaleRecord {
   id: string;
   celebrationId: string;
   eventId: string;
-  templateId: string;
   amount: number;
   upsells: {
     removeWatermark: boolean;

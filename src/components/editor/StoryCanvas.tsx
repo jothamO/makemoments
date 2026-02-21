@@ -2,6 +2,7 @@ import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { StoryPage } from "@/data/types";
+import { hexToRgba } from "@/lib/utils";
 
 interface StoryCanvasProps {
   page: StoryPage;
@@ -10,6 +11,8 @@ interface StoryCanvasProps {
   onTextChange?: (text: string) => void;
   editable?: boolean;
 }
+
+// hexToRgba moved to @/lib/utils
 
 export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextChange, editable = false }: StoryCanvasProps) {
   const fontSizeMap = { small: "text-base", medium: "text-2xl", large: "text-4xl" };
@@ -22,15 +25,14 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
     <div
       className="relative w-full h-full rounded-2xl overflow-hidden flex flex-col"
       style={{
-        background: `linear-gradient(160deg, ${page.bgGradientStart}, ${page.bgGradientEnd})`,
+        backgroundColor: page.bgGradientStart,
+        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.bgGradientEnd, page.type === 'dark' ? 0.4 : 0.25)}, transparent 70%)`
       }}
     >
       {/* Background Pattern */}
       {page.backgroundPattern && (
         <BackgroundPattern
-          pattern={page.backgroundPattern}
-          type={patternDetails?.type}
-          customEmojis={patternDetails?.emoji ? patternDetails?.emoji.split(",") : undefined}
+          patternId={page.backgroundPattern}
         />
       )}
       {/* Photo area */}
@@ -91,15 +93,6 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
           )}
         </div>
       </div>
-
-      {/* Watermark */}
-      {showWatermark && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-white/15 text-2xl font-bold rotate-[-30deg] select-none">
-            MakeMoments
-          </span>
-        </div>
-      )}
     </div>
   );
 }

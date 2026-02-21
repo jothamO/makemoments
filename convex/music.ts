@@ -53,6 +53,24 @@ export const getByEvent = query({
     },
 });
 
+export const update = mutation({
+    args: {
+        id: v.id("musicTracks"),
+        name: v.optional(v.string()),
+        artist: v.optional(v.string()),
+        duration: v.optional(v.number()),
+        isPremium: v.optional(v.boolean()),
+        price: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        const { id, ...data } = args;
+        const updates = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined));
+        if (Object.keys(updates).length > 0) {
+            await ctx.db.patch(id, updates);
+        }
+    },
+});
+
 export const rename = mutation({
     args: {
         id: v.id("musicTracks"),
@@ -70,6 +88,8 @@ export const create = mutation({
         duration: v.number(),
         url: v.optional(v.string()),
         storageId: v.optional(v.id("_storage")),
+        isPremium: v.optional(v.boolean()),
+        price: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         return await ctx.db.insert("musicTracks", args);
@@ -79,6 +99,23 @@ export const create = mutation({
 export const remove = mutation({
     args: { id: v.id("musicTracks") },
     handler: async (ctx, args) => {
+        // Safe Delete: Check if used in any events
+        const events = await ctx.db.query("events").collect();
+        const isUsedInEvent = events.some(e => e.theme.musicTrackIds?.includes(args.id));
+
+        if (isUsedInEvent) {
+            throw new Error("Cannot delete music: It is currently used in one or more events.");
+        }
+
+        // Safe Delete: Check if used in any celebrations (stories)
+        const celebrations = await ctx.db.query("celebrations")
+            .filter(q => q.eq(q.field("musicTrackId"), args.id))
+            .first();
+
+        if (celebrations) {
+            throw new Error("Cannot delete music: It is associated with a published story.");
+        }
+
         const track = await ctx.db.get(args.id);
         if (track?.storageId) {
             await ctx.storage.delete(track.storageId);
