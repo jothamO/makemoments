@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 
 async function resolveEventAssets(ctx: any, event: any) {
     const theme = event.theme || {};
@@ -266,7 +267,22 @@ export const update = mutation({
     },
     handler: async (ctx, args) => {
         const { id, ...rest } = args;
-        await ctx.db.patch(id, rest);
+
+        const existing = await ctx.db.get(id);
+        if (!existing) throw new Error("Event not found");
+
+        const isNowActive = args.status === "active" && existing.status === "upcoming";
+
+        await ctx.db.patch(id, {
+            ...rest,
+            updatedAt: Date.now(),
+        });
+
+        if (isNowActive) {
+            await ctx.scheduler.runAfter(0, api.mail.sendEventLaunchNotification, {
+                eventId: id,
+            });
+        }
     },
 });
 

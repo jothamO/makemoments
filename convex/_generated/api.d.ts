@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
 import type * as backup from "../backup.js";
+import type * as celebrationExpiry from "../celebrationExpiry.js";
 import type * as celebrations from "../celebrations.js";
 import type * as characters from "../characters.js";
 import type * as crons from "../crons.js";
@@ -22,6 +24,7 @@ import type * as init from "../init.js";
 import type * as mail from "../mail.js";
 import type * as migrate_patterns from "../migrate_patterns.js";
 import type * as music from "../music.js";
+import type * as notifications from "../notifications.js";
 import type * as patterns from "../patterns.js";
 import type * as payments from "../payments.js";
 import type * as pricing from "../pricing.js";
@@ -41,7 +44,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   backup: typeof backup;
+  celebrationExpiry: typeof celebrationExpiry;
   celebrations: typeof celebrations;
   characters: typeof characters;
   crons: typeof crons;
@@ -55,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   mail: typeof mail;
   migrate_patterns: typeof migrate_patterns;
   music: typeof music;
+  notifications: typeof notifications;
   patterns: typeof patterns;
   payments: typeof payments;
   pricing: typeof pricing;

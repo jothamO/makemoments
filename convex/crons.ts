@@ -10,4 +10,11 @@ crons.cron(
     internal.exchangeRates.fetchLiveRates
 );
 
+// Process celebration expirations daily at 01:00 UTC
+crons.cron(
+    "process expirations",
+    "0 1 * * *",
+    internal.celebrationExpiry.processExpirations
+);
+
 export default crons;

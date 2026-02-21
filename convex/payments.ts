@@ -1,6 +1,8 @@
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
+import { createPasswordHash } from "./auth";
+
 // Initialize a payment — creates celebration with "pending" status
 export const initializePayment = mutation({
     args: {
@@ -18,10 +20,52 @@ export const initializePayment = mutation({
         currency: v.optional(v.string()),
         gateway: v.optional(v.string()),
         paymentReference: v.string(),
+        // Auth additions
+        createAccount: v.optional(v.boolean()),
+        username: v.optional(v.string()),
+        password: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        const { createAccount, username, password, ...celebrationData } = args;
+
+        let userId: string | undefined;
+
+        if (createAccount && password) {
+            // Check if user already exists
+            const existing = await ctx.db
+                .query("users")
+                .withIndex("by_email", q => q.eq("email", args.email))
+                .first();
+
+            if (existing) {
+                userId = existing._id;
+                // If they chose to create account but it exists, we might want to update it
+                // but for now let's just link it.
+            } else {
+                const { hash, salt } = await createPasswordHash(password);
+                userId = await ctx.db.insert("users", {
+                    email: args.email,
+                    username: username,
+                    passwordHash: hash,
+                    salt: salt,
+                    role: "user",
+                    isSubscriber: true,
+                    createdAt: Date.now(),
+                });
+            }
+        } else {
+            // Try to link to existing user if logged in (token check would be better but token is on client)
+            // For now we check if a user with this email exists regardless of login
+            const existing = await ctx.db
+                .query("users")
+                .withIndex("by_email", q => q.eq("email", args.email))
+                .first();
+            if (existing) userId = existing._id;
+        }
+
         const celebrationId = await ctx.db.insert("celebrations", {
-            ...args,
+            ...celebrationData,
+            userId: userId as any,
             paymentStatus: "pending",
             views: 0,
             expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,

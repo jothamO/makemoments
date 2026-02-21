@@ -22,6 +22,10 @@ import AdminMail from "./pages/admin/Mail";
 import AdminUsers from "./pages/admin/Users";
 import AdminLayout from "./components/admin/AdminLayout";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import LoginPage from "./pages/LoginPage";
+import MyMoments from "./pages/MyMoments";
+import { useAuth } from "./hooks/useAuth";
 
 const queryClient = new QueryClient();
 
@@ -36,14 +40,22 @@ const App = () => (
             <Route path="/" element={<Homepage />} />
             <Route path="/create" element={<CreateRedirect />} />
             <Route path="/:eventSlug/create" element={<CreatePage />} />
-            <Route path="/:eventSlug/create" element={<CreatePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/my-moments" element={
+              <ProtectedRoute>
+                <MyMoments />
+              </ProtectedRoute>
+            } />
 
             {/* Admin */}
-            <Route path="/admin" element={<AdminLayout />}>
+            <Route path="/admin" element={
+              <ProtectedRoute requireAdmin>
+                <AdminLayout />
+              </ProtectedRoute>
+            }>
               <Route index element={<AdminDashboard />} />
               <Route path="events" element={<AdminEvents />} />
               <Route path="events/new" element={<AdminEventEditor />} />
-              <Route path="events/:id/edit" element={<AdminEventEditor />} />
               <Route path="events/:id/edit" element={<AdminEventEditor />} />
               <Route path="sales" element={<AdminSales />} />
               <Route path="celebrations" element={<AdminCelebrations />} />

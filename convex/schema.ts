@@ -81,6 +81,7 @@ export default defineSchema({
         paymentStatus: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed")),
         userId: v.optional(v.string()),           // Links to user account if created
         expiresAt: v.optional(v.number()),        // Timestamp — 365 days from creation
+        deletedAt: v.optional(v.number()),        // Soft-delete timestamp
         views: v.number(),
         createdAt: v.number(),
     }).index("by_slug", ["slug"]),
@@ -178,11 +179,22 @@ export default defineSchema({
 
     users: defineTable({
         email: v.string(),
+        username: v.optional(v.string()),
         name: v.optional(v.string()),
         role: v.union(v.literal("admin"), v.literal("user")),
+        passwordHash: v.optional(v.string()),
+        salt: v.optional(v.string()),
         isSubscriber: v.boolean(), // For Newsletter/Notify Me
         createdAt: v.number(),
     }).index("by_email", ["email"]),
+
+    sessions: defineTable({
+        userId: v.union(v.id("users"), v.literal("admin")),
+        token: v.string(),
+        role: v.union(v.literal("admin"), v.literal("user")),
+        expiresAt: v.number(),
+        createdAt: v.number(),
+    }).index("by_token", ["token"]),
 
     mailConfig: defineTable({
         zeptomailApiKey: v.string(),
@@ -193,10 +205,20 @@ export default defineSchema({
     }),
 
     mailTemplates: defineTable({
-        category: v.union(v.literal("welcome"), v.literal("reminder"), v.literal("newsletter"), v.literal("new_event"), v.literal("forgot_password"), v.literal("post_payment")),
+        category: v.union(v.literal("welcome"), v.literal("reminder"), v.literal("newsletter"), v.literal("new_event"), v.literal("forgot_password"), v.literal("post_payment"), v.literal("expiry_warning"), v.literal("event_launch")),
         templateId: v.string(),
         subject: v.string(),
         updatedAt: v.number(),
     }).index("by_category", ["category"]),
+
+    eventNotifications: defineTable({
+        eventId: v.id("events"),
+        email: v.string(),
+        userId: v.optional(v.id("users")),
+        status: v.union(v.literal("pending"), v.literal("notified"), v.literal("unsubscribed")),
+        createdAt: v.number(),
+    }).index("by_event", ["eventId"])
+        .index("by_email_event", ["email", "eventId"])
+        .index("by_user", ["userId"]),
 });
 

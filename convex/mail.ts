@@ -1,5 +1,6 @@
 import { query, mutation, action } from "./_generated/server";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 
 // ── Configuration ──
 
@@ -38,7 +39,7 @@ export const getTemplates = query({
 
 export const upsertTemplate = mutation({
     args: {
-        category: v.union(v.literal("welcome"), v.literal("reminder"), v.literal("newsletter"), v.literal("new_event"), v.literal("forgot_password"), v.literal("post_payment")),
+        category: v.union(v.literal("welcome"), v.literal("reminder"), v.literal("newsletter"), v.literal("new_event"), v.literal("forgot_password"), v.literal("post_payment"), v.literal("expiry_warning"), v.literal("event_launch")),
         templateId: v.string(),
         subject: v.string(),
     },
@@ -65,7 +66,7 @@ const ZEPTOMAIL_API = "https://api.zeptomail.com/v1.1/email";
 export const sendTestEmail = action({
     args: {
         to: v.string(),
-        category: v.union(v.literal("welcome"), v.literal("reminder"), v.literal("newsletter"), v.literal("new_event"), v.literal("forgot_password"), v.literal("post_payment")),
+        category: v.union(v.literal("welcome"), v.literal("reminder"), v.literal("newsletter"), v.literal("new_event"), v.literal("forgot_password"), v.literal("post_payment"), v.literal("expiry_warning"), v.literal("event_launch")),
     },
     handler: async (ctx, args) => {
         const config = await ctx.runQuery("api.mail.getConfig" as any);
@@ -105,5 +106,96 @@ export const sendTestEmail = action({
         }
 
         return { success: true };
+    },
+});
+
+export const sendExpiryWarning = action({
+    args: {
+        email: v.string(),
+        daysLeft: v.number(),
+        slug: v.string(),
+    },
+    handler: async (ctx, args) => {
+        const config = await ctx.runQuery("api.mail.getConfig" as any);
+        const templates = await ctx.runQuery("api.mail.getTemplates" as any);
+        const template = templates.find((t: any) => t.category === "expiry_warning");
+
+        if (!config || !config.zeptomailApiKey || !template || !template.templateId) {
+            console.warn("Skipping expiry warning: ZeptoMail config or template missing");
+            return;
+        }
+
+        await fetch(ZEPTOMAIL_API, {
+            method: "POST",
+            headers: {
+                "Authorization": config.zeptomailApiKey,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                from: { address: config.fromEmail, name: config.fromName },
+                to: [{ email_address: { address: args.email } }],
+                subject: template.subject,
+                mail_template_key: template.templateId,
+                merge_info: {
+                    days_left: args.daysLeft.toString(),
+                    celebration_url: `https://makemoments.xyz/${args.slug}`,
+                    app_name: "MakeMoments",
+                },
+            }),
+        });
+    },
+});
+
+export const sendEventLaunchNotification = action({
+    args: {
+        eventId: v.id("events"),
+    },
+    handler: async (ctx, args) => {
+        const config = await ctx.runQuery(api.mail.getConfig);
+        const templates = await ctx.runQuery(api.mail.getTemplates);
+        const template = templates.find((t: any) => t.category === "event_launch");
+        const event = await ctx.runQuery(api.events.getById, { id: args.eventId });
+        const subscribers = await ctx.runQuery(api.notifications.listByEvent, { eventId: args.eventId });
+
+        if (!config || !config.zeptomailApiKey || !template || !template.templateId || !event) {
+            console.warn("Skipping launch notification: Config, template, or event missing");
+            return;
+        }
+
+        const pendingSubs = subscribers.filter((s: any) => s.status === "pending");
+        if (pendingSubs.length === 0) return;
+
+        for (const sub of pendingSubs) {
+            try {
+                const res = await fetch(ZEPTOMAIL_API, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": config.zeptomailApiKey,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        from: { address: config.fromEmail, name: config.fromName },
+                        to: [{ email_address: { address: sub.email } }],
+                        subject: template.subject.replace("{{event_name}}", event.name),
+                        mail_template_key: template.templateId,
+                        merge_info: {
+                            event_name: event.name,
+                            event_url: `https://makemoments.xyz/${event.slug}`,
+                            app_name: "MakeMoments",
+                        },
+                    }),
+                });
+
+                if (res.ok) {
+                    await ctx.runMutation(api.notifications.unsubscribe, {
+                        email: sub.email,
+                        eventId: args.eventId,
+                        status: "notified"
+                    });
+                }
+            } catch (error) {
+                console.error(`Failed to notify ${sub.email}:`, error);
+            }
+        }
     },
 });

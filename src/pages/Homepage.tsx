@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 import { ChevronLeft, ChevronRight, Sparkles, Bell } from "lucide-react";
 import { useEventTheme } from "@/contexts/ThemeContext";
+import { NotifyMeDialog } from "@/components/public/NotifyMeDialog";
 import { PublicHeader } from "@/components/public/Header";
 import { PublicFooter } from "@/components/public/Footer";
 import { EventHero } from "@/components/public/EventHero";
@@ -20,10 +21,17 @@ import { EXPRESSIVE_EASE, CONTENT_TRANSITION, TAP_SCALE } from "@/lib/animation"
 
 export default function Homepage() {
   const allPatterns = useQuery(api.patterns.list);
-
   const activeEvent = useQuery(api.events.getActive);
   const libraryData = useQuery(api.events.getLibrary);
   const { event: legacyEvent, theme: legacyTheme } = useEventTheme();
+
+  const [selectedNotifyEvent, setSelectedNotifyEvent] = useState<any>(null);
+  const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);
+
+  const handleNotifyRequest = (event: any) => {
+    setSelectedNotifyEvent(event);
+    setIsNotifyDialogOpen(true);
+  };
 
   const event = activeEvent || legacyEvent;
   const theme = activeEvent?.theme || legacyTheme;
@@ -169,49 +177,53 @@ export default function Homepage() {
           </AnimatePresence>
 
           {/* Navigation Arrows (desktop) */}
-          {slides.length > 1 && (
-            <>
-              <motion.button
-                onClick={prevSlide}
-                whileTap={TAP_SCALE}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
-                aria-label="Previous slide"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </motion.button>
-              <motion.button
-                onClick={nextSlide}
-                whileTap={TAP_SCALE}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
-                aria-label="Next slide"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </motion.button>
-            </>
-          )}
+          {
+            slides.length > 1 && (
+              <>
+                <motion.button
+                  onClick={prevSlide}
+                  whileTap={TAP_SCALE}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </motion.button>
+                <motion.button
+                  onClick={nextSlide}
+                  whileTap={TAP_SCALE}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </motion.button>
+              </>
+            )
+          }
 
           {/* Slide Indicators */}
-          {slides.length > 1 && (
-            <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center gap-2">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className="relative w-2 h-2 rounded-full transition-all bg-white/40 hover:bg-white/60"
-                  style={{ width: index === currentSlide ? 24 : 8 }}
-                  aria-label={`Go to slide ${index + 1}`}
-                >
-                  {index === currentSlide && (
-                    <motion.div
-                      layoutId="hero-slide-indicator"
-                      className="absolute inset-0 rounded-full bg-white"
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+          {
+            slides.length > 1 && (
+              <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center gap-2">
+                {slides.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className="relative w-2 h-2 rounded-full transition-all bg-white/40 hover:bg-white/60"
+                    style={{ width: index === currentSlide ? 24 : 8 }}
+                    aria-label={`Go to slide ${index + 1}`}
+                  >
+                    {index === currentSlide && (
+                      <motion.div
+                        layoutId="hero-slide-indicator"
+                        className="absolute inset-0 rounded-full bg-white"
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )
+          }
 
           {/* Swipe Hint (mobile) */}
           <div
@@ -311,7 +323,7 @@ export default function Homepage() {
                 </div>
                 <div className="grid md:grid-cols-3 gap-8">
                   {libraryData.evergreen.map((libEvent: any) => (
-                    <LibraryEventCard key={libEvent._id} event={libEvent} />
+                    <LibraryEventCard key={libEvent._id} event={libEvent} onNotify={() => handleNotifyRequest(libEvent)} />
                   ))}
                 </div>
               </div>
@@ -327,7 +339,7 @@ export default function Homepage() {
                 </div>
                 <div className="grid md:grid-cols-3 gap-8 opacity-70 grayscale-[0.5]">
                   {libraryData.comingSoon.map((libEvent: any) => (
-                    <LibraryEventCard key={libEvent._id} event={libEvent} isUpcoming />
+                    <LibraryEventCard key={libEvent._id} event={libEvent} isUpcoming onNotify={() => handleNotifyRequest(libEvent)} />
                   ))}
                 </div>
               </div>
@@ -337,6 +349,16 @@ export default function Homepage() {
       </section>
 
       <PublicFooter />
+
+      {
+        selectedNotifyEvent && (
+          <NotifyMeDialog
+            event={selectedNotifyEvent}
+            open={isNotifyDialogOpen}
+            onOpenChange={setIsNotifyDialogOpen}
+          />
+        )
+      }
     </div>
   );
 }
@@ -446,7 +468,7 @@ function StepCard({ number, icon, title, description, accentColor }: {
 }
 
 // LibraryEventCard Component
-function LibraryEventCard({ event, isUpcoming = false }: { event: any; isUpcoming?: boolean }) {
+function LibraryEventCard({ event, isUpcoming = false, onNotify }: { event: any; isUpcoming?: boolean; onNotify?: () => void }) {
   const dateStr = new Date(event.date).toLocaleDateString("en-US", { month: "long", day: "numeric" });
   const theme = event.theme;
 
@@ -477,7 +499,14 @@ function LibraryEventCard({ event, isUpcoming = false }: { event: any; isUpcomin
           >
             {event.name}
           </h3>
-          {isUpcoming && <Badge className="mt-2 bg-zinc-900 text-white border-0">Coming Soon</Badge>}
+          {isUpcoming && (
+            <Badge
+              className="mt-2 text-white border-0"
+              style={{ backgroundColor: theme.glowColor }}
+            >
+              Coming Soon
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -491,7 +520,15 @@ function LibraryEventCard({ event, isUpcoming = false }: { event: any; isUpcomin
         </p>
 
         {isUpcoming ? (
-          <Button variant="outline" className="w-full rounded-full border-zinc-200 text-zinc-500 hover:bg-zinc-50 pointer-events-none">
+          <Button
+            variant="outline"
+            className="w-full rounded-full border-zinc-200 transition-all active:scale-[0.98]"
+            style={{
+              borderColor: `${theme.glowColor}40`,
+              color: theme.glowColor
+            }}
+            onClick={onNotify}
+          >
             <Bell className="w-3 h-3 mr-2" /> Notify Me
           </Button>
         ) : (

@@ -83,7 +83,10 @@ export default function AdminMail() {
         { id: "newsletter", label: "Newsletter", description: "Standard newsletter template" },
         { id: "new_event", label: "New Event", description: "Announcement for new events" },
         { id: "forgot_password", label: "Forgot Password", description: "Password reset link template" },
+        { id: "event_launch", label: "Event Launch", description: "Sent to users waiting for an upcoming event" },
     ];
+
+    const stats = useQuery(api.notifications.getStats) || [];
 
     return (
         <div className="space-y-8 p-6 bg-white min-h-screen">
@@ -98,6 +101,7 @@ export default function AdminMail() {
                 <TabsList className="bg-zinc-100 p-1">
                     <TabsTrigger value="settings" className="gap-2"><Settings className="h-4 w-4" /> Configuration</TabsTrigger>
                     <TabsTrigger value="templates" className="gap-2"><Layout className="h-4 w-4" /> Templates</TabsTrigger>
+                    <TabsTrigger value="notifications" className="gap-2"><Bell className="h-4 w-4" /> Notifications</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="settings" className="mt-6">
@@ -224,6 +228,46 @@ export default function AdminMail() {
                             />
                         ))}
                     </div>
+                </TabsContent>
+
+                <TabsContent value="notifications" className="mt-6">
+                    <Card className="border-zinc-200">
+                        <CardHeader>
+                            <CardTitle>Notification Requests</CardTitle>
+                            <CardDescription>Track interest for upcoming events.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="border rounded-lg overflow-hidden">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-zinc-50 border-b">
+                                        <tr>
+                                            <th className="text-left px-4 py-3 font-semibold">Event</th>
+                                            <th className="text-center px-4 py-3 font-semibold">Pending</th>
+                                            <th className="text-center px-4 py-3 font-semibold">Notified</th>
+                                            <th className="text-center px-4 py-3 font-semibold">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {stats.map((s) => (
+                                            <tr key={s.eventId}>
+                                                <td className="px-4 py-3 font-medium">{s.eventName}</td>
+                                                <td className="px-4 py-3 text-center">{s.pending}</td>
+                                                <td className="px-4 py-3 text-center">{s.notified}</td>
+                                                <td className="px-4 py-3 text-center">{s.total}</td>
+                                            </tr>
+                                        ))}
+                                        {stats.length === 0 && (
+                                            <tr>
+                                                <td colSpan={4} className="px-4 py-8 text-center text-zinc-500 italic">
+                                                    No notification requests yet.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
         </div>

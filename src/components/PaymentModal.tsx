@@ -45,6 +45,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
   const [hdDownload, setHdDownload] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [processing, setProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
@@ -235,6 +236,9 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
         currency,
         gateway,
         paymentReference: paystackConfig.reference,
+        createAccount,
+        username,
+        password,
       });
 
       setCelebrationId(result.celebrationId);
@@ -530,12 +534,19 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
                 </button>
 
                 {createAccount && (
-                  <div className="mt-2">
+                  <div className="mt-2 space-y-2">
                     <Input
                       type="text"
                       placeholder="Choose a username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/25 rounded-xl h-11 focus-visible:ring-1"
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Choose a password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       className="bg-white/5 border-white/10 text-white placeholder:text-white/25 rounded-xl h-11 focus-visible:ring-1"
                     />
                   </div>

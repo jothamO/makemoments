@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { BACKGROUND_PATTERNS } from "@/lib/backgroundPatterns";
 import {
@@ -202,6 +202,12 @@ export default function CreatePage() {
     // Initialize first page
     useEffect(() => {
         if (pages.length === 0 && activeEvent !== undefined) {
+            const prefillPages = location.state?.prefillPages;
+            if (prefillPages) {
+                setPages(prefillPages);
+                return;
+            }
+
             const firstGlobal = availableThemes[0] as any;
             const eventTheme = activeEvent?.theme as any;
 
@@ -212,7 +218,7 @@ export default function CreatePage() {
 
             setPages([createInitialPage(initialPrimary, initialSecondary, initialGlow, initialType)]);
         }
-    }, [pages.length, activeEvent, availableThemes]);
+    }, [pages.length, activeEvent, availableThemes, location.state]);
 
     // Apply the first event backdrop as the default once assets load
     useEffect(() => {

@@ -67,3 +67,25 @@ export const incrementViews = mutation({
         }
     },
 });
+
+export const listByUser = query({
+    args: { userId: v.id("users") },
+    handler: async (ctx, args) => {
+        const celebrations = await ctx.db
+            .query("celebrations")
+            .filter((q) => q.eq(q.field("userId"), args.userId))
+            .order("desc")
+            .collect();
+
+        const results = [];
+        for (const c of celebrations) {
+            const event = await ctx.db.get(c.eventId);
+            results.push({
+                ...c,
+                eventSlug: event?.slug || "unknown",
+                eventName: event?.title || "Unknown Event",
+            });
+        }
+        return results;
+    },
+});
