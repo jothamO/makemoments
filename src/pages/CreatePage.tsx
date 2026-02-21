@@ -73,8 +73,6 @@ export default function CreatePage() {
     // Computed Assets from Resolved Data
     const musicTracks = resolvedAssets?.musicTracks || [];
     const availableThemes = resolvedAssets?.themes || [];
-    const availableCharacters = resolvedAssets?.characters?.map((c: any) => c.url) || [];
-    const availablePatterns = resolvedAssets?.patterns || [];
 
     const availableFonts = (() => {
         if (!resolvedAssets?.fonts || resolvedAssets.fonts.length === 0) return DEFAULT_FONTS;
@@ -140,12 +138,12 @@ export default function CreatePage() {
                 document.head.appendChild(style);
             }
         });
-    }, [availableFonts, allFonts]);
+    }, [availableFonts]);
 
     // Compute available characters
     const availableCharacters = (() => {
-        if (allCharacters && activeEvent?.theme?.characterIds && activeEvent.theme.characterIds.length > 0) {
-            return allCharacters
+        if (resolvedAssets?.characters && activeEvent?.theme?.characterIds && activeEvent.theme.characterIds.length > 0) {
+            return (resolvedAssets.characters as any[])
                 .filter(c => activeEvent.theme.characterIds!.includes(c._id))
                 .map(c => c.url);
         }
@@ -155,12 +153,12 @@ export default function CreatePage() {
 
     // Merge patterns, preferring Dynamic (DB) over Hardcoded
     const availablePatterns = (() => {
-        const dynamicPatterns = allPatterns?.map(p => ({
+        const dynamicPatterns = (resolvedAssets?.patterns as any[])?.map((p: any) => ({
             id: p.id,
-            emoji: p.emoji,
+            emoji: p.emojis?.[0] || "✨",
             label: p.name,
             type: p.type,
-            customEmojis: [p.emoji]
+            customEmojis: p.emojis || ["✨"]
         })) || [];
 
         // Create a map of dynamic patterns for easy lookup
@@ -174,12 +172,14 @@ export default function CreatePage() {
         const merged = [...dynamicPatterns];
 
         // Add hardcoded only if NOT in dynamic (Legacy fallback)
-        SLIDE_EFFECT_OPTIONS.forEach(hc => {
-            if (!dynamicMap.has(hc.id)) {
+        Object.entries(BACKGROUND_PATTERNS).forEach(([id, pattern]: [string, any]) => {
+            if (!dynamicMap.has(id)) {
                 merged.push({
-                    ...hc,
-                    type: hc.type as "falling" | "floating" | "rising" | "static",
-                    customEmojis: [hc.emoji]
+                    id: id,
+                    label: pattern.name,
+                    emoji: pattern.emojis?.[0] || "✨",
+                    type: pattern.physics as any,
+                    customEmojis: pattern.emojis || ["✨"]
                 });
             }
         });
@@ -411,7 +411,6 @@ export default function CreatePage() {
     }
 
     const hasContent = pages.some(p => p.photoUrl || p.text.trim().length > 0);
-    const activeMusicTrack = musicTracks.find((t) => t._id === selectedMusicId);
 
     // -----------------------------------------------------------------------
     // Render
