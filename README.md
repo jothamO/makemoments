@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# MakeMoments — Crafting moments that matter
 
 ## Project info
 
