@@ -23,6 +23,7 @@ import type * as http from "../http.js";
 import type * as init from "../init.js";
 import type * as mail from "../mail.js";
 import type * as migrate_patterns from "../migrate_patterns.js";
+import type * as mirror from "../mirror.js";
 import type * as music from "../music.js";
 import type * as notifications from "../notifications.js";
 import type * as patterns from "../patterns.js";
@@ -59,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   init: typeof init;
   mail: typeof mail;
   migrate_patterns: typeof migrate_patterns;
+  mirror: typeof mirror;
   music: typeof music;
   notifications: typeof notifications;
   patterns: typeof patterns;

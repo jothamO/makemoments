@@ -41,6 +41,16 @@ export const create = mutation({
     },
 });
 
+export const updateStorageId = mutation({
+    args: {
+        id: v.id("globalFonts"),
+        storageId: v.id("_storage"),
+    },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.id, { storageId: args.storageId });
+    },
+});
+
 export const update = mutation({
     args: {
         id: v.id("globalFonts"),

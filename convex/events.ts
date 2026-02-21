@@ -6,19 +6,37 @@ async function resolveEventAssets(ctx: any, event: any) {
     const theme = event.theme || {};
 
     // 1. Resolve Music
-    const musicTracks = theme.musicTrackIds?.length > 0
+    const musicTracksRaw = theme.musicTrackIds?.length > 0
         ? await Promise.all(theme.musicTrackIds.map((id: any) => ctx.db.get(id)))
         : [];
+    const musicTracks = await Promise.all(
+        musicTracksRaw.filter(Boolean).map(async (track: any) => ({
+            ...track,
+            url: track.storageId ? await ctx.storage.getUrl(track.storageId) : track.url
+        }))
+    );
 
     // 2. Resolve Characters
-    const characters = theme.characterIds?.length > 0
+    const charactersRaw = theme.characterIds?.length > 0
         ? await Promise.all(theme.characterIds.map((id: any) => ctx.db.get(id)))
         : [];
+    const characters = await Promise.all(
+        charactersRaw.filter(Boolean).map(async (char: any) => ({
+            ...char,
+            url: char.storageId ? await ctx.storage.getUrl(char.storageId) : char.url
+        }))
+    );
 
     // 3. Resolve Fonts
-    const fonts = theme.allowedFontIds?.length > 0
+    const fontsRaw = theme.allowedFontIds?.length > 0
         ? await Promise.all(theme.allowedFontIds.map((id: any) => ctx.db.get(id)))
         : [];
+    const fonts = await Promise.all(
+        fontsRaw.filter(Boolean).map(async (font: any) => ({
+            ...font,
+            url: font.storageId ? await ctx.storage.getUrl(font.storageId) : font.url
+        }))
+    );
 
     // 4. Resolve Patterns
     const patterns = theme.patternIds?.length > 0
@@ -35,9 +53,9 @@ async function resolveEventAssets(ctx: any, event: any) {
     return {
         ...event,
         resolvedAssets: {
-            musicTracks: musicTracks.filter(Boolean),
-            characters: characters.filter(Boolean),
-            fonts: fonts.filter(Boolean),
+            musicTracks,
+            characters,
+            fonts,
             patterns: patterns.filter(Boolean),
             themes: themes.filter(Boolean),
         }
@@ -224,11 +242,13 @@ export const create = mutation({
         tier: v.optional(v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4))),
         kind: v.optional(v.union(v.literal("recurring"), v.literal("one-time"), v.literal("evergreen"))),
         theme: v.any(),
+        updatedAt: v.optional(v.float64()),
     },
     handler: async (ctx, args) => {
         const eventId = await ctx.db.insert("events", {
             ...args,
             createdAt: Date.now(),
+            updatedAt: Date.now(),
         });
 
         // Create the "Standard Slide" template automatically for every new event

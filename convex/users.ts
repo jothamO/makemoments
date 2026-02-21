@@ -18,19 +18,26 @@ export const upsert = mutation({
     handler: async (ctx, args) => {
         const { id, ...data } = args;
         if (id) {
-            await ctx.db.patch(id, data);
+            await ctx.db.patch(id, {
+                ...data,
+                updatedAt: Date.now(),
+            });
             return id;
         }
 
         const existing = await ctx.db.query("users").withIndex("by_email", q => q.eq("email", args.email)).first();
         if (existing) {
-            await ctx.db.patch(existing._id, data);
+            await ctx.db.patch(existing._id, {
+                ...data,
+                updatedAt: Date.now(),
+            });
             return existing._id;
         }
 
         return await ctx.db.insert("users", {
             ...data,
             createdAt: Date.now(),
+            updatedAt: Date.now(),
         });
     },
 });

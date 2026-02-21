@@ -1,13 +1,13 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-
+// Schema Version: 1.1 - Added updatedAt
 export default defineSchema({
     events: defineTable({
         name: v.string(),
         slug: v.string(),
-        date: v.number(),
-        launchDate: v.number(),
-        endDate: v.number(),
+        date: v.float64(),
+        launchDate: v.float64(),
+        endDate: v.float64(),
         status: v.union(v.literal("upcoming"), v.literal("active"), v.literal("ended")),
         tier: v.optional(v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4))),
         kind: v.optional(v.union(v.literal("recurring"), v.literal("one-time"), v.literal("evergreen"))),
@@ -49,7 +49,8 @@ export default defineSchema({
             backgroundPattern: v.optional(v.string()),
             patternIds: v.optional(v.array(v.string())),
         }),
-        createdAt: v.number(),
+        createdAt: v.float64(),
+        updatedAt: v.optional(v.float64()),
     }).index("by_slug", ["slug"]),
 
 
@@ -156,7 +157,7 @@ export default defineSchema({
         fromCurrency: v.string(),   // Always "USD"
         toCurrency: v.string(),     // "GHS", "KES", "ZAR", "XOF", "NGN", etc.
         rate: v.number(),           // e.g. 1 USD = 15.5 GHS → rate = 15.5
-        updatedAt: v.number(),
+        updatedAt: v.optional(v.float64()),
     }).index("by_pair", ["fromCurrency", "toCurrency"]),
 
     gatewayConfig: defineTable({
@@ -185,7 +186,8 @@ export default defineSchema({
         passwordHash: v.optional(v.string()),
         salt: v.optional(v.string()),
         isSubscriber: v.boolean(), // For Newsletter/Notify Me
-        createdAt: v.number(),
+        createdAt: v.float64(),
+        updatedAt: v.optional(v.float64()),
     }).index("by_email", ["email"]),
 
     sessions: defineTable({
@@ -219,6 +221,5 @@ export default defineSchema({
         createdAt: v.number(),
     }).index("by_event", ["eventId"])
         .index("by_email_event", ["email", "eventId"])
-        .index("by_user", ["userId"]),
+        .index("by_user", ["userId"])
 });
-

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Send, Mail, Settings, Layout, Key, AtSign } from "lucide-react";
+import { Loader2, Save, Send, Mail, Settings, Layout, Key, AtSign, Bell } from "lucide-react";
 
 export default function AdminMail() {
     const { toast } = useToast();
@@ -17,6 +17,7 @@ export default function AdminMail() {
     const upsertConfig = useMutation(api.mail.upsertConfig);
     const upsertTemplate = useMutation(api.mail.upsertTemplate);
     const sendTest = useAction(api.mail.sendTestEmail);
+    const stats = useQuery(api.notifications.getStats) || [];
 
     const [apiKey, setApiKey] = useState("");
     const [fromEmail, setFromEmail] = useState("");
@@ -86,7 +87,6 @@ export default function AdminMail() {
         { id: "event_launch", label: "Event Launch", description: "Sent to users waiting for an upcoming event" },
     ];
 
-    const stats = useQuery(api.notifications.getStats) || [];
 
     return (
         <div className="space-y-8 p-6 bg-white min-h-screen">

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { BACKGROUND_PATTERNS } from "@/lib/backgroundPatterns";
+import { musicTracks as fallbackMusicTracks } from "@/data/music-tracks";
 import {
     ArrowLeft,
     Image as ImageIcon,
@@ -71,7 +72,9 @@ export default function CreatePage() {
     const resolvedAssets = activeEvent?.resolvedAssets;
 
     // Computed Assets from Resolved Data
-    const musicTracks = resolvedAssets?.musicTracks || [];
+    const musicTracks = (resolvedAssets?.musicTracks && resolvedAssets.musicTracks.length > 0)
+        ? resolvedAssets.musicTracks
+        : fallbackMusicTracks;
     const availableThemes = resolvedAssets?.themes || [];
 
     const availableFonts = (() => {
@@ -97,6 +100,13 @@ export default function CreatePage() {
     // Refs
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const hasAppliedDefaultBackdrop = useRef(false);
+
+    // Derived: active track for audio playback (must be before effects that use it)
+    // We look in both lists to ensure we find the track even if it's a fallback or DB provided
+    const activeMusicTrack = [
+        ...(resolvedAssets?.musicTracks || []),
+        ...fallbackMusicTracks
+    ].find((t: any) => (t._id || t.id) === selectedMusicId);
 
     // Contexts
     const { event, theme: legacyTheme } = useEventTheme();
@@ -148,7 +158,7 @@ export default function CreatePage() {
                 .map(c => c.url);
         }
         // Fallback to existing logic or hardcoded
-        return currentTheme.characters || [];
+        return currentTheme?.characters || [];
     })();
 
     // Merge patterns, preferring Dynamic (DB) over Hardcoded
@@ -194,7 +204,7 @@ export default function CreatePage() {
 
     // Helper to get custom emojis for a pattern ID
     const getPatternEmojis = (patternId: string) => {
-        const pattern = availablePatterns.find(p => p.id === patternId);
+        const pattern = availablePatterns?.find(p => p.id === patternId);
         // If we found it in availablePatterns, use its customEmojis (which we constructed above)
         return (pattern as any)?.customEmojis;
     };
@@ -244,15 +254,68 @@ export default function CreatePage() {
     }, [pages.length, availableThemes]);
 
 
-    // Sync audio element with play/pause state
+    // Imperatively manage audio: load new source, then play
+    const lastLoadedUrl = useRef<string | null>(null);
+
     useEffect(() => {
-        if (!audioRef.current) return;
-        if (isPlaying) {
-            audioRef.current.play().catch(e => console.log("Playback blocked or failed:", e));
-        } else {
-            audioRef.current.pause();
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const trackUrl = activeMusicTrack?.url;
+
+        // Diagnostic log (optional, but helpful for debugging)
+        if (selectedMusicId) {
+            console.log("Audio Sync:", { selectedMusicId, trackUrl, isPlaying });
         }
-    }, [isPlaying, selectedMusicId]);
+
+        if (!isPlaying || !trackUrl) {
+            audio.pause();
+            return;
+        }
+
+        const playSafe = () => {
+            audio.play().catch(e => {
+                if (e.name !== 'AbortError') {
+                    console.error("Playback failed:", e);
+                    toast({
+                        title: "Audio blocked",
+                        description: "Click anywhere on the page to enable music playback.",
+                    });
+                }
+            });
+        };
+
+        // If the URL changed, load the new source first
+        if (trackUrl !== lastLoadedUrl.current) {
+            lastLoadedUrl.current = trackUrl;
+            audio.src = trackUrl;
+            audio.load();
+
+            const onReady = () => {
+                playSafe();
+                audio.removeEventListener("canplaythrough", onReady);
+            };
+            audio.addEventListener("canplaythrough", onReady);
+
+            audio.onerror = () => {
+                console.error("Audio Load Error:", trackUrl);
+                toast({
+                    title: "Music error",
+                    description: "Failed to load music track. It might be unavailable.",
+                    variant: "destructive"
+                });
+            };
+
+            return () => {
+                audio.removeEventListener("canplaythrough", onReady);
+            };
+        }
+
+        // Same source, just ensure it's playing
+        if (audio.paused) {
+            playSafe();
+        }
+    }, [isPlaying, activeMusicTrack?.url, selectedMusicId]);
 
     // -----------------------------------------------------------------------
     // Actions
@@ -363,7 +426,6 @@ export default function CreatePage() {
     5.  **Hover States**: Check that the new "ring" selection indicator and hover backgrounds feel smooth and responsive.
     */
     const currentPage = pages[currentPageIndex];
-    const activeMusicTrack = musicTracks.find((t: any) => t._id === selectedMusicId);
 
     const addPage = () => {
         if (!currentPage) return;
@@ -690,16 +752,11 @@ export default function CreatePage() {
                 musicTrack={activeMusicTrack}
             />
 
-            {activeMusicTrack?.url && (
-                <audio
-                    ref={audioRef}
-                    src={activeMusicTrack.url}
-                    autoPlay={isPlaying}
-                    loop
-                    onPlay={() => setIsPlaying(true)}
-                    onPause={() => setIsPlaying(false)}
-                />
-            )}
+            <audio
+                ref={audioRef}
+                loop
+                onPause={() => setIsPlaying(false)}
+            />
 
             <style>{`
                 header, main, footer { user-select: none; }

@@ -87,23 +87,41 @@ export default function FilesPage() {
     const [playingId, setPlayingId] = useState<string | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    const togglePlay = (trackId: string, url?: string) => {
+    const togglePlay = async (trackId: string, url?: string) => {
         if (!url) return;
-        if (playingId === trackId) {
-            audioRef.current?.pause();
-            setPlayingId(null);
-        } else {
-            if (audioRef.current) {
-                audioRef.current.src = url;
-                audioRef.current.play();
-                setPlayingId(trackId);
+
+        try {
+            if (playingId === trackId) {
+                audioRef.current?.pause();
+                setPlayingId(null);
             } else {
-                const audio = new Audio(url);
-                audio.play();
-                audio.onended = () => setPlayingId(null);
-                audioRef.current = audio;
+                if (!audioRef.current) {
+                    audioRef.current = new Audio();
+                    audioRef.current.onended = () => setPlayingId(null);
+                }
+
+                audioRef.current.src = url;
+                await audioRef.current.play();
                 setPlayingId(trackId);
+
+                // Add error listener for subsequent load issues
+                audioRef.current.onerror = () => {
+                    toast({
+                        title: "Playback failed",
+                        description: "Could not load the audio file. The link might be broken.",
+                        variant: "destructive"
+                    });
+                    setPlayingId(null);
+                };
             }
+        } catch (error: any) {
+            console.error("Playback error:", error);
+            toast({
+                title: "Playback blocked",
+                description: "The browser blocked playback or the file is missing.",
+                variant: "destructive"
+            });
+            setPlayingId(null);
         }
     };
 
@@ -750,6 +768,7 @@ export default function FilesPage() {
                                     <TableRow className="border-zinc-200 hover:bg-transparent">
                                         <TableHead className="w-12"></TableHead>
                                         <TableHead className="text-zinc-500">Track Name</TableHead>
+                                        <TableHead className="text-zinc-500">Source</TableHead>
                                         <TableHead className="text-zinc-500">Artist</TableHead>
                                         <TableHead className="text-zinc-500">Duration</TableHead>
                                         <TableHead className="text-zinc-500 px-6 text-right">Actions</TableHead>
@@ -780,6 +799,14 @@ export default function FilesPage() {
                                                 </Button>
                                             </TableCell>
                                             <TableCell className="font-medium text-zinc-900">{track.name}</TableCell>
+                                            <TableCell>
+                                                <span className={cn(
+                                                    "px-2 py-0.5 rounded-md text-[10px] font-bold uppercase",
+                                                    track.storageId ? "bg-indigo-50 text-indigo-600 border border-indigo-100" : "bg-zinc-100 text-zinc-400 border border-zinc-200"
+                                                )}>
+                                                    {track.storageId ? "Convex" : "Static"}
+                                                </span>
+                                            </TableCell>
                                             <TableCell className="text-zinc-500">{track.artist}</TableCell>
                                             <TableCell className="text-zinc-500">{track.duration}s</TableCell>
                                             <TableCell className="text-right px-6 space-x-2">

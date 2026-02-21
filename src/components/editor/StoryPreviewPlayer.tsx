@@ -29,6 +29,28 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
     const pauseStartRef = useRef<number>(0);
     const remainingRef = useRef<number>(SLIDE_DURATION_MS);
 
+    // ── Advance to next slide or loop ────────────────────────
+    const advanceSlide = useCallback((fromIndex: number) => {
+        const nextIndex = (fromIndex + 1) % pages.length;
+
+        // Mark the completed bar at 100%
+        const completedBar = progressBarRefs.current[fromIndex];
+        if (completedBar) completedBar.style.width = "100%";
+
+        if (nextIndex === 0 && audioRef.current) {
+            // Looped — restart music
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(() => { });
+            // Reset all bars
+            progressBarRefs.current.forEach((b) => {
+                if (b) b.style.width = "0%";
+            });
+        }
+
+        setCurrentIndex(nextIndex);
+        remainingRef.current = SLIDE_DURATION_MS;
+    }, [pages.length]);
+
     // ── Start a progress bar fill for the given slide ────────
     const startProgressBar = useCallback((index: number, durationMs: number) => {
         // Stop any previous animation
@@ -60,29 +82,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
         slideTimerRef.current = setTimeout(() => {
             advanceSlide(index);
         }, durationMs);
-    }, []);
-
-    // ── Advance to next slide or loop ────────────────────────
-    const advanceSlide = useCallback((fromIndex: number) => {
-        const nextIndex = (fromIndex + 1) % pages.length;
-
-        // Mark the completed bar at 100%
-        const completedBar = progressBarRefs.current[fromIndex];
-        if (completedBar) completedBar.style.width = "100%";
-
-        if (nextIndex === 0 && audioRef.current) {
-            // Looped — restart music
-            audioRef.current.currentTime = 0;
-            audioRef.current.play().catch(() => { });
-            // Reset all bars
-            progressBarRefs.current.forEach((b) => {
-                if (b) b.style.width = "0%";
-            });
-        }
-
-        setCurrentIndex(nextIndex);
-        remainingRef.current = SLIDE_DURATION_MS;
-    }, [pages.length]);
+    }, [advanceSlide]);
 
     // ── Kick off progress whenever currentIndex changes ──────
     useEffect(() => {
