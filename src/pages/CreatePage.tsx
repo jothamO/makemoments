@@ -199,23 +199,6 @@ export default function CreatePage() {
         return (pattern as any)?.customEmojis;
     };
 
-    // State
-    const [pages, setPages] = useState<StoryPage[]>([]);
-    const [currentPageIndex, setCurrentPageIndex] = useState(0);
-    const [activePicker, setActivePicker] = useState<string | null>(null);
-    const [selectedMusicId, setSelectedMusicId] = useState<string | undefined>();
-
-    // Modals
-    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-    const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-    const [characterPickerOpen, setCharacterPickerOpen] = useState(false);
-    // Audio handling
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-
-    const { toast } = useToast();
-
     // Initialize first page
     useEffect(() => {
         if (pages.length === 0 && activeEvent !== undefined) {
