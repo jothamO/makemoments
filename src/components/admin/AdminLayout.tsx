@@ -11,7 +11,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, Calendar, Layout, DollarSign, Heart, Settings, Wallet, FolderOpen, Mail as MailIcon, Users as UsersIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { LayoutDashboard, Calendar, Layout, DollarSign, Heart, Settings, Wallet, FolderOpen, Mail as MailIcon, Users as UsersIcon, Home } from "lucide-react";
 
 const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -68,9 +69,18 @@ export default function AdminLayout() {
       <div className="min-h-screen flex w-full bg-muted/30">
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 flex items-center border-b bg-white px-4 gap-3">
-            <SidebarTrigger />
-            <span className="text-sm font-medium text-muted-foreground">Admin</span>
+          <header className="h-14 flex items-center justify-between border-b bg-white px-4">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger />
+              <span className="text-sm font-medium text-muted-foreground">Admin</span>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="gap-2">
+              <Link to="/">
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden sm:inline">Home</span>
+                <Home className="h-4 w-4 sm:hidden" />
+              </Link>
+            </Button>
           </header>
           <main className="flex-1 p-4 md:p-6">
             <Outlet />

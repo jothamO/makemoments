@@ -26,6 +26,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import MyMoments from "./pages/MyMoments";
 import { useAuth } from "./hooks/useAuth";
+import { BottomNavigation } from "./components/public/BottomNavigation";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/:slug" element={<CelebrationView />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <BottomNavigation />
         </BrowserRouter>
       </ThemeProvider>
     </TooltipProvider>

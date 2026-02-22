@@ -93,7 +93,7 @@ export default function Homepage() {
 
       <EventHero
         theme={theme as any}
-        className="h-[calc(100vh-64px)]"
+        className="h-[60vh] md:h-[calc(100vh-64px)]"
       >
         <div {...swipeHandlers} className="w-full relative h-full flex items-center justify-center">
           <AnimatePresence initial={false} mode="wait">
@@ -106,7 +106,7 @@ export default function Homepage() {
               className="absolute inset-0 flex flex-col items-center justify-center px-6"
               style={{ zIndex: 30 }}
             >
-              <div className="space-y-6 md:space-y-10 w-full max-w-6xl mx-auto text-center flex flex-col items-center">
+              <div className="space-y-4 md:space-y-10 w-full max-w-6xl mx-auto text-center flex flex-col items-center">
                 {slides[currentSlide]?.badge && (
                   <motion.div
                     className="inline-block"
@@ -115,7 +115,7 @@ export default function Homepage() {
                     transition={{ ...CONTENT_TRANSITION, delay: 0.0 }}
                   >
                     <Badge
-                      className="text-xs px-5 py-2 rounded-full border-0 whitespace-nowrap shadow-sm"
+                      className="text-[10px] md:text-xs px-4 md:px-5 py-1.5 md:py-2 rounded-full border-0 whitespace-nowrap shadow-sm"
                       style={{
                         background: theme.type === 'dark' ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.6)",
                         color: "inherit",
@@ -127,9 +127,9 @@ export default function Homepage() {
                   </motion.div>
                 )}
 
-                <div className="space-y-4 md:space-y-6 flex flex-col items-center">
+                <div className="space-y-2 md:space-y-6 flex flex-col items-center">
                   <motion.h1
-                    className="text-3xl sm:text-5xl md:text-8xl font-bold leading-[1.1] tracking-tight text-center"
+                    className="text-2xl sm:text-4xl md:text-8xl font-bold leading-[1.2] md:leading-[1.1] tracking-tight text-center max-w-[90vw] md:max-w-none"
                     style={{ fontFamily: (theme as any).headlineFont }}
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -139,7 +139,7 @@ export default function Homepage() {
                   </motion.h1>
 
                   <motion.p
-                    className="text-base sm:text-lg md:text-2xl opacity-90 max-w-2xl mx-auto leading-relaxed text-center"
+                    className="text-sm sm:text-lg md:text-2xl opacity-90 max-w-[80vw] md:max-w-2xl mx-auto leading-relaxed text-center"
                     style={{ fontFamily: (theme as any).bodyFont }}
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -150,7 +150,7 @@ export default function Homepage() {
                 </div>
 
                 <motion.div
-                  className="pt-4 md:pt-8 flex justify-center"
+                  className="pt-2 md:pt-8 flex justify-center"
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ ...CONTENT_TRANSITION, delay: 0.2 }}
@@ -158,7 +158,7 @@ export default function Homepage() {
                   <Button
                     asChild
                     size="lg"
-                    className="text-lg px-12 py-8 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 border-0 pulse-hover h-auto"
+                    className="text-base md:text-lg px-8 md:px-12 py-6 md:py-8 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 border-0 pulse-hover h-auto"
                     style={{
                       backgroundColor: (theme as any).primary || (theme as any).glowColor || "#000",
                       color: (theme as any).textMode === "light" ? "#FFFFFF" :
@@ -167,7 +167,7 @@ export default function Homepage() {
                     }}
                   >
                     <Link to={`/${event.slug}/create`}>
-                      <Sparkles className="mr-2 h-6 w-6" />
+                      <Sparkles className="mr-2 h-5 w-5 md:h-6 md:w-6" />
                       {(theme as any).ctaText || "Create Now"} ✨
                     </Link>
                   </Button>
@@ -183,7 +183,7 @@ export default function Homepage() {
                 <motion.button
                   onClick={prevSlide}
                   whileTap={TAP_SCALE}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
                   aria-label="Previous slide"
                 >
                   <ChevronLeft className="w-6 h-6" />
@@ -191,7 +191,7 @@ export default function Homepage() {
                 <motion.button
                   onClick={nextSlide}
                   whileTap={TAP_SCALE}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
                   aria-label="Next slide"
                 >
                   <ChevronRight className="w-6 h-6" />
@@ -203,13 +203,13 @@ export default function Homepage() {
           {/* Slide Indicators */}
           {
             slides.length > 1 && (
-              <div className="absolute bottom-8 left-0 right-0 z-20 flex justify-center gap-2">
+              <div className="absolute bottom-6 md:bottom-8 left-0 right-0 z-20 flex justify-center gap-2">
                 {slides.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentSlide(index)}
-                    className="relative w-2 h-2 rounded-full transition-all bg-white/40 hover:bg-white/60"
-                    style={{ width: index === currentSlide ? 24 : 8 }}
+                    className="relative w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all bg-white/40 hover:bg-white/60"
+                    style={{ width: index === currentSlide ? (window.innerWidth < 768 ? 16 : 24) : (window.innerWidth < 768 ? 6 : 8) }}
                     aria-label={`Go to slide ${index + 1}`}
                   >
                     {index === currentSlide && (
@@ -227,34 +227,53 @@ export default function Homepage() {
 
           {/* Swipe Hint (mobile) */}
           <div
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm opacity-60 md:hidden flex items-center gap-2"
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] opacity-60 md:hidden flex items-center gap-1"
             style={{ color: theme.textLight }}
           >
-            <span>Swipe to navigate</span>
-            <ChevronRight className="w-4 h-4 animate-pulse" />
+            <span>Swipe for more</span>
+            <ChevronRight className="w-3 h-3 animate-pulse" />
           </div>
         </div>
       </EventHero>
 
       {/* SECTION 2: HOW IT WORKS */}
-      <section className="py-24 bg-white">
+      <section className="py-16 md:py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={CONTENT_TRANSITION}
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
           >
-            <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)", color: theme.primary }}>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)", color: theme.primary }}>
               Create in 3 Simple Steps
             </h2>
-            <p className="text-gray-600 text-lg max-w-md mx-auto">
+            <p className="text-gray-600 text-base md:text-lg max-w-md mx-auto">
               Beautiful cards in minutes, no design skills needed
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-12">
+          {/* Mobile Stepper View */}
+          <div className="md:hidden flex justify-between items-center max-w-sm mx-auto mb-4 px-2">
+            {[
+              { icon: "🎨", label: "Pick" },
+              { icon: "✍️", label: "Edit" },
+              { icon: "🔗", label: "Send" }
+            ].map((step, i) => (
+              <React.Fragment key={i}>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-2xl shadow-sm border border-primary/10">
+                    {step.icon}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{step.label}</span>
+                </div>
+                {i < 2 && <div className="h-px flex-1 bg-zinc-100 mx-2 mb-6" />}
+              </React.Fragment>
+            ))}
+          </div>
+
+          <div className="hidden md:grid grid-cols-3 gap-12">
             <StepCard
               number="1"
               icon="🎨"
@@ -281,33 +300,37 @@ export default function Homepage() {
       </section>
 
       {/* SECTION 3: CELEBRATION LIBRARY */}
-      <section className="py-24 bg-gray-50">
+      <section className="py-16 md:py-24 bg-gray-50 pb-32 md:pb-24">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={CONTENT_TRANSITION}
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
           >
-            <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)" }}>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)" }}>
               Celebration Library
             </h2>
             <p className="text-gray-600">Explore our curated collection of memories and magic</p>
           </motion.div>
 
-          <div className="space-y-20">
+          <div className="space-y-12 md:space-y-20">
             {/* 1. Popular Now */}
             {libraryData?.popularNow && libraryData.popularNow.length > 0 && (
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8">
                 <div className="flex items-center gap-4">
                   <div className="h-px bg-zinc-200 flex-1" />
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Popular Now</h3>
+                  <h3 className="text-xs md:text-sm font-bold uppercase tracking-widest text-zinc-400">Popular Now</h3>
                   <div className="h-px bg-zinc-200 flex-1" />
                 </div>
-                <div className="grid md:grid-cols-3 gap-8">
-                  {libraryData.popularNow.map((libEvent: any) => (
-                    <LibraryEventCard key={libEvent._id} event={libEvent} />
+
+                {/* Horizontal Scroll on Mobile, Grid on Desktop */}
+                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory">
+                  {libraryData.popularNow.slice(0, 3).map((libEvent: any) => (
+                    <div key={libEvent._id} className="min-w-[280px] md:min-w-0 snap-center">
+                      <LibraryEventCard event={libEvent} />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -315,15 +338,17 @@ export default function Homepage() {
 
             {/* 2. Evergreen */}
             {libraryData?.evergreen && libraryData.evergreen.length > 0 && (
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8">
                 <div className="flex items-center gap-4">
                   <div className="h-px bg-zinc-200 flex-1" />
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Evergreen Favorites</h3>
+                  <h3 className="text-xs md:text-sm font-bold uppercase tracking-widest text-zinc-400">Evergreen Favorites</h3>
                   <div className="h-px bg-zinc-200 flex-1" />
                 </div>
-                <div className="grid md:grid-cols-3 gap-8">
-                  {libraryData.evergreen.map((libEvent: any) => (
-                    <LibraryEventCard key={libEvent._id} event={libEvent} onNotify={() => handleNotifyRequest(libEvent)} />
+                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory">
+                  {libraryData.evergreen.slice(0, 3).map((libEvent: any) => (
+                    <div key={libEvent._id} className="min-w-[280px] md:min-w-0 snap-center">
+                      <LibraryEventCard event={libEvent} onNotify={() => handleNotifyRequest(libEvent)} />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -331,15 +356,17 @@ export default function Homepage() {
 
             {/* 3. Coming Soon */}
             {libraryData?.comingSoon && libraryData.comingSoon.length > 0 && (
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8">
                 <div className="flex items-center gap-4">
                   <div className="h-px bg-zinc-200 flex-1" />
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Coming Soon</h3>
+                  <h3 className="text-xs md:text-sm font-bold uppercase tracking-widest text-zinc-400">Coming Soon</h3>
                   <div className="h-px bg-zinc-200 flex-1" />
                 </div>
-                <div className="grid md:grid-cols-3 gap-8 opacity-70 grayscale-[0.5]">
-                  {libraryData.comingSoon.map((libEvent: any) => (
-                    <LibraryEventCard key={libEvent._id} event={libEvent} isUpcoming onNotify={() => handleNotifyRequest(libEvent)} />
+                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory opacity-90 md:opacity-70">
+                  {libraryData.comingSoon.slice(0, 3).map((libEvent: any) => (
+                    <div key={libEvent._id} className="min-w-[240px] md:min-w-0 snap-center">
+                      <LibraryEventCard event={libEvent} isUpcoming onNotify={() => handleNotifyRequest(libEvent)} />
+                    </div>
                   ))}
                 </div>
               </div>

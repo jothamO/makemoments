@@ -44,11 +44,7 @@ export function BackgroundPattern({
 
     // Resolve pattern
     const getPattern = (): PatternDefinition => {
-        // 1. Check static patterns
-        if (patternId in BACKGROUND_PATTERNS) {
-            return BACKGROUND_PATTERNS[patternId];
-        }
-        // 2. Check dynamic patterns
+        // Only check dynamic patterns from Convex
         const dynamic = dynamicPatterns.find(p => p.id === patternId);
         if (dynamic) {
             return {
@@ -59,7 +55,8 @@ export function BackgroundPattern({
                 css: {}
             };
         }
-        // 3. Fallback
+
+        // Fallback to minimal if nothing found in DB
         return BACKGROUND_PATTERNS['minimal'];
     };
 

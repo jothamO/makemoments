@@ -1,14 +1,13 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEventTheme } from "@/contexts/ThemeContext";
-
 import { UserMenu } from "@/components/auth/UserMenu";
+import { useAuth } from "@/hooks/useAuth";
 
 export function PublicHeader() {
-  const [open, setOpen] = useState(false);
   const { theme } = useEventTheme();
+  const { isLoggedIn, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-border/50">
@@ -25,21 +24,20 @@ export function PublicHeader() {
           <UserMenu />
         </nav>
 
-        {/* Mobile toggle */}
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(!open)}>
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        {/* Mobile Logout (Top Right) */}
+        <div className="md:hidden flex items-center">
+          {isLoggedIn && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => logout()}
+              className="text-muted-foreground"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
       </div>
-
-      {open && (
-        <nav className="md:hidden border-t bg-white px-4 py-3 space-y-2" style={{ fontFamily: "var(--font-body)" }}>
-          <Link to="/" className="block py-2" onClick={() => setOpen(false)}>Home</Link>
-          <Link to="/create/womens-day" className="block py-2" onClick={() => setOpen(false)}>Create</Link>
-          <div className="pt-2 border-t">
-            <UserMenu />
-          </div>
-        </nav>
-      )}
     </header>
   );
 }

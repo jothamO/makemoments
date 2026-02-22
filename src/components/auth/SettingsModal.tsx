@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, BellOff, Loader2, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 interface SettingsModalProps {
     open: boolean;

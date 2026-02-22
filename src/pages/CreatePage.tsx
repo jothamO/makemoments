@@ -161,7 +161,7 @@ export default function CreatePage() {
         return currentTheme?.characters || [];
     })();
 
-    // Merge patterns, preferring Dynamic (DB) over Hardcoded
+    // List only dynamic patterns from DB
     const availablePatterns = (() => {
         const dynamicPatterns = (resolvedAssets?.patterns as any[])?.map((p: any) => ({
             id: p.id,
@@ -171,35 +171,12 @@ export default function CreatePage() {
             customEmojis: p.emojis || ["✨"]
         })) || [];
 
-        // Create a map of dynamic patterns for easy lookup
-        const dynamicMap = new Map(dynamicPatterns.map(p => [p.id, p]));
-
-        // Start with hardcoded, but if a dynamic one exists with same ID, use that instead.
-        // Actually, let's just use dynamic patterns if we have them, and only add hardcoded if distinct?
-        // Better: Use everything from DB. If DB is empty/loading, maybe fallback. 
-        // But since we have a mix, let's merge:
-
-        const merged = [...dynamicPatterns];
-
-        // Add hardcoded only if NOT in dynamic (Legacy fallback)
-        Object.entries(BACKGROUND_PATTERNS).forEach(([id, pattern]: [string, any]) => {
-            if (!dynamicMap.has(id)) {
-                merged.push({
-                    id: id,
-                    label: pattern.name,
-                    emoji: pattern.emojis?.[0] || "✨",
-                    type: pattern.physics as any,
-                    customEmojis: pattern.emojis || ["✨"]
-                });
-            }
-        });
-
         // Filter by event settings if present
         if (activeEvent?.theme?.patternIds && activeEvent.theme.patternIds.length > 0) {
-            return merged.filter(p => activeEvent.theme.patternIds!.includes(p.id));
+            return dynamicPatterns.filter(p => activeEvent.theme.patternIds!.includes(p.id));
         }
 
-        return merged;
+        return dynamicPatterns;
     })();
 
     // Helper to get custom emojis for a pattern ID
@@ -730,6 +707,7 @@ export default function CreatePage() {
                 isOpen={characterPickerOpen}
                 onClose={() => setCharacterPickerOpen(false)}
                 onSelect={(url) => updateCurrentPage({ photoUrl: url })}
+                selectedUrl={currentPage.photoUrl}
                 characters={availableCharacters}
                 theme={{ primary: currentTheme.primary, secondary: currentTheme.secondary }}
             />
