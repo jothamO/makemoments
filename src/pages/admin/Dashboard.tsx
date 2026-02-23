@@ -68,72 +68,118 @@ const AdminDashboard = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((m) => (
-          <Card key={m.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{m.title}</CardTitle>
-              <m.icon className={`h-4 w-4 ${m.color}`} />
+          <Card key={m.title} className="overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 pt-3 sm:px-6 sm:pt-6">
+              <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">{m.title}</CardTitle>
+              <m.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${m.color}`} />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{m.value}</div>
+            <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6">
+              <div className="text-lg sm:text-2xl font-bold truncate">{m.value}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Revenue (Last 7 Days)</CardTitle>
+        <CardHeader className="py-4">
+          <CardTitle className="text-sm sm:text-base">Revenue (Last 7 Days)</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" fontSize={12} />
-              <YAxis fontSize={12} />
-              <Tooltip />
-              <Line type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+        <CardContent className="pb-4">
+          <div className="h-[200px] sm:h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="name"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={10}
+                />
+                <YAxis
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `₦${(value / 1000)}k`}
+                />
+                <Tooltip
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  formatter={(value: number) => [`₦${value.toLocaleString()}`, "Revenue"]}
+                />
+                <Line type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, fill: '#6366f1' }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Recent Celebrations</CardTitle>
+        <CardHeader className="py-4">
+          <CardTitle className="text-sm sm:text-base">Recent Celebrations</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Slug</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Views</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {celebrations
-                .sort((a, b) => b.createdAt - a.createdAt)
-                .slice(0, 10)
-                .map((c) => (
-                  <TableRow key={c._id}>
-                    <TableCell className="font-medium">{c.slug}</TableCell>
-                    <TableCell>{c.email}</TableCell>
-                    <TableCell>{c.currency === "USD" ? "$" : "₦"}{(c.totalPaid || 0).toLocaleString()}</TableCell>
-                    <TableCell>
-                      <span className={`text-xs font-medium ${c.paymentStatus === "paid" ? "text-green-600"
+          {/* Desktop Table */}
+          <div className="hidden sm:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Slug</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Views</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {celebrations
+                  .sort((a, b) => b.createdAt - a.createdAt)
+                  .slice(0, 10)
+                  .map((c) => (
+                    <TableRow key={c._id}>
+                      <TableCell className="font-medium">{c.slug}</TableCell>
+                      <TableCell>{c.email}</TableCell>
+                      <TableCell>{c.currency === "USD" ? "$" : "₦"}{(c.totalPaid || 0).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <span className={`text-xs font-medium uppercase tracking-wider ${c.paymentStatus === "paid" ? "text-green-600"
                           : c.paymentStatus === "failed" ? "text-red-500"
                             : "text-amber-500"
+                          }`}>
+                          {c.paymentStatus}
+                        </span>
+                      </TableCell>
+                      <TableCell>{c.views || 0}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile List Fallback */}
+          <div className="sm:hidden divide-y">
+            {celebrations
+              .sort((a, b) => b.createdAt - a.createdAt)
+              .slice(0, 10)
+              .map((c) => (
+                <div key={c._id} className="p-4 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div className="font-medium text-sm text-zinc-900 truncate max-w-[150px]">{c.email}</div>
+                    <div className="text-sm font-bold">{c.currency === "USD" ? "$" : "₦"}{(c.totalPaid || 0).toLocaleString()}</div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="text-[10px] text-muted-foreground font-mono bg-zinc-50 px-1.5 py-0.5 rounded border border-zinc-100">/{c.slug}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground">{c.views || 0} views</span>
+                      <span className={`text-[10px] font-bold uppercase ${c.paymentStatus === "paid" ? "text-green-600"
+                        : c.paymentStatus === "failed" ? "text-red-500"
+                          : "text-amber-500"
                         }`}>
                         {c.paymentStatus}
                       </span>
-                    </TableCell>
-                    <TableCell>{c.views || 0}</TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
         </CardContent>
       </Card>
     </div>

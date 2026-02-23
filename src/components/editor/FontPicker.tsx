@@ -10,16 +10,6 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const DEFAULT_FONTS = [
-  "Playfair Display",
-  "Montserrat",
-  "Dancing Script",
-  "Lora",
-  "Poppins",
-  "Pacifico",
-  "Raleway",
-  "Merriweather",
-];
 
 const sizes: { label: string; value: FontSize }[] = [
   { label: "S", value: "small" },
@@ -31,24 +21,20 @@ interface FontPickerProps {
   fontFamily: string;
   fontSize: FontSize;
   whitelist?: string[];
+  availableFonts?: any[];
   onFontChange: (font: string) => void;
   onSizeChange: (size: FontSize) => void;
 }
 
-export function FontPicker({ fontFamily, fontSize, whitelist, onFontChange, onSizeChange }: FontPickerProps) {
+export function FontPicker({ fontFamily, fontSize, whitelist, availableFonts = [], onFontChange, onSizeChange }: FontPickerProps) {
   const [open, setOpen] = useState(false);
-  const allDynamicFonts = useQuery(api.fonts.list);
 
   const fonts = (() => {
-    const dynamic = allDynamicFonts?.map(f => f.name) || [];
-    const merged = Array.from(new Set([...DEFAULT_FONTS, ...dynamic]));
-
-    // If whitelist exists, we need to map names to IDs or vice versa?
-    // In fonts.ts, we track by name. Whitelist contains IDs.
-    if (whitelist && whitelist.length > 0 && allDynamicFonts) {
-      return allDynamicFonts.filter(f => whitelist.includes(f._id)).map(f => f.name);
+    // If whitelist exists, filter the availableFonts
+    if (whitelist && whitelist.length > 0) {
+      return availableFonts.filter(f => f.isDefault || whitelist.includes(f._id || f.id));
     }
-    return merged;
+    return availableFonts;
   })();
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -68,23 +54,23 @@ export function FontPicker({ fontFamily, fontSize, whitelist, onFontChange, onSi
         </div>
         <ScrollArea className="h-[350px]">
           <div className="p-2 space-y-1">
-            {fonts.map((f) => (
+            {fonts.map((f: any) => (
               <button
-                key={f}
+                key={f.id || f.value}
                 onClick={() => {
-                  onFontChange(f);
+                  onFontChange(f.value);
                   setOpen(false);
                 }}
                 className={cn(
                   "w-full flex items-center gap-3 p-3 rounded-xl transition-all group",
-                  fontFamily === f ? "bg-white/15 ring-1 ring-white/10" : "hover:bg-white/5"
+                  fontFamily === f.value ? "bg-white/15 ring-1 ring-white/10" : "hover:bg-white/5"
                 )}
               >
                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/5 group-hover:bg-white/20 transition-colors">
-                  <span className="text-sm font-medium" style={{ fontFamily: f }}>Aa</span>
+                  <span className="text-sm font-medium" style={{ fontFamily: f.value }}>Aa</span>
                 </div>
-                <span className="flex-1 text-sm font-semibold text-white/70 group-hover:text-white transition-colors text-left" style={{ fontFamily: f }}>{f}</span>
-                {fontFamily === f && (
+                <span className="flex-1 text-sm font-semibold text-white/70 group-hover:text-white transition-colors text-left" style={{ fontFamily: f.value }}>{f.isDefault ? "Default" : f.name}</span>
+                {fontFamily === f.value && (
                   <motion.div layoutId="font-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-glow" />
                 )}
               </button>

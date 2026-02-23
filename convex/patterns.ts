@@ -80,6 +80,15 @@ export const remove = mutation({
             throw new Error("Cannot delete pattern: It is currently assigned to one or more events.");
         }
 
+        // Handle Default Fallback
+        if (pattern?.isDefault) {
+            const candidates = await ctx.db.query("globalPatterns").order("desc").take(2);
+            const fallback = candidates.find(c => c._id !== args.id);
+            if (fallback) {
+                await ctx.db.patch(fallback._id, { isDefault: true });
+            }
+        }
+
         await ctx.db.delete(args.id);
     },
 });

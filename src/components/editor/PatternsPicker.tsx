@@ -1,4 +1,3 @@
-import { BACKGROUND_PATTERNS } from "@/lib/backgroundPatterns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sparkles } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,52 +5,24 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { TAP_SCALE } from "@/lib/animation";
-import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import { getContrastColor } from "@/lib/utils";
 
 interface PatternsPickerProps {
     currentPattern?: string;
     activeColor?: string;
     whitelist?: string[];
+    availablePatterns?: any[];
     onSelect: (patternId: string) => void;
 }
 
-export function PatternsPicker({ currentPattern, activeColor, whitelist, onSelect }: PatternsPickerProps) {
+export function PatternsPicker({ currentPattern, activeColor, whitelist, availablePatterns = [], onSelect }: PatternsPickerProps) {
     const [open, setOpen] = useState(false);
-    const allDynamic = useQuery(api.patterns.list);
 
     const patterns = (() => {
-        // 1. Static Patterns as base
-        const patternMap = new Map(
-            Object.entries(BACKGROUND_PATTERNS).map(([id, def]) => [id, {
-                id,
-                name: def.name,
-                emojis: def.emojis,
-                type: 'emoji-canvas' as const,
-                physics: def.physics,
-                css: def.css
-            }])
-        );
-
-        // 2. Overlay Dynamic Patterns from DB
-        allDynamic?.forEach(p => {
-            patternMap.set(p.id, {
-                id: p.id,
-                name: p.name,
-                emojis: p.emojis,
-                type: 'emoji-canvas' as const,
-                physics: p.type as any,
-                css: {}
-            });
-        });
-
-        const merged = Array.from(patternMap.values());
-
         if (whitelist && whitelist.length > 0) {
-            return merged.filter(p => whitelist.includes(p.id));
+            return availablePatterns.filter(p => whitelist.includes(p.id));
         }
-        return merged;
+        return availablePatterns;
     })();
 
     return (
@@ -112,7 +83,7 @@ export function PatternsPicker({ currentPattern, activeColor, whitelist, onSelec
                                 )}
                             >
                                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/10 shadow-sm transition-transform group-hover:scale-110">
-                                    <span className="text-xl">{p.emojis?.[0] || "✨"}</span>
+                                    <span className="text-xl">{p.emoji || "✨"}</span>
                                 </div>
                                 <span className="text-sm font-medium">{p.name}</span>
                                 {currentPattern === p.id && (

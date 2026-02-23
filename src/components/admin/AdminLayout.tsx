@@ -26,11 +26,15 @@ const navItems = [
   { title: "Users", url: "/admin/users", icon: UsersIcon },
 ];
 
+import { useSidebar } from "@/components/ui/sidebar";
+
 function AdminSidebar() {
+  const { setOpenMobile } = useSidebar();
+
   return (
     <Sidebar className="border-r">
       <div className="p-4 border-b">
-        <Link to="/admin" className="font-bold text-lg">
+        <Link to="/admin" className="font-bold text-lg" onClick={() => setOpenMobile(false)}>
           <span className="text-indigo-600">Make</span>Moments
         </Link>
         <p className="text-xs text-muted-foreground">Admin Panel</p>
@@ -48,6 +52,7 @@ function AdminSidebar() {
                       end={item.url === "/admin"}
                       className="hover:bg-muted/50"
                       activeClassName="bg-indigo-50 text-indigo-700 font-medium"
+                      onClick={() => setOpenMobile(false)}
                     >
                       <item.icon className="mr-2 h-4 w-4" />
                       <span>{item.title}</span>

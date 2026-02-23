@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface CharacterPickerProps {
     isOpen: boolean;
@@ -13,6 +14,8 @@ interface CharacterPickerProps {
         primary: string;
         secondary: string;
     };
+    photoCount?: number;
+    multiImagePrice?: number;
 }
 
 export function CharacterPicker({
@@ -22,7 +25,10 @@ export function CharacterPicker({
     selectedUrl,
     characters,
     theme,
+    photoCount = 0,
+    multiImagePrice = 0,
 }: CharacterPickerProps) {
+    const { symbol } = useCurrency();
 
     if (!isOpen) return null;
 
@@ -68,6 +74,20 @@ export function CharacterPicker({
                         <X className="w-6 h-6" />
                     </button>
                 </div>
+
+                {photoCount >= 1 && (
+                    <div className="px-6 py-2.5 bg-zinc-950 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+                            <p className="text-[11px] font-bold text-white uppercase tracking-wider">
+                                Multi-Image Upgrade
+                            </p>
+                        </div>
+                        <span className="text-xs font-medium text-white/60">
+                            Add up to 3 for {symbol}{multiImagePrice.toLocaleString()}
+                        </span>
+                    </div>
+                )}
 
                 <div className="p-6 max-h-[60vh] overflow-y-auto">
                     <div className="grid grid-cols-4 gap-4">

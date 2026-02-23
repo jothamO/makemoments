@@ -1,5 +1,4 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { musicTracks } from "@/data/music-tracks";
 import { Music, Play, Pause, ArrowLeft } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -9,16 +8,13 @@ import { TAP_SCALE } from "@/lib/animation";
 import { getContrastColor } from "@/lib/utils";
 
 
-import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-
-
 interface MusicPickerProps {
   selectedId?: string;
   isPlaying?: boolean;
   onTogglePlay: () => void;
   activeColor?: string;
   whitelist?: string[];
+  availableMusic?: any[];
   onSelect: (trackId: string | undefined) => void;
 }
 
@@ -28,9 +24,9 @@ export function MusicPicker({
   onTogglePlay,
   activeColor,
   whitelist,
+  availableMusic = [],
   onSelect
 }: MusicPickerProps) {
-  const allTracks = useQuery(api.music.list);
   const [open, setOpen] = useState(false);
 
   const handlePlayClick = (trackId: string) => {
@@ -42,8 +38,8 @@ export function MusicPicker({
   };
 
   const tracks = whitelist && whitelist.length > 0
-    ? allTracks?.filter(t => whitelist.includes(t._id))
-    : (allTracks || musicTracks);
+    ? availableMusic.filter(t => whitelist.includes(t._id || t.id))
+    : availableMusic;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

@@ -79,6 +79,16 @@ export const remove = mutation({
             throw new Error("Cannot delete font: It is currently whitelisted for one or more events.");
         }
 
+        // Handle Default Fallback
+        const font = await ctx.db.get(args.id);
+        if (font?.isDefault) {
+            const candidates = await ctx.db.query("globalFonts").order("desc").take(2);
+            const fallback = candidates.find(c => c._id !== args.id);
+            if (fallback) {
+                await ctx.db.patch(fallback._id, { isDefault: true });
+            }
+        }
+
         await ctx.db.delete(args.id);
     },
 });

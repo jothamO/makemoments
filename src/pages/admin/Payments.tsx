@@ -368,64 +368,103 @@ export default function PaymentsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Event</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Slug</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
-                                        <TableHead>Gateway</TableHead>
-                                        <TableHead>Status</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {transactions.slice(0, 50).map((tx) => {
-                                        const eventName = events.find((e) => e._id === tx.eventId)?.name || "—";
-                                        return (
-                                            <TableRow key={tx._id}>
-                                                <TableCell className="text-xs text-zinc-500">
-                                                    {new Date(tx.createdAt).toLocaleDateString()}
-                                                </TableCell>
-                                                <TableCell className="text-sm font-medium">{eventName}</TableCell>
-                                                <TableCell className="text-sm text-zinc-500">{tx.email}</TableCell>
-                                                <TableCell className="text-xs font-mono text-zinc-400">{tx.slug}</TableCell>
-                                                <TableCell className="text-sm text-right font-medium">
-                                                    {tx.currency === "USD" ? "$" : "₦"}{tx.totalPaid.toLocaleString()}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${tx.gateway === "stripe"
-                                                        ? "bg-indigo-50 text-indigo-700"
-                                                        : "bg-green-50 text-green-700"
-                                                        }`}>
-                                                        {tx.gateway || "paystack"}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <span className={`inline-flex items-center gap-1 text-xs ${tx.paymentStatus === "paid"
-                                                        ? "text-green-600"
-                                                        : tx.paymentStatus === "failed"
-                                                            ? "text-red-500"
-                                                            : "text-amber-500"
-                                                        }`}>
-                                                        {tx.paymentStatus === "paid" && <CheckCircle2 className="h-3 w-3" />}
-                                                        {tx.paymentStatus === "failed" && <XCircle className="h-3 w-3" />}
+                            {/* Desktop Table */}
+                            <div className="hidden sm:block">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Event</TableHead>
+                                            <TableHead>Email</TableHead>
+                                            <TableHead>Slug</TableHead>
+                                            <TableHead className="text-right">Amount</TableHead>
+                                            <TableHead>Gateway</TableHead>
+                                            <TableHead>Status</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {transactions.slice(0, 50).map((tx) => {
+                                            const eventName = events.find((e) => e._id === tx.eventId)?.name || "—";
+                                            return (
+                                                <TableRow key={tx._id} className="border-zinc-100 hover:bg-zinc-50 transition-colors">
+                                                    <TableCell className="text-xs text-zinc-500">
+                                                        {new Date(tx.createdAt).toLocaleDateString()}
+                                                    </TableCell>
+                                                    <TableCell className="text-sm font-medium text-zinc-900">{eventName}</TableCell>
+                                                    <TableCell className="text-sm text-zinc-500">{tx.email}</TableCell>
+                                                    <TableCell className="text-xs font-mono text-zinc-400">{tx.slug}</TableCell>
+                                                    <TableCell className="text-sm text-right font-bold text-zinc-900">
+                                                        {tx.currency === "USD" ? "$" : "₦"}{tx.totalPaid.toLocaleString()}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${tx.gateway === "stripe"
+                                                            ? "bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                                            : "bg-green-50 text-green-700 border border-green-100"
+                                                            }`}>
+                                                            {tx.gateway || "paystack"}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span className={`inline-flex items-center gap-1 text-xs font-semibold ${tx.paymentStatus === "paid"
+                                                            ? "text-emerald-600"
+                                                            : tx.paymentStatus === "failed"
+                                                                ? "text-rose-500"
+                                                                : "text-amber-500"
+                                                            }`}>
+                                                            {tx.paymentStatus === "paid" && <CheckCircle2 className="h-3 w-3" />}
+                                                            {tx.paymentStatus === "failed" && <XCircle className="h-3 w-3" />}
+                                                            {tx.paymentStatus}
+                                                        </span>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            {/* Mobile Card View */}
+                            <div className="sm:hidden divide-y divide-zinc-100 -mx-6">
+                                {transactions.slice(0, 50).map((tx) => {
+                                    const eventName = events.find((e) => e._id === tx.eventId)?.name || "—";
+                                    return (
+                                        <div key={tx._id} className="p-4 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="space-y-0.5">
+                                                    <p className="text-sm font-bold text-zinc-900 leading-tight">{eventName}</p>
+                                                    <p className="text-[10px] text-zinc-500">{new Date(tx.createdAt).toLocaleDateString()} • {tx.email}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-black text-zinc-900">
+                                                        {tx.currency === "USD" ? "$" : "₦"}{tx.totalPaid.toLocaleString()}
+                                                    </p>
+                                                    <span className={`text-[9px] font-black uppercase tracking-tighter ${tx.paymentStatus === "paid" ? "text-emerald-600" : "text-amber-500"}`}>
                                                         {tx.paymentStatus}
                                                     </span>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                    {transactions.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={7} className="text-center text-zinc-400 py-8">
-                                                No transactions yet
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between bg-zinc-50 px-3 py-2 rounded-lg border border-zinc-100">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tight ${tx.gateway === "stripe" ? "bg-indigo-100 text-indigo-700" : "bg-green-100 text-green-700"}`}>
+                                                        {tx.gateway || "paystack"}
+                                                    </span>
+                                                    <code className="text-[9px] text-zinc-400 font-mono">{tx.slug}</code>
+                                                </div>
+                                                {tx.paymentStatus === "paid" ? (
+                                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                                                ) : (
+                                                    <RefreshCw className="h-3.5 w-3.5 text-amber-500 animate-spin-slow" />
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {transactions.length === 0 && (
+                                <div className="text-center text-zinc-400 py-12 border-t border-zinc-100">
+                                    No transactions yet
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent >

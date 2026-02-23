@@ -1,10 +1,9 @@
 import { useEffect, useRef } from "react";
-import { BACKGROUND_PATTERNS, PatternId, PatternDefinition } from '@/lib/backgroundPatterns';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 
 interface BackgroundPatternProps {
-    patternId: PatternId;
+    patternId: string;
     variant?: 'default' | 'subtle';
     className?: string;
 }
@@ -43,8 +42,7 @@ export function BackgroundPattern({
     const dynamicPatterns = useQuery(api.patterns.list) || [];
 
     // Resolve pattern
-    const getPattern = (): PatternDefinition => {
-        // Only check dynamic patterns from Convex
+    const getPattern = () => {
         const dynamic = dynamicPatterns.find(p => p.id === patternId);
         if (dynamic) {
             return {
@@ -55,13 +53,11 @@ export function BackgroundPattern({
                 css: {}
             };
         }
-
-        // Fallback to minimal if nothing found in DB
-        return BACKGROUND_PATTERNS['minimal'];
+        return null;
     };
 
     const pattern = getPattern();
-    const isEmojiCanvas = pattern.type === 'emoji-canvas' && pattern.emojis && pattern.emojis.length > 0;
+    const isEmojiCanvas = pattern?.type === 'emoji-canvas' && pattern?.emojis && pattern.emojis.length > 0;
 
     // Helper: full re-roll of a particle's visual properties
     const rerollVisuals = (p: Particle, emojis: string[]) => {
@@ -77,12 +73,12 @@ export function BackgroundPattern({
 
     // Initialize Particles
     useEffect(() => {
-        if (!isEmojiCanvas || !pattern.emojis) {
+        if (!isEmojiCanvas || !pattern?.emojis) {
             particlesRef.current = [];
             return;
         }
 
-        const count = pattern.count || (variant === 'subtle' ? 15 : 25);
+        const count = variant === 'subtle' ? 15 : 25;
         const particles: Particle[] = [];
 
         // Physics constants per type
@@ -223,7 +219,7 @@ export function BackgroundPattern({
                 p.rotation += p.rotationSpeed;
 
                 // 2. Physics Logic
-                if (pattern.physics === 'burst') {
+                if (pattern?.physics === 'burst') {
                     // NO friction — constant velocity chaos
                     // Per-particle chaotic sway
                     p.x += Math.sin((elapsed + p.swayOffset) / p.swayFrequency) * p.swayAmplitude;
@@ -239,10 +235,10 @@ export function BackgroundPattern({
                         const mul = 0.7 + Math.random() * 0.6;
                         p.speedX = (Math.random() - 0.5) * 2.4 * mul;
                         p.speedY = (Math.random() - 0.5) * 2.4 * mul;
-                        rerollVisuals(p, pattern.emojis!);
+                        rerollVisuals(p, pattern?.emojis!);
                         p.layer = Math.random() < 0.7 ? 'back' : 'front';
                     }
-                } else if (pattern.physics === 'drift') {
+                } else if (pattern?.physics === 'drift') {
                     // Chaotic wandering — two overlapping sine waves at different frequencies
                     const t1 = (elapsed + p.swayOffset) / p.swayFrequency;
                     const t2 = (elapsed + p.delay) / (p.swayFrequency * 0.7);
@@ -259,10 +255,10 @@ export function BackgroundPattern({
                         p.age = 0;
                         p.x = 10 + Math.random() * 80;
                         p.y = 20 + Math.random() * 50;
-                        rerollVisuals(p, pattern.emojis!);
+                        rerollVisuals(p, pattern?.emojis!);
                         p.layer = Math.random() < 0.7 ? 'back' : 'front';
                     }
-                } else if (pattern.physics !== 'static') {
+                } else if (pattern?.physics !== 'static') {
                     // Rise/Fall — chaotic per-particle sway
                     p.x += Math.sin((elapsed + p.swayOffset) / p.swayFrequency) * p.swayAmplitude;
 
@@ -273,13 +269,13 @@ export function BackgroundPattern({
                     if (p.y > 110) {
                         p.y = -10;
                         p.x = Math.random() * 100;
-                        rerollVisuals(p, pattern.emojis!);
+                        rerollVisuals(p, pattern?.emojis!);
                         p.layer = Math.random() < 0.7 ? 'back' : 'front';
                     }
                     if (p.y < -10) {
                         p.y = 105;
                         p.x = Math.random() * 100;
-                        rerollVisuals(p, pattern.emojis!);
+                        rerollVisuals(p, pattern?.emojis!);
                         p.layer = Math.random() < 0.7 ? 'back' : 'front';
                     }
                 } else {
@@ -318,17 +314,17 @@ export function BackgroundPattern({
     }, [patternId, isEmojiCanvas, pattern]);
 
     // CSS Fallback (Dots/Grid)
-    if (pattern.type === 'css-only') {
+    if (pattern?.type === 'css-only') {
         return (
             <div
                 className={`absolute inset-0 pointer-events-none -z-10 ${className}`}
-                style={pattern.css}
+                style={(pattern as any).css}
             />
         );
     }
 
     // Canvas Render — dual layer
-    if (pattern.type === 'emoji-canvas') {
+    if (pattern?.type === 'emoji-canvas') {
         return (
             <>
                 {/* Back layer — behind content (z-10) */}

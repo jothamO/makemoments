@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, animate } from "framer-motion";
-import { X } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { StoryPage, MusicTrack } from "@/data/types";
 import { hexToRgba, cn } from "@/lib/utils";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
@@ -27,6 +27,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
     const activeAnimRef = useRef<ReturnType<typeof animate> | null>(null);
     const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pauseStartRef = useRef<number>(0);
+    const slideStartTimeRef = useRef<number>(0);
     const remainingRef = useRef<number>(SLIDE_DURATION_MS);
 
     // ── Advance to next slide or loop ────────────────────────
@@ -77,6 +78,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
         });
 
         remainingRef.current = durationMs;
+        slideStartTimeRef.current = performance.now();
 
         // Advance slide after duration
         slideTimerRef.current = setTimeout(() => {
@@ -86,13 +88,15 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
 
     // ── Kick off progress whenever currentIndex changes ──────
     useEffect(() => {
-        if (!open || isPaused || !pages.length) return;
+        if (!open || !pages.length) return;
+        if (isPaused) return;
+
         startProgressBar(currentIndex, remainingRef.current);
         return () => {
             if (activeAnimRef.current) activeAnimRef.current.stop();
             if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
         };
-    }, [currentIndex, open, isPaused, startProgressBar, pages.length]);
+    }, [currentIndex, open, startProgressBar, pages.length, isPaused]);
 
     // ── Reset everything when opened / closed ────────────────
     useEffect(() => {
@@ -100,7 +104,6 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
             setCurrentIndex(0);
             setIsPaused(false);
             remainingRef.current = SLIDE_DURATION_MS;
-            // Reset all bars
             progressBarRefs.current.forEach((b) => {
                 if (b) b.style.width = "0%";
             });
@@ -115,11 +118,12 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
         }
     }, [open]);
 
-    // ── Pause logic (instant via onTouchStart / onMouseDown) ─
+    // ── Pause logic ──────────────────────────────────────────
     const handlePause = useCallback(() => {
         if (isPaused) return;
         setIsPaused(true);
-        pauseStartRef.current = performance.now();
+        const elapsed = performance.now() - slideStartTimeRef.current;
+        remainingRef.current = Math.max(0, remainingRef.current - elapsed);
 
         if (activeAnimRef.current) activeAnimRef.current.pause();
         if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
@@ -128,21 +132,19 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
 
     const handleResume = useCallback(() => {
         if (!isPaused) return;
-        const pausedFor = performance.now() - pauseStartRef.current;
-        remainingRef.current = Math.max(0, remainingRef.current - pausedFor);
         setIsPaused(false);
+        slideStartTimeRef.current = performance.now();
 
         if (activeAnimRef.current) activeAnimRef.current.play();
         if (audioRef.current) audioRef.current.play().catch(() => { });
 
-        // Re-schedule the advance timer with the remaining time
         if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
         slideTimerRef.current = setTimeout(() => {
             advanceSlide(currentIndex);
         }, remainingRef.current);
     }, [isPaused, currentIndex, advanceSlide]);
 
-    // ── Tap navigation (left / right halves) ─────────────────
+    // ── Tap navigation ───────────────────────────────────────
     const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -150,7 +152,8 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
 
         if (isLeftHalf) {
             if (currentIndex > 0) {
-                // Reset current bar
+                if (activeAnimRef.current) activeAnimRef.current.stop();
+                if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
                 const bar = progressBarRefs.current[currentIndex];
                 if (bar) bar.style.width = "0%";
                 remainingRef.current = SLIDE_DURATION_MS;
@@ -158,6 +161,8 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
             }
         } else {
             if (currentIndex < pages.length - 1) {
+                if (activeAnimRef.current) activeAnimRef.current.stop();
+                if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
                 const bar = progressBarRefs.current[currentIndex];
                 if (bar) bar.style.width = "100%";
                 remainingRef.current = SLIDE_DURATION_MS;
@@ -171,6 +176,15 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
     if (!open || pages.length === 0) return null;
 
     const page = pages[currentIndex];
+
+    // Helper for dynamic font size
+    const getFontSize = (length: number) => {
+        if (length <= 30) return 'text-5xl sm:text-6xl';
+        if (length <= 60) return 'text-4xl sm:text-5xl';
+        if (length <= 100) return 'text-3xl sm:text-4xl';
+        if (length <= 150) return 'text-2xl sm:text-3xl';
+        return 'text-xl sm:text-2xl';
+    };
 
     return (
         <AnimatePresence>
@@ -190,7 +204,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                         <BackgroundPattern patternId={page.backgroundPattern} />
                     )}
 
-                    {/* ── Progress Bars ───────────────────────────── */}
+                    {/* ── Progress Bars ───────────────────── */}
                     <div className="flex gap-1 px-3 pt-4 pb-2 z-20">
                         {pages.map((_, i) => (
                             <div
@@ -214,15 +228,16 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                         ))}
                     </div>
 
-                    {/* ── Close Button ────────────────────────────── */}
+                    {/* ── Close Button ────────────────────── */}
                     <button
                         onClick={onClose}
-                        className="absolute top-5 right-4 z-30 p-2 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-black/50 transition-colors"
+                        className="absolute top-12 right-4 z-50 flex items-center gap-1 px-3 py-1.5 bg-black/30 backdrop-blur-md rounded-full text-white/90 hover:bg-black/50 hover:text-white transition-colors"
                     >
-                        <X className="w-5 h-5" />
+                        <ChevronLeft className="w-5 h-5 -ml-1" />
+                        <span className="text-sm font-medium pr-1">Back to editor</span>
                     </button>
 
-                    {/* ── Slide Content ───────────────────────────── */}
+                    {/* ── Slide Content ───────────────────── */}
                     <div
                         className="flex-1 relative cursor-pointer select-none"
                         onClick={handleTap}
@@ -232,77 +247,120 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                         onTouchStart={handlePause}
                         onTouchEnd={handleResume}
                     >
-                        <AnimatePresence initial={false} mode="wait">
+                        <AnimatePresence mode="wait">
                             <motion.div
                                 key={currentIndex}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 1.05 }}
                                 transition={CONTENT_TRANSITION}
-                                className="absolute inset-0 flex items-center justify-center"
+                                className="absolute inset-0"
                             >
-                                <div className="text-center px-8 max-w-lg">
-                                    {/* Photo — enters first */}
-                                    {page.photoUrl && (
-                                        <motion.img
-                                            src={page.photoUrl}
-                                            alt=""
-                                            className="w-36 h-36 mx-auto rounded-3xl mb-8 shadow-2xl object-cover"
-                                            initial={{ opacity: 0, y: 12 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ ...CONTENT_TRANSITION, delay: 0.0 }}
-                                        />
-                                    )}
-                                    {/* Headline — enters second */}
-                                    <motion.h1
-                                        className="text-4xl md:text-5xl font-bold leading-tight"
-                                        style={{
-                                            fontFamily: page.fontFamily,
-                                            color: page.textColor || "#FFFFFF",
-                                        }}
-                                        initial={{ opacity: 0, y: 16 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
-                                    >
-                                        {page.text || ""}
-                                    </motion.h1>
-                                </div>
+                                {/* Master Layout Container — mathematically synced to CreatePage <main> dimensions (48px top chrome, 188px bottom chrome) */}
+                                <div className="absolute inset-0 flex flex-col pt-[48px] pb-[188px] pointer-events-none">
+                                    <div className="flex-1 relative flex flex-col items-center justify-center w-full">
 
-                                {/* Stickers — staggered entrance */}
-                                {page.stickers.map((s, idx) => (
-                                    <motion.div
-                                        key={idx}
-                                        className="absolute text-5xl pointer-events-none select-none"
-                                        style={{ left: `${s.x}%`, top: `${s.y}%` }}
-                                        initial={{ opacity: 0, scale: 0.6 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ ...CONTENT_TRANSITION, delay: 0.15 + idx * 0.05 }}
-                                    >
-                                        {s.emoji}
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        </AnimatePresence>
-                    </div>
+                                        {/* Text Layout Layer */}
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-10 pointer-events-none">
+                                            {/* Spacer block to maintain layout parity with Create editor */}
+                                            <div className="flex justify-center mb-4 min-h-[160px] w-full relative z-10" />
 
-                    {/* ── Paused Indicator ────────────────────────── */}
-                    <AnimatePresence>
-                        {isPaused && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
-                            >
-                                <div className="w-16 h-16 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center">
-                                    <div className="flex gap-1.5">
-                                        <div className="w-2 h-7 bg-white rounded-sm" />
-                                        <div className="w-2 h-7 bg-white rounded-sm" />
+                                            <div className="text-center w-full z-20 flex items-start justify-center min-h-[60px]">
+                                                <motion.h1
+                                                    className={cn(
+                                                        "font-medium leading-tight",
+                                                        getFontSize(page.text?.length || 0)
+                                                    )}
+                                                    style={{
+                                                        fontFamily: page.fontFamily,
+                                                        color: page.textColor || "#FFFFFF",
+                                                    }}
+                                                    initial={{ opacity: 0, y: 16 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
+                                                >
+                                                    {page.text || ""}
+                                                </motion.h1>
+                                            </div>
+
+                                            {/* Ghost Progress Bar for identical flex-col vertical centering */}
+                                            <div className="mt-3 flex items-center gap-2 w-full opacity-0 select-none">
+                                                <div className="flex-1 h-0.5" />
+                                                <span className="text-xs font-mono shrink-0">0/200</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Characters / Photos Layer */}
+                                        {page.photos && page.photos.length > 0 && (
+                                            <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
+                                                {page.photos.map((photo, i) => (
+                                                    <div
+                                                        key={photo.id || i}
+                                                        className="absolute inset-0 flex items-center justify-center"
+                                                    >
+                                                        <motion.div
+                                                            initial={{ opacity: 0, scale: 0.95 }}
+                                                            animate={{
+                                                                opacity: 1,
+                                                                scale: 1,
+                                                                x: photo.transform.x,
+                                                                y: photo.transform.y,
+                                                                rotate: photo.transform.rotation,
+                                                            }}
+                                                            transition={{
+                                                                ...CONTENT_TRANSITION,
+                                                                delay: 0.05 + i * 0.05,
+                                                            }}
+                                                            style={{
+                                                                width: photo.transform.width,
+                                                                height: photo.transform.width,
+                                                            }}
+                                                            className="pointer-events-auto"
+                                                        >
+                                                            <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                                                        </motion.div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Stickers */}
+                                        {page.stickers.map((s, idx) => (
+                                            <motion.div
+                                                key={idx}
+                                                className="absolute text-5xl pointer-events-none select-none z-20"
+                                                style={{ left: `${s.x}%`, top: `${s.y}%` }}
+                                                initial={{ opacity: 0, scale: 0.6 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ ...CONTENT_TRANSITION, delay: 0.15 + idx * 0.05 }}
+                                            >
+                                                {s.emoji}
+                                            </motion.div>
+                                        ))}
                                     </div>
                                 </div>
                             </motion.div>
-                        )}
-                    </AnimatePresence>
+                        </AnimatePresence>
+
+                        {/* Pause Overlay */}
+                        <AnimatePresence>
+                            {isPaused && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
+                                >
+                                    <div className="w-16 h-16 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center">
+                                        <div className="flex gap-1.5">
+                                            <div className="w-2 h-7 bg-white rounded-sm" />
+                                            <div className="w-2 h-7 bg-white rounded-sm" />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
 
                     {musicTrack?.url && (
                         <audio

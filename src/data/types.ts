@@ -42,11 +42,25 @@ export interface CelebrationEvent {
 
 
 export type SlideTransition = "fade" | "slide" | "zoom" | "flip";
+export interface ImageTransform {
+  x: number;
+  y: number;
+  width: number;
+  rotation: number;
+}
+
+export interface Photo {
+  id: string;
+  url: string;
+  transform: ImageTransform;
+}
+
 export type FontSize = "small" | "medium" | "large";
 
 export interface StoryPage {
   id: string;
-  photoUrl?: string;
+  photoUrl?: string; // Legacy
+  photos?: Photo[]; // New: support for up to 3 characters
   text: string;
   fontFamily: string;
   fontSize: FontSize;
@@ -58,6 +72,7 @@ export interface StoryPage {
   transition: SlideTransition;
   backgroundPattern?: string;
   stickers: { emoji: string; x: number; y: number }[];
+  imageTransform?: ImageTransform; // Legacy
   type?: "light" | "dark";
 }
 

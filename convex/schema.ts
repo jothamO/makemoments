@@ -62,13 +62,14 @@ export default defineSchema({
         storageId: v.optional(v.id("_storage")),
         isPremium: v.optional(v.boolean()),
         price: v.optional(v.number()),
+        isDefault: v.optional(v.boolean()),
     }),
 
     celebrations: defineTable({
         eventId: v.id("events"),
         slug: v.string(),
         email: v.string(),
-        pages: v.array(v.any()), // StoryPage[]
+        pages: v.array(v.any()), // StoryPage[] (including imageTransform)
         musicTrackId: v.optional(v.id("musicTracks")),
         removeWatermark: v.boolean(),
         hasMusic: v.boolean(),
@@ -95,6 +96,7 @@ export default defineSchema({
         type: v.union(v.literal("light"), v.literal("dark")),
         isPremium: v.optional(v.boolean()),
         price: v.optional(v.number()),
+        isDefault: v.optional(v.boolean()),
         createdAt: v.number(),
     }),
 
@@ -105,6 +107,7 @@ export default defineSchema({
         storageId: v.optional(v.id("_storage")), // If uploaded
         isPremium: v.optional(v.boolean()),
         price: v.optional(v.number()),
+        isDefault: v.optional(v.boolean()),
         createdAt: v.number(),
     }),
 
@@ -121,6 +124,7 @@ export default defineSchema({
         ),
         isPremium: v.optional(v.boolean()),
         price: v.optional(v.number()),
+        isDefault: v.optional(v.boolean()),
         createdAt: v.number(),
     }),
 
@@ -130,6 +134,7 @@ export default defineSchema({
         url: v.optional(v.string()),
         isPremium: v.optional(v.boolean()),
         price: v.optional(v.number()),
+        isDefault: v.optional(v.boolean()),
         createdAt: v.number(),
     }).index("by_url", ["url"]),
 

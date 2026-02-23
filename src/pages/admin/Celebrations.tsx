@@ -79,103 +79,153 @@ const AdminCelebrations = () => {
             placeholder="Search by slug, email, or event..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9"
+            className="pl-9 h-9 text-sm"
           />
         </div>
-        <Select value={eventFilter} onValueChange={setEventFilter}>
-          <SelectTrigger className="w-48 h-9"><SelectValue placeholder="All Events" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Events</SelectItem>
-            {events.map((e) => <SelectItem key={e._id} value={e._id}>{e.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-36 h-9"><SelectValue placeholder="All Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 sm:flex gap-2">
+          <Select value={eventFilter} onValueChange={setEventFilter}>
+            <SelectTrigger className="w-full sm:w-48 h-9 text-xs sm:text-sm"><SelectValue placeholder="All Events" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Events</SelectItem>
+              {events.map((e) => <SelectItem key={e._id} value={e._id}>{e.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-36 h-9 text-xs sm:text-sm"><SelectValue placeholder="All Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="border border-zinc-200 rounded-xl overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-zinc-50/80">
-              <TableHead className="text-xs">Date</TableHead>
-              <TableHead className="text-xs">Event</TableHead>
-              <TableHead className="text-xs">Slug / Link</TableHead>
-              <TableHead className="text-xs">Email</TableHead>
-              <TableHead className="text-xs text-center">Views</TableHead>
-              <TableHead className="text-xs text-right">Amount</TableHead>
-              <TableHead className="text-xs">Gateway</TableHead>
-              <TableHead className="text-xs">Status</TableHead>
-              <TableHead className="text-xs text-center">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.slice(0, 100).map((c) => (
-              <TableRow key={c._id}>
-                <TableCell className="text-xs text-zinc-500 whitespace-nowrap">
-                  {new Date(c.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell className="text-sm font-medium">
-                  {eventMap[c.eventId] || "—"}
-                </TableCell>
-                <TableCell className="text-xs font-mono text-zinc-500 max-w-[140px] truncate">
-                  {c.slug}
-                </TableCell>
-                <TableCell className="text-xs text-zinc-500 max-w-[160px] truncate">
-                  {c.email}
-                </TableCell>
-                <TableCell className="text-center">
-                  <Badge variant="secondary" className="text-[10px] gap-1">
-                    <Eye className="h-3 w-3" /> {c.views || 0}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm text-right font-medium whitespace-nowrap">
-                  {c.currency === "USD" ? "$" : "₦"}{c.totalPaid?.toLocaleString() || 0}
-                </TableCell>
-                <TableCell>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${c.gateway === "stripe" ? "bg-indigo-50 text-indigo-700" : "bg-green-50 text-green-700"
-                    }`}>
-                    {c.gateway || "paystack"}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className={`inline-flex items-center gap-1 text-xs ${c.paymentStatus === "paid" ? "text-green-600"
+      {/* Table Container */}
+      <div className="border border-zinc-200 rounded-xl overflow-hidden bg-white">
+        {/* Desktop Table View */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-zinc-50/80">
+                <TableHead className="text-[10px] uppercase font-bold tracking-tight">Date</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold tracking-tight">Event</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold tracking-tight">Slug / Link</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold tracking-tight">Email</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold tracking-tight text-center">Views</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold tracking-tight text-right">Amount</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold tracking-tight">Gateway</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold tracking-tight">Status</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold tracking-tight text-center">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.slice(0, 100).map((c) => (
+                <TableRow key={c._id} className="hover:bg-zinc-50/50 transition-colors">
+                  <TableCell className="text-[11px] text-zinc-500 whitespace-nowrap">
+                    {new Date(c.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-sm font-medium">
+                    {eventMap[c.eventId] || "—"}
+                  </TableCell>
+                  <TableCell className="text-[11px] font-mono text-zinc-500 max-w-[140px] truncate">
+                    {c.slug}
+                  </TableCell>
+                  <TableCell className="text-[11px] text-zinc-500 max-w-[160px] truncate">
+                    {c.email}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="secondary" className="text-[10px] font-medium h-5 px-1.5 gap-1 bg-zinc-100/80 text-zinc-600 border-none">
+                      <Eye className="h-3 w-3" /> {c.views || 0}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm text-right font-bold whitespace-nowrap">
+                    {c.currency === "USD" ? "$" : "₦"}{c.totalPaid?.toLocaleString() || 0}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${c.gateway === "stripe" ? "bg-indigo-50 text-indigo-700" : "bg-green-50 text-green-700"
+                      }`}>
+                      {c.gateway || "paystack"}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${c.paymentStatus === "paid" ? "text-green-600"
                       : c.paymentStatus === "failed" ? "text-red-500"
                         : "text-amber-500"
+                      }`}>
+                      {c.paymentStatus === "paid" && <CheckCircle2 className="h-3.5 w-3.5" />}
+                      {c.paymentStatus === "failed" && <XCircle className="h-3.5 w-3.5" />}
+                      {c.paymentStatus === "pending" && <Clock className="h-3.5 w-3.5" />}
+                      {c.paymentStatus}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900" asChild>
+                      <Link to={`/${c.slug}`}><ExternalLink className="h-4 w-4" /></Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Card List View */}
+        <div className="md:hidden divide-y divide-zinc-100">
+          {filtered.slice(0, 100).map((c) => (
+            <div key={c._id} className="p-4 space-y-3">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-pink-400" />
+                    <span className="text-[11px] font-mono text-zinc-400">/{c.slug}</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-zinc-900 truncate max-w-[200px]">{eventMap[c.eventId] || "Unknown Event"}</h3>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-black text-zinc-900">{c.currency === "USD" ? "$" : "₦"}{c.totalPaid?.toLocaleString() || 0}</div>
+                  <div className="text-[10px] text-zinc-400">{new Date(c.createdAt).toLocaleDateString()}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate max-w-[120px]">{c.email}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    <span>{c.views || 0}</span>
+                  </div>
+                  <span className={`font-bold uppercase ${c.paymentStatus === "paid" ? "text-green-600"
+                    : c.paymentStatus === "failed" ? "text-red-500"
+                      : "text-amber-500"
                     }`}>
-                    {c.paymentStatus === "paid" && <CheckCircle2 className="h-3 w-3" />}
-                    {c.paymentStatus === "failed" && <XCircle className="h-3 w-3" />}
-                    {c.paymentStatus === "pending" && <Clock className="h-3 w-3" />}
                     {c.paymentStatus}
                   </span>
-                </TableCell>
-                <TableCell className="text-center">
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to={`/${c.slug}`}><ExternalLink className="h-3.5 w-3.5" /></Link>
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center text-zinc-400 py-10">
-                  No celebrations found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1 h-9 text-xs gap-2 font-medium" asChild>
+                  <Link to={`/${c.slug}`}><ExternalLink className="h-3.5 w-3.5 text-zinc-400" /> View Moment</Link>
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filtered.length === 0 && (
+          <div className="text-center text-zinc-400 py-16">
+            <Search className="h-10 w-10 mx-auto mb-4 opacity-10" />
+            <p className="text-sm">No celebrations match your filters.</p>
+          </div>
+        )}
       </div>
 
       {filtered.length > 100 && (
-        <p className="text-xs text-zinc-400 text-center">Showing first 100 of {filtered.length} results</p>
+        <p className="text-[10px] font-medium text-zinc-400 text-center bg-zinc-50 py-2 rounded-lg">Showing first 100 of {filtered.length} results</p>
       )}
     </div>
   );

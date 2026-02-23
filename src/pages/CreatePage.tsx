@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { BACKGROUND_PATTERNS } from "@/lib/backgroundPatterns";
-import { musicTracks as fallbackMusicTracks } from "@/data/music-tracks";
 import {
     ArrowLeft,
     Image as ImageIcon,
@@ -19,6 +17,7 @@ import {
     Loader2,
 } from "lucide-react";
 import { EditorToolbar } from "@/components/editor/EditorToolbar";
+import { ImageTransformEditor } from "@/components/editor/ImageTransformEditor";
 import { useEventTheme } from "@/contexts/ThemeContext";
 import type { StoryPage, EventTheme, MusicTrack } from "@/data/types";
 import { cn, hexToRgba } from "@/lib/utils";
@@ -31,25 +30,14 @@ import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { getWiseAssMessage } from "@/lib/statusUtils";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 // ---------------------------------------------------------------------------
-// Constants & Types
-// ---------------------------------------------------------------------------
 
-const DEFAULT_FONTS = [
-    { name: "Serif (Lora)", value: "Lora" },
-    { name: "Elegant (Playfair)", value: "Playfair Display" },
-    { name: "Modern (Montserrat)", value: "Montserrat" },
-    { name: "Bold (Bebas Neue)", value: "Bebas Neue" },
-    { name: "Handwritten (Dancing Script)", value: "Dancing Script" },
-    { name: "Playful (Pacifico)", value: "Pacifico" },
-    { name: "Classic (Inter)", value: "Inter" },
-];
-
-const createInitialPage = (primary: string, secondary: string, glowColor?: string, type: "light" | "dark" = "light"): StoryPage => ({
+const createInitialPage = (primary: string, secondary: string, glowColor?: string, type: "light" | "dark" = "light", initialFont: string = "system-ui"): StoryPage => ({
     id: `page-${Math.random().toString(36).slice(2, 9)}`,
     text: "",
-    fontFamily: "Lora",
+    fontFamily: initialFont,
     fontSize: "medium",
     textAlign: "center",
     textColor: type === 'dark' ? "#FFFFFF" : "#18181B",
@@ -67,25 +55,26 @@ export default function CreatePage() {
     const eventResponse = useQuery(api.events.getBySlugWithAssets, eventSlug ? { slug: eventSlug } : "skip");
     const { toast } = useToast();
 
+    const location = useLocation();
+
     // Normalize activeEvent for legacy components
     const activeEvent = eventResponse?.event;
     const resolvedAssets = activeEvent?.resolvedAssets;
 
     // Computed Assets from Resolved Data
-    const musicTracks = (resolvedAssets?.musicTracks && resolvedAssets.musicTracks.length > 0)
-        ? resolvedAssets.musicTracks
-        : fallbackMusicTracks;
-    const availableThemes = resolvedAssets?.themes || [];
-
+    const availableThemes: Partial<EventTheme>[] = (resolvedAssets?.themes || []) as Partial<EventTheme>[];
+    const availableMusic: MusicTrack[] = (resolvedAssets?.musicTracks || []) as MusicTrack[];
     const availableFonts = (() => {
-        if (!resolvedAssets?.fonts || resolvedAssets.fonts.length === 0) return DEFAULT_FONTS;
+        if (!resolvedAssets?.fonts || resolvedAssets.fonts.length === 0) return [];
         return resolvedAssets.fonts.map((f: any) => ({
+            id: f._id || f.id,
             name: f.name,
             value: f.name,
             isCustom: f.isCustom as boolean | undefined,
+            isDefault: f.isDefault as boolean | undefined,
             storageId: f.storageId as string | undefined,
             url: (f as any).url as string | undefined,
-        } as { name: string; value: string; isCustom?: boolean; storageId?: string; url?: string }));
+        } as { id: string; name: string; value: string; isCustom?: boolean; isDefault?: boolean; storageId?: string; url?: string }));
     })();
 
     // State
@@ -96,17 +85,22 @@ export default function CreatePage() {
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [characterPickerOpen, setCharacterPickerOpen] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [selectedElement, setSelectedElement] = useState<"image" | "text" | null>(null);
+    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+
+    const { isNigeria } = useCurrency();
+
+    // Pricing
+    const globalPricing = useQuery(api.pricing.list) || [];
+    const multiImagePrice = globalPricing.find(p => p.category === 'multiImage')?.prices?.[isNigeria ? "ngn" : "usd"] || (isNigeria ? 500 : 0.49);
 
     // Refs
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const canvasAreaRef = useRef<HTMLDivElement>(null);
     const hasAppliedDefaultBackdrop = useRef(false);
 
     // Derived: active track for audio playback (must be before effects that use it)
-    // We look in both lists to ensure we find the track even if it's a fallback or DB provided
-    const activeMusicTrack = [
-        ...(resolvedAssets?.musicTracks || []),
-        ...fallbackMusicTracks
-    ].find((t: any) => (t._id || t.id) === selectedMusicId);
+    const activeMusicTrack = (resolvedAssets?.musicTracks || []).find((t: any) => (t._id || t.id) === selectedMusicId);
 
     // Contexts
     const { event, theme: legacyTheme } = useEventTheme();
@@ -117,7 +111,7 @@ export default function CreatePage() {
         if (!availableFonts) return;
 
         // 1. Google Fonts
-        const googleFonts = availableFonts.filter(f => !(f as any).isCustom && !DEFAULT_FONTS.some(df => df.value === f.value));
+        const googleFonts = availableFonts.filter(f => !(f as any).isCustom);
         if (googleFonts.length > 0) {
             const linkId = 'dynamic-google-fonts';
             if (!document.getElementById(linkId)) {
@@ -157,8 +151,7 @@ export default function CreatePage() {
                 .filter(c => activeEvent.theme.characterIds!.includes(c._id))
                 .map(c => c.url);
         }
-        // Fallback to existing logic or hardcoded
-        return currentTheme?.characters || [];
+        return (resolvedAssets?.characters || []).map((c: any) => c.url);
     })();
 
     // List only dynamic patterns from DB
@@ -166,7 +159,7 @@ export default function CreatePage() {
         const dynamicPatterns = (resolvedAssets?.patterns as any[])?.map((p: any) => ({
             id: p.id,
             emoji: p.emojis?.[0] || "✨",
-            label: p.name,
+            name: p.name,
             type: p.type,
             customEmojis: p.emojis || ["✨"]
         })) || [];
@@ -189,7 +182,9 @@ export default function CreatePage() {
     // Initialize first page
     useEffect(() => {
         if (pages.length === 0 && activeEvent !== undefined) {
-            const prefillPages = location.state?.prefillPages;
+            // @ts-ignore - react-router-dom location state types are generic
+            const state = location.state;
+            const prefillPages = state?.prefillPages;
             if (prefillPages) {
                 setPages(prefillPages);
                 return;
@@ -203,9 +198,13 @@ export default function CreatePage() {
             const initialGlow = firstGlobal?.glowColor || eventTheme?.glowColor || "#ffffff";
             const initialType = firstGlobal?.type || eventTheme?.type || "light";
 
-            setPages([createInitialPage(initialPrimary, initialSecondary, initialGlow, initialType)]);
+            // Find the default font to use as the initial font
+            const defaultFontObj = availableFonts.find(f => f.isDefault);
+            const initialFont = defaultFontObj?.value || "system-ui";
+
+            setPages([createInitialPage(initialPrimary, initialSecondary, initialGlow, initialType, initialFont)]);
         }
-    }, [pages.length, activeEvent, availableThemes, location.state]);
+    }, [pages.length, activeEvent, availableThemes, availableFonts, location.state]);
 
     // Apply the first event backdrop as the default once assets load
     useEffect(() => {
@@ -228,7 +227,14 @@ export default function CreatePage() {
                 type: type,
             }))
         );
-    }, [pages.length, availableThemes]);
+
+        // @ts-ignore
+        const state = location.state;
+        if (state?.fromTemplate) {
+            console.log("Replacing history state without fromTemplate flag to prevent reload loop.");
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [pages.length, availableThemes, location, navigate]);
 
 
     // Imperatively manage audio: load new source, then play
@@ -276,11 +282,15 @@ export default function CreatePage() {
 
             audio.onerror = () => {
                 console.error("Audio Load Error:", trackUrl);
-                toast({
-                    title: "Music error",
-                    description: "Failed to load music track. It might be unavailable.",
-                    variant: "destructive"
-                });
+                // @ts-ignore
+                const state = location.state;
+                if (state?.fromTemplate) {
+                    toast({
+                        title: "Music error",
+                        description: "Failed to load music track. It might be unavailable.",
+                        variant: "destructive"
+                    });
+                }
             };
 
             return () => {
@@ -302,6 +312,35 @@ export default function CreatePage() {
             prev.map((p, i) => (i === currentPageIndex ? { ...p, ...updates } : p))
         );
     }, [currentPageIndex]);
+
+    const bringPhotoToFront = useCallback((index: number) => {
+        const page = pages[currentPageIndex];
+        if (!page) return;
+
+        const photos = page.photos && page.photos.length > 0
+            ? [...page.photos]
+            : (page.photoUrl ? [{
+                id: "id-legacy",
+                url: page.photoUrl,
+                transform: page.imageTransform || { x: 0, y: 0, width: 128, rotation: 0 }
+            }] : []);
+
+        if (index < 0 || index >= photos.length) return;
+
+        const [photo] = photos.splice(index, 1);
+        photos.push(photo);
+
+        updateCurrentPage({
+            photos,
+            // Clear legacy fields once we migrate to the new array
+            photoUrl: undefined,
+            imageTransform: undefined
+        });
+
+        // The photo is now at the last position
+        setSelectedPhotoIndex(photos.length - 1);
+        setSelectedElement("image");
+    }, [pages, currentPageIndex, updateCurrentPage]);
 
     const handleBackdropSelect = (theme: Partial<EventTheme>) => {
         const type = theme.type || "light";
@@ -402,6 +441,7 @@ export default function CreatePage() {
     4.  **Glassmorphism**: Ensure all popovers have a deep blur (`backdrop-blur-2xl` or `3xl`) and look premium against the background.
     5.  **Hover States**: Check that the new "ring" selection indicator and hover backgrounds feel smooth and responsive.
     */
+    // task.md
     const currentPage = pages[currentPageIndex];
 
     const addPage = () => {
@@ -495,7 +535,15 @@ export default function CreatePage() {
             </header>
 
             {/* CANVAS AREA */}
-            <main className="flex-1 flex flex-col justify-center px-10 relative z-10">
+            <main
+                ref={canvasAreaRef}
+                className="flex-1 px-10 relative overflow-hidden"
+                onClick={() => {
+                    console.log("Background clicked - deselecting");
+                    setSelectedElement(null);
+                    setSelectedPhotoIndex(null);
+                }}
+            >
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentPageIndex}
@@ -503,83 +551,169 @@ export default function CreatePage() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="w-full flex flex-col items-center"
+                        className="absolute inset-0 flex flex-col items-center justify-center p-10"
                     >
-                        {/* Photo Slot */}
-                        <div className="flex justify-center mb-4">
-                            <button
-                                onClick={() => setCharacterPickerOpen(true)}
-                                className={cn(
-                                    "w-32 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors overflow-hidden",
-                                    currentPage.photoUrl
-                                        ? "border-transparent"
-                                        : (currentPage.type === 'dark'
-                                            ? "border-white/20 hover:border-white/40 text-white/40 hover:text-white/60"
-                                            : "border-zinc-900/20 hover:border-zinc-900/40 text-zinc-400 hover:text-zinc-600")
-                                )}
-                            >
-                                {currentPage.photoUrl ? (
-                                    <img src={currentPage.photoUrl} alt="" className="w-full h-full object-cover" />
-                                ) : (
+                        {/* Photo Slot — Hidden/Ghost for layout spacing but Photos move to Absolute Inset */}
+                        <div
+                            className="flex justify-center mb-4 min-h-[160px] w-full relative z-10"
+                        >
+                            {(() => {
+                                const photosCount = (currentPage.photos?.length || 0) + (currentPage.photoUrl ? 1 : 0);
+                                return (
                                     <>
-                                        <ImageIcon className="w-8 h-8" />
-                                        <span className="text-sm font-medium">Add Photo</span>
+                                        {/* Add/Unlock Button */}
+                                        {photosCount < 3 && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setCharacterPickerOpen(true);
+                                                }}
+                                                className={cn(
+                                                    "w-32 h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all overflow-hidden z-20 text-center px-2",
+                                                    currentPage.type === 'dark'
+                                                        ? "border-white/20 hover:border-white/40 text-white/40 hover:text-white/60"
+                                                        : "border-zinc-900/20 hover:border-zinc-900/40 text-zinc-400 hover:text-zinc-600",
+                                                    photosCount > 0 && "opacity-40 hover:opacity-100"
+                                                )}
+                                            >
+                                                <ImageIcon className="w-8 h-8" />
+                                                <span className="text-sm font-medium leading-tight">
+                                                    {photosCount === 1 ? "Unlock 3 Characters" : "Add Photo"}
+                                                </span>
+                                            </button>
+                                        )}
                                     </>
-                                )}
-                            </button>
+                                );
+                            })()}
+                        </div>
+
+                        {/* Photos Layer - Now Absolute Inset to match StoryCanvas */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 overflow-hidden">
+                            {(() => {
+                                const photos = currentPage.photos && currentPage.photos.length > 0
+                                    ? currentPage.photos
+                                    : (currentPage.photoUrl ? [{
+                                        id: "id-legacy",
+                                        url: currentPage.photoUrl,
+                                        transform: currentPage.imageTransform || { x: 0, y: 0, width: 128, rotation: 0 }
+                                    }] : []);
+
+                                return photos.map((photo, idx) => (
+                                    <div
+                                        key={photo.id || idx}
+                                        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                                    >
+                                        <ImageTransformEditor
+                                            url={photo.url}
+                                            transform={photo.transform}
+                                            containerRef={canvasAreaRef} // Keep containerRef for now, ImageTransformEditor might still need it for calculations
+                                            isSelected={selectedElement === "image" && selectedPhotoIndex === idx}
+                                            onSelect={() => bringPhotoToFront(idx)}
+                                            onUpdate={(newTransform) => {
+                                                const updatedPhotos = [...photos];
+                                                updatedPhotos[idx] = { ...photo, transform: newTransform };
+                                                updateCurrentPage({
+                                                    photos: updatedPhotos,
+                                                    photoUrl: undefined,
+                                                    imageTransform: undefined
+                                                });
+                                            }}
+                                            onRemove={() => {
+                                                const updatedPhotos = photos.filter((_, i) => i !== idx);
+                                                updateCurrentPage({
+                                                    photos: updatedPhotos.length > 0 ? updatedPhotos : undefined,
+                                                    photoUrl: undefined,
+                                                    imageTransform: undefined
+                                                });
+                                                setSelectedPhotoIndex(null);
+                                                setSelectedElement(null);
+                                            }}
+                                        />
+                                    </div>
+                                ));
+                            })()}
                         </div>
 
                         {/* Text Editor */}
-                        <textarea
-                            value={currentPage.text}
-                            onChange={(e) => updateCurrentPage({ text: e.target.value.slice(0, 200) })}
-                            placeholder="Tap to write..."
-                            className={cn(
-                                "bg-transparent text-5xl sm:text-6xl font-medium leading-tight resize-none focus:outline-none w-full overflow-hidden transition-colors duration-500",
-                                currentPage.type === 'dark'
-                                    ? "placeholder-white/30 caret-white"
-                                    : "placeholder-zinc-400 caret-zinc-900"
-                            )}
-                            style={{
-                                fontFamily: currentPage.fontFamily,
-                                textAlign: currentPage.textAlign as React.CSSProperties["textAlign"],
-                                minHeight: "60px",
-                                color: currentPage.textColor,
-                            }}
-                            rows={3}
-                        />
+                        <div className="w-full relative z-20 px-0">
+                            {(() => {
+                                const getFontSize = (length: number) => {
+                                    if (length <= 30) return 'text-5xl sm:text-6xl';
+                                    if (length <= 60) return 'text-4xl sm:text-5xl';
+                                    if (length <= 100) return 'text-3xl sm:text-4xl';
+                                    if (length <= 150) return 'text-2xl sm:text-3xl';
+                                    return 'text-xl sm:text-2xl';
+                                };
 
-                        {/* Progress Bar + Character Count */}
-                        <div className="mt-3 flex items-center gap-2 w-full">
-                            <div className={cn(
-                                "flex-1 h-0.5 rounded-full overflow-hidden",
-                                currentPage.type === 'dark' ? "bg-white/10" : "bg-zinc-900/10"
-                            )}>
-                                <div
-                                    className={cn(
-                                        "h-full rounded-full transition-all duration-200",
-                                        currentPage.type === 'dark' ? "bg-white/30" : "bg-zinc-900/30"
-                                    )}
-                                    style={{ width: `${(currentPage.text.length / 200) * 100}%` }}
-                                />
+                                return (
+                                    <textarea
+                                        value={currentPage.text}
+                                        onChange={(e) => {
+                                            updateCurrentPage({ text: e.target.value.slice(0, 200) });
+                                            e.target.style.height = 'auto';
+                                            e.target.style.height = `${Math.max(60, Math.min(e.target.scrollHeight, 300))}px`;
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.height = 'auto';
+                                            e.target.style.height = `${Math.max(60, Math.min(e.target.scrollHeight, 300))}px`;
+                                        }}
+                                        placeholder="Tap to write..."
+                                        className={cn(
+                                            "bg-transparent font-medium leading-tight resize-none focus:outline-none w-full overflow-hidden",
+                                            getFontSize(currentPage.text.length),
+                                            currentPage.type === 'dark'
+                                                ? "placeholder-white/30 caret-white"
+                                                : "placeholder-zinc-400 caret-zinc-900"
+                                        )}
+                                        style={{
+                                            fontFamily: currentPage.fontFamily,
+                                            textAlign: currentPage.textAlign as React.CSSProperties["textAlign"],
+                                            minHeight: "60px",
+                                            color: currentPage.textColor,
+                                        }}
+                                    />
+                                );
+                            })()}
+
+                            {/* Progress Bar + Character Count */}
+                            <div className="mt-3 flex items-center gap-2 w-full">
+                                <div className={cn(
+                                    "flex-1 h-0.5 rounded-full overflow-hidden",
+                                    currentPage.type === 'dark' ? "bg-white/10" : "bg-zinc-900/10"
+                                )}>
+                                    <motion.div
+                                        className={cn(
+                                            "h-full rounded-full",
+                                            (currentPage.text?.length || 0) / 200 > 0.9 ? 'bg-red-400' :
+                                                (currentPage.text?.length || 0) / 200 > 0.7 ? 'bg-amber-400' :
+                                                    currentPage.type === 'dark' ? 'bg-white/30' : 'bg-zinc-900/30'
+                                        )}
+                                        animate={{ width: `${Math.min((currentPage.text?.length || 0) / 200 * 100, 100)}%` }}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                    />
+                                </div>
+                                <span className={cn(
+                                    "text-xs font-mono shrink-0",
+                                    (currentPage.text?.length || 0) / 200 > 0.9 ? 'text-red-400' :
+                                        currentPage.type === 'dark' ? 'text-white/30' : 'text-zinc-500'
+                                )}>
+                                    {currentPage.text?.length || 0}/200
+                                </span>
                             </div>
-                            <span className="text-xs font-mono text-zinc-500">
-                                {currentPage.text.length}/200
-                            </span>
-                        </div>
 
-                        {/* Stickers on Page */}
-                        {currentPage.stickers.map((s, idx) => (
-                            <motion.div
-                                key={idx}
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="absolute text-5xl pointer-events-none select-none"
-                                style={{ left: `${s.x}%`, top: `${s.y}%` }}
-                            >
-                                {s.emoji}
-                            </motion.div>
-                        ))}
+                            {/* Stickers on Page */}
+                            {currentPage.stickers.map((s, idx) => (
+                                <motion.div
+                                    key={idx}
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="absolute text-5xl pointer-events-none select-none"
+                                    style={{ left: `${s.x}%`, top: `${s.y}%` }}
+                                >
+                                    {s.emoji}
+                                </motion.div>
+                            ))}
+                        </div>
                     </motion.div>
                 </AnimatePresence>
 
@@ -588,7 +722,7 @@ export default function CreatePage() {
                     <button
                         onClick={nextPage}
                         className={cn(
-                            "absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-24 flex items-center justify-center transition-colors",
+                            "absolute right-0 top-1/2 -translate-y-1/2 z-30 w-12 h-24 flex items-center justify-center transition-colors",
                             currentPage.type === 'dark'
                                 ? "text-white/40 hover:text-white"
                                 : "text-zinc-400 hover:text-zinc-700"
@@ -601,7 +735,7 @@ export default function CreatePage() {
                     <button
                         onClick={prevPage}
                         className={cn(
-                            "absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-24 flex items-center justify-center transition-colors",
+                            "absolute left-0 top-1/2 -translate-y-1/2 z-30 w-12 h-24 flex items-center justify-center transition-colors",
                             currentPage.type === 'dark'
                                 ? "text-white/40 hover:text-white"
                                 : "text-zinc-400 hover:text-zinc-700"
@@ -661,6 +795,10 @@ export default function CreatePage() {
                     allowedFontIds={activeEvent?.theme?.allowedFontIds}
                     allowedMusicIds={activeEvent?.theme?.musicTrackIds}
                     allowedPatternIds={activeEvent?.theme?.patternIds}
+                    availablePatterns={availablePatterns}
+                    availableFonts={availableFonts}
+                    availableThemes={availableThemes}
+                    availableMusic={availableMusic}
                     onPageUpdate={updateCurrentPage}
                     onMusicChange={(id) => {
                         setSelectedMusicId(id);
@@ -706,8 +844,50 @@ export default function CreatePage() {
             <CharacterPicker
                 isOpen={characterPickerOpen}
                 onClose={() => setCharacterPickerOpen(false)}
-                onSelect={(url) => updateCurrentPage({ photoUrl: url })}
-                selectedUrl={currentPage.photoUrl}
+                onSelect={(url) => {
+                    const photos = currentPage.photos && currentPage.photos.length > 0
+                        ? [...currentPage.photos]
+                        : (currentPage.photoUrl ? [{
+                            id: "id-legacy",
+                            url: currentPage.photoUrl,
+                            transform: currentPage.imageTransform || { x: 0, y: 0, width: 128, rotation: 0 }
+                        }] : []);
+
+                    if (photos.length >= 3) return;
+
+                    // Offset slightly if there are already photos
+                    const offset = photos.length * 20;
+                    const newPhoto = {
+                        id: "img-" + Date.now(),
+                        url,
+                        transform: { x: offset, y: -100 + offset, width: 128, rotation: 0 }
+                    };
+
+                    photos.push(newPhoto);
+
+                    updateCurrentPage({
+                        photos,
+                        photoUrl: undefined,
+                        imageTransform: undefined
+                    });
+
+                    setSelectedPhotoIndex(photos.length - 1);
+                    setSelectedElement("image");
+                    setCharacterPickerOpen(false);
+                }}
+                selectedUrl={(() => {
+                    if (selectedPhotoIndex !== null && currentPage.photos) {
+                        return currentPage.photos[selectedPhotoIndex]?.url;
+                    }
+                    return currentPage.photoUrl;
+                })()}
+                photoCount={(() => {
+                    const ps = currentPage.photos && currentPage.photos.length > 0
+                        ? currentPage.photos
+                        : (currentPage.photoUrl ? [1] : []);
+                    return ps.length;
+                })()}
+                multiImagePrice={multiImagePrice}
                 characters={availableCharacters}
                 theme={{ primary: currentTheme.primary, secondary: currentTheme.secondary }}
             />

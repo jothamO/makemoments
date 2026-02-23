@@ -5,10 +5,19 @@ import { api } from "./_generated/api";
 async function resolveEventAssets(ctx: any, event: any) {
     const theme = event.theme || {};
 
+    // Helper: fetch default asset if array is empty
+    const getDefaults = async (tableName: string) => {
+        return await ctx.db
+            .query(tableName as any)
+            .filter((q: any) => q.eq(q.field("isDefault"), true))
+            .collect();
+    };
+
     // 1. Resolve Music
     const musicTracksRaw = theme.musicTrackIds?.length > 0
         ? await Promise.all(theme.musicTrackIds.map((id: any) => ctx.db.get(id)))
-        : [];
+        : await getDefaults("musicTracks");
+
     const musicTracks = await Promise.all(
         musicTracksRaw.filter(Boolean).map(async (track: any) => ({
             ...track,
@@ -19,7 +28,8 @@ async function resolveEventAssets(ctx: any, event: any) {
     // 2. Resolve Characters
     const charactersRaw = theme.characterIds?.length > 0
         ? await Promise.all(theme.characterIds.map((id: any) => ctx.db.get(id)))
-        : [];
+        : await getDefaults("globalCharacters");
+
     const characters = await Promise.all(
         charactersRaw.filter(Boolean).map(async (char: any) => ({
             ...char,
@@ -28,9 +38,26 @@ async function resolveEventAssets(ctx: any, event: any) {
     );
 
     // 3. Resolve Fonts
-    const fontsRaw = theme.allowedFontIds?.length > 0
-        ? await Promise.all(theme.allowedFontIds.map((id: any) => ctx.db.get(id)))
-        : [];
+    const defaultFonts = await getDefaults("globalFonts");
+    let fontsRaw = [];
+
+    if (theme.allowedFontIds?.length > 0) {
+        // Fetch event-specific fonts
+        const eventFonts = await Promise.all(theme.allowedFontIds.map((id: any) => ctx.db.get(id)));
+
+        // Merge with defaults, ensuring default font is always first and deduplicated
+        const mergedFonts = [...defaultFonts, ...eventFonts.filter(Boolean)];
+        // Deduplicate by ID
+        const seenIds = new Set();
+        fontsRaw = mergedFonts.filter(f => {
+            if (seenIds.has(f._id)) return false;
+            seenIds.add(f._id);
+            return true;
+        });
+    } else {
+        fontsRaw = defaultFonts;
+    }
+
     const fonts = await Promise.all(
         fontsRaw.filter(Boolean).map(async (font: any) => ({
             ...font,
@@ -39,16 +66,18 @@ async function resolveEventAssets(ctx: any, event: any) {
     );
 
     // 4. Resolve Patterns
-    const patterns = theme.patternIds?.length > 0
-        ? await ctx.db.query("globalPatterns").collect().then((all: any[]) =>
-            all.filter(p => theme.patternIds.includes(p.id))
-        )
-        : [];
+    let patternsRaw = [];
+    if (theme.patternIds?.length > 0) {
+        const allPatterns = await ctx.db.query("globalPatterns").collect();
+        patternsRaw = allPatterns.filter((p: any) => theme.patternIds.includes(p.id));
+    } else {
+        patternsRaw = await getDefaults("globalPatterns");
+    }
 
     // 5. Resolve Themes (Backdrops)
     const themes = theme.allowedThemeIds?.length > 0
         ? await Promise.all(theme.allowedThemeIds.map((id: any) => ctx.db.get(id)))
-        : [];
+        : await getDefaults("globalThemes");
 
     return {
         ...event,
@@ -56,7 +85,7 @@ async function resolveEventAssets(ctx: any, event: any) {
             musicTracks,
             characters,
             fonts,
-            patterns: patterns.filter(Boolean),
+            patterns: patternsRaw.filter(Boolean),
             themes: themes.filter(Boolean),
         }
     };

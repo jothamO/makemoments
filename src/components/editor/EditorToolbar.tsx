@@ -20,6 +20,10 @@ interface EditorToolbarProps {
   onPageUpdate: (updates: Partial<StoryPage>) => void;
   onMusicChange: (trackId: string | undefined) => void;
   onBackdropSelect: (theme: Partial<EventTheme>) => void;
+  availablePatterns?: any[];
+  availableFonts?: any[];
+  availableThemes?: any[];
+  availableMusic?: any[];
   className?: string;
 }
 
@@ -36,19 +40,28 @@ export function EditorToolbar({
   onPageUpdate,
   onMusicChange,
   onBackdropSelect,
+  availablePatterns = [],
+  availableFonts = [],
+  availableThemes = [],
+  availableMusic = [],
   className
 }: EditorToolbarProps) {
   return (
     <div className={cn("fixed bottom-10 left-0 right-0 flex justify-center z-50 pointer-events-none", className)}>
       <div className="w-[268px] bg-white/5 backdrop-blur-3xl rounded-2xl p-2 flex items-center justify-between pointer-events-auto border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
 
-        <BackdropPicker onSelect={onBackdropSelect} currentPrimary={page.bgGradientStart} whitelist={allowedThemeIds} />
+        <BackdropPicker
+          onSelect={onBackdropSelect}
+          currentPrimary={page.bgGradientStart}
+          whitelist={allowedThemeIds}
+          availableThemes={availableThemes} />
 
         {/* 2. Font */}
         <FontPicker
           fontFamily={page.fontFamily}
           fontSize={page.fontSize}
           whitelist={allowedFontIds}
+          availableFonts={availableFonts}
           onFontChange={(f) => onPageUpdate({ fontFamily: f })}
           onSizeChange={(s: FontSize) => onPageUpdate({ fontSize: s })}
         />
@@ -66,6 +79,7 @@ export function EditorToolbar({
           onTogglePlay={onTogglePlay || (() => { })}
           activeColor={activeColor}
           whitelist={allowedMusicIds}
+          availableMusic={availableMusic}
           onSelect={onMusicChange}
         />
 
@@ -74,6 +88,7 @@ export function EditorToolbar({
           currentPattern={page.backgroundPattern}
           activeColor={activeColor}
           whitelist={allowedPatternIds}
+          availablePatterns={availablePatterns}
           onSelect={(id) => onPageUpdate({ backgroundPattern: id })}
         />
 

@@ -141,6 +141,7 @@ export default function PricingPage() {
         { id: 'patterns', label: 'Patterns', icon: ImageIcon },
         { id: 'characters', label: 'Characters', icon: User },
         { id: 'customLink', label: 'Custom Link', icon: Sparkles },
+        { id: 'multiImage', label: '3 Character Unlock', icon: ImageIcon },
         { id: 'removeWatermark', label: 'Remove Watermark', icon: ShieldOff },
         { id: 'hdDownload', label: 'HD Download', icon: Download },
         { id: 'extraSlide', label: 'Extra Slide (per slide)', icon: Layers },
@@ -288,76 +289,139 @@ function AssetTable({ items, type, premiumStatus, setPremiumStatus }: any) {
     }, [audio]);
 
     return (
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Preview</TableHead>
-                    <TableHead>Asset Name</TableHead>
-                    <TableHead className="w-[100px] text-center">Premium?</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {items.map((item: any) => (
-                    <TableRow key={item._id}>
-                        <TableCell className="w-[80px]">
-                            {type === 'font' && (
-                                <span className="text-lg" style={{ fontFamily: item.fontFamily }}>
-                                    Aa
-                                </span>
-                            )}
-                            {type === 'theme' && (
-                                <div className="flex -space-x-2">
-                                    <div
-                                        className="h-6 w-6 rounded-full border border-zinc-200"
-                                        style={{ backgroundColor: item.baseColor }}
-                                        title={`Base: ${item.baseColor}`}
-                                    />
-                                    <div
-                                        className="h-6 w-6 rounded-full border border-zinc-200 shadow-sm"
-                                        style={{ backgroundColor: item.glowColor }}
-                                        title={`Glow: ${item.glowColor}`}
-                                    />
-                                </div>
-                            )}
-                            {type === 'pattern' && (
-                                <span className="text-xl">{item.emojis?.[0]}</span>
-                            )}
-                            {type === 'music' && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 hover:bg-zinc-100"
-                                    onClick={() => togglePlay(item)}
-                                >
-                                    {playingId === item._id ? (
-                                        <Pause className="h-4 w-4 text-emerald-600" />
-                                    ) : (
-                                        <Play className="h-4 w-4 text-zinc-400" />
+        <div className="space-y-4">
+            {/* Desktop Table View */}
+            <div className="hidden sm:block">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="border-zinc-200">
+                            <TableHead className="text-zinc-500">Preview</TableHead>
+                            <TableHead className="text-zinc-500">Asset Name</TableHead>
+                            <TableHead className="w-[100px] text-center text-zinc-500">Premium?</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {items.map((item: any) => (
+                            <TableRow key={item._id} className="border-zinc-100 hover:bg-zinc-50 transition-colors">
+                                <TableCell className="w-[80px]">
+                                    {type === 'font' && (
+                                        <span className="text-lg" style={{ fontFamily: item.fontFamily }}>
+                                            Aa
+                                        </span>
                                     )}
-                                </Button>
-                            )}
-                            {type === 'char' && (
-                                <div className="h-10 w-10 rounded-md bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center">
+                                    {type === 'theme' && (
+                                        <div className="flex -space-x-2">
+                                            <div
+                                                className="h-6 w-6 rounded-full border border-zinc-200 shadow-sm"
+                                                style={{ backgroundColor: item.baseColor }}
+                                                title={`Base: ${item.baseColor}`}
+                                            />
+                                            <div
+                                                className="h-6 w-6 rounded-full border border-zinc-200 shadow-sm ring-1 ring-white"
+                                                style={{ backgroundColor: item.glowColor }}
+                                                title={`Glow: ${item.glowColor}`}
+                                            />
+                                        </div>
+                                    )}
+                                    {type === 'pattern' && (
+                                        <span className="text-xl">{item.emojis?.[0]}</span>
+                                    )}
+                                    {type === 'music' && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 hover:bg-rose-50 text-zinc-400 hover:text-rose-600"
+                                            onClick={() => togglePlay(item)}
+                                        >
+                                            {playingId === item._id ? (
+                                                <Pause className="h-4 w-4 fill-current" />
+                                            ) : (
+                                                <Play className="h-4 w-4 fill-current" />
+                                            )}
+                                        </Button>
+                                    )}
+                                    {type === 'char' && (
+                                        <div className="h-10 w-10 rounded-md bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center">
+                                            <img src={item.url} alt={item.name} className="h-8 w-8 object-contain" />
+                                        </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="font-medium text-zinc-900">
+                                    <span style={type === 'font' ? { fontFamily: item.fontFamily } : {}}>
+                                        {item.name}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <Checkbox
+                                        checked={!!premiumStatus[`${type}-${item._id}`]}
+                                        onCheckedChange={(checked) => {
+                                            setPremiumStatus((prev: any) => ({ ...prev, [`${type}-${item._id}`]: !!checked }));
+                                        }}
+                                        className="data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900"
+                                    />
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="sm:hidden divide-y divide-zinc-100 -mx-4">
+                {items.map((item: any) => (
+                    <div key={item._id} className="p-4 flex items-center justify-between hover:bg-zinc-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center shrink-0">
+                                {type === 'font' && (
+                                    <span className="text-sm font-bold" style={{ fontFamily: item.fontFamily }}>Aa</span>
+                                )}
+                                {type === 'theme' && (
+                                    <div className="flex -space-x-1.5">
+                                        <div className="h-4 w-4 rounded-full border border-zinc-200" style={{ backgroundColor: item.baseColor }} />
+                                        <div className="h-4 w-4 rounded-full border border-zinc-200 ring-1 ring-white" style={{ backgroundColor: item.glowColor }} />
+                                    </div>
+                                )}
+                                {type === 'pattern' && (
+                                    <span className="text-xl">{item.emojis?.[0]}</span>
+                                )}
+                                {type === 'music' && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={cn(
+                                            "h-8 w-8 rounded-full",
+                                            playingId === item._id ? "text-rose-600 bg-rose-50" : "text-zinc-400"
+                                        )}
+                                        onClick={() => togglePlay(item)}
+                                    >
+                                        {playingId === item._id ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
+                                    </Button>
+                                )}
+                                {type === 'char' && (
                                     <img src={item.url} alt={item.name} className="h-8 w-8 object-contain" />
-                                </div>
-                            )}
-                        </TableCell>
-                        <TableCell className="font-medium text-zinc-700">
-                            <span style={type === 'font' ? { fontFamily: item.fontFamily } : {}}>
-                                {item.name}
-                            </span>
-                        </TableCell>
-                        <TableCell className="text-center">
+                                )}
+                            </div>
+                            <div className="space-y-0.5">
+                                <p className="text-sm font-bold text-zinc-900 leading-tight" style={type === 'font' ? { fontFamily: item.fontFamily } : {}}>
+                                    {item.name}
+                                </p>
+                                <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{type}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100">
+                            <Label htmlFor={`mobile-premium-${item._id}`} className="text-[10px] font-bold text-zinc-500 uppercase">Premium</Label>
                             <Checkbox
+                                id={`mobile-premium-${item._id}`}
                                 checked={!!premiumStatus[`${type}-${item._id}`]}
                                 onCheckedChange={(checked) => {
                                     setPremiumStatus((prev: any) => ({ ...prev, [`${type}-${item._id}`]: !!checked }));
                                 }}
+                                className="data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900 h-4 w-4"
                             />
-                        </TableCell>
-                    </TableRow>
+                        </div>
+                    </div>
                 ))}
-            </TableBody>
-        </Table>
+            </div>
+        </div>
     );
 }

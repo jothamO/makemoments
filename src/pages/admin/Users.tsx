@@ -127,95 +127,173 @@ export default function AdminUsers() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>User</TableHead>
-                                <TableHead>Role</TableHead>
-                                <TableHead>Subscription</TableHead>
-                                <TableHead>Joined</TableHead>
-                                <TableHead className="w-12"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredUsers.map((user) => (
-                                <TableRow key={user._id}>
-                                    <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-zinc-900">{user.name || "Anonymous"}</span>
-                                            <span className="text-xs text-zinc-500">{user.email}</span>
+                    {/* Desktop Table */}
+                    <div className="hidden sm:block">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="border-zinc-200">
+                                    <TableHead className="text-zinc-500 font-bold uppercase tracking-wider text-[10px]">User</TableHead>
+                                    <TableHead className="text-zinc-500 font-bold uppercase tracking-wider text-[10px]">Role</TableHead>
+                                    <TableHead className="text-zinc-500 font-bold uppercase tracking-wider text-[10px]">Subscription</TableHead>
+                                    <TableHead className="text-zinc-500 font-bold uppercase tracking-wider text-[10px]">Joined</TableHead>
+                                    <TableHead className="w-12"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredUsers.map((user) => (
+                                    <TableRow key={user._id} className="border-zinc-100 hover:bg-zinc-50 transition-colors">
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-zinc-900">{user.name || "Anonymous"}</span>
+                                                <span className="text-xs text-zinc-500 font-medium">{user.email}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={user.role === "admin" ? "default" : "secondary"} className={`text-[10px] font-black uppercase tracking-widest ${user.role === "admin" ? "bg-indigo-600" : "bg-zinc-100 text-zinc-600"}`}>
+                                                {user.role === "admin" ? <Shield className="h-3 w-3 mr-1" /> : <UserIcon className="h-3 w-3 mr-1" />}
+                                                {user.role}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.isSubscriber ? (
+                                                <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 text-[10px] font-black uppercase tracking-tighter gap-1">
+                                                    <Check className="h-3 w-3" /> Subscribed
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="text-zinc-400 border-zinc-200 bg-zinc-50 text-[10px] font-black uppercase tracking-tighter gap-1">
+                                                    <X className="h-3 w-3" /> Opted Out
+                                                </Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-xs text-zinc-500 font-medium font-mono">
+                                            {new Date(user.createdAt).toLocaleDateString()}
+                                        </TableCell>
+                                        <TableCell>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-zinc-100">
+                                                        <MoreVertical className="h-4 w-4 text-zinc-400" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-48 shadow-xl border-zinc-200">
+                                                    <DropdownMenuItem
+                                                        onClick={() => upsertUser({
+                                                            id: user._id,
+                                                            email: user.email,
+                                                            role: user.role === "admin" ? "user" : "admin",
+                                                            isSubscriber: user.isSubscriber
+                                                        })}
+                                                        className="gap-2 font-medium"
+                                                    >
+                                                        <Shield className="h-4 w-4" />
+                                                        Toggle Admin Role
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => upsertUser({
+                                                            id: user._id,
+                                                            email: user.email,
+                                                            role: user.role,
+                                                            isSubscriber: !user.isSubscriber
+                                                        })}
+                                                        className="gap-2 font-medium"
+                                                    >
+                                                        <Mail className="h-4 w-4" />
+                                                        {user.isSubscriber ? "Unsubscribe User" : "Subscribe to Mail"}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-rose-600 gap-2 font-medium" onClick={() => handleDelete(user._id)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                        Delete User
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="sm:hidden divide-y divide-zinc-100 -mx-6">
+                        {filteredUsers.map((user) => (
+                            <div key={user._id} className="p-4 space-y-3 hover:bg-zinc-50 transition-colors">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center border border-zinc-200">
+                                            <UserIcon className="h-5 w-5 text-zinc-400" />
                                         </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={user.role === "admin" ? "default" : "secondary"} className="text-[10px] uppercase tracking-wider">
-                                            {user.role === "admin" ? <Shield className="h-3 w-3 mr-1" /> : <UserIcon className="h-3 w-3 mr-1" />}
-                                            {user.role}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
+                                        <div className="space-y-0.5 min-w-0">
+                                            <p className="text-sm font-black text-zinc-900 truncate pr-2">{user.name || "Anonymous"}</p>
+                                            <p className="text-[10px] text-zinc-500 font-medium truncate pr-2">{user.email}</p>
+                                        </div>
+                                    </div>
+                                    <Badge variant={user.role === "admin" ? "default" : "secondary"} className={`text-[8px] font-black uppercase tracking-widest shrink-0 ${user.role === "admin" ? "bg-indigo-600" : "bg-zinc-100 text-zinc-500"}`}>
+                                        {user.role === "admin" ? <Shield className="h-2 w-2 mr-1" /> : null}
+                                        {user.role}
+                                    </Badge>
+                                </div>
+                                <div className="flex items-center justify-between bg-zinc-50 px-3 py-2 rounded-lg border border-zinc-100">
+                                    <div className="flex items-center gap-2">
                                         {user.isSubscriber ? (
-                                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 text-[10px] gap-1">
-                                                <Check className="h-3 w-3" /> Subscribed
-                                            </Badge>
+                                            <div className="flex items-center gap-1.5 text-emerald-600">
+                                                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                <span className="text-[10px] font-black uppercase tracking-tighter">Subscribed</span>
+                                            </div>
                                         ) : (
-                                            <Badge variant="outline" className="text-zinc-400 border-zinc-200 bg-zinc-50 text-[10px] gap-1">
-                                                <X className="h-3 w-3" /> Opted Out
-                                            </Badge>
+                                            <div className="flex items-center gap-1.5 text-zinc-400">
+                                                <div className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
+                                                <span className="text-[10px] font-black uppercase tracking-tighter">Opted Out</span>
+                                            </div>
                                         )}
-                                    </TableCell>
-                                    <TableCell className="text-xs text-zinc-500">
-                                        {new Date(user.createdAt).toLocaleDateString()}
-                                    </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem
-                                                    onClick={() => upsertUser({
-                                                        id: user._id,
-                                                        email: user.email,
-                                                        role: user.role === "admin" ? "user" : "admin",
-                                                        isSubscriber: user.isSubscriber
-                                                    })}
-                                                    className="gap-2"
-                                                >
-                                                    <Shield className="h-4 w-4" />
-                                                    Toggle Admin
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => upsertUser({
-                                                        id: user._id,
-                                                        email: user.email,
-                                                        role: user.role,
-                                                        isSubscriber: !user.isSubscriber
-                                                    })}
-                                                    className="gap-2"
-                                                >
-                                                    <Mail className="h-4 w-4" />
-                                                    {user.isSubscriber ? "Unsubscribe" : "Subscribe"}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-600 gap-2" onClick={() => handleDelete(user._id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                    Delete User
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {filteredUsers.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-zinc-400 py-12">
-                                        No users found
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                                        <span className="text-zinc-300">|</span>
+                                        <span className="text-[9px] text-zinc-400 font-mono">{new Date(user.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-zinc-200 rounded-full">
+                                                <MoreVertical className="h-3 w-3 text-zinc-400" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-48 shadow-xl border-zinc-200">
+                                            <DropdownMenuItem
+                                                onClick={() => upsertUser({
+                                                    id: user._id,
+                                                    email: user.email,
+                                                    role: user.role === "admin" ? "user" : "admin",
+                                                    isSubscriber: user.isSubscriber
+                                                })}
+                                                className="gap-2 font-medium"
+                                            >
+                                                <Shield className="h-4 w-4" />
+                                                Toggle Admin Role
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() => upsertUser({
+                                                    id: user._id,
+                                                    email: user.email,
+                                                    role: user.role,
+                                                    isSubscriber: !user.isSubscriber
+                                                })}
+                                                className="gap-2 font-medium"
+                                            >
+                                                <Mail className="h-4 w-4" />
+                                                {user.isSubscriber ? "Unsubscribe User" : "Subscribe to Mail"}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem className="text-rose-600 gap-2 font-medium" onClick={() => handleDelete(user._id)}>
+                                                <Trash2 className="h-4 w-4" />
+                                                Delete User
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {filteredUsers.length === 0 && (
+                        <div className="text-center text-zinc-400 py-12 border-t border-zinc-100">
+                            No users found
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>

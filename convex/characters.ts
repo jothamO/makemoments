@@ -71,6 +71,16 @@ export const remove = mutation({
         }
 
         const char = await ctx.db.get(args.id);
+
+        // Handle Default Fallback
+        if (char?.isDefault) {
+            const candidates = await ctx.db.query("globalCharacters").order("desc").take(2);
+            const fallback = candidates.find(c => c._id !== args.id);
+            if (fallback) {
+                await ctx.db.patch(fallback._id, { isDefault: true });
+            }
+        }
+
         if (char?.storageId) {
             await ctx.storage.delete(char.storageId);
         }

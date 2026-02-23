@@ -104,6 +104,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
       hdDownload: 0,
       extraSlide: 0,
       removeWatermark: 0,
+      multiImage: 0,
       customLink: 0,
     };
     globalPricing.forEach((gp) => {
@@ -139,6 +140,12 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
     const premiumChars = characters.filter((c) => emojisUsed.includes(c.name) && c.isPremium);
     if (premiumChars.length > 0 && prices.characters > 0) {
       addons.push({ key: "characters", label: "Premium Illustrations", price: prices.characters, auto: true });
+    }
+
+    const actualMultiImage = pages.some(p => (p.photos?.length || 0) > 1);
+
+    if (actualMultiImage && prices.multiImage > 0) {
+      addons.push({ key: "multiImage", label: "3 Character Unlock", price: prices.multiImage, auto: true });
     }
 
     return addons;
@@ -187,9 +194,8 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
 
   // ── Slug ──
   const autoSlug = useMemo(() => {
-    const firstText = pages.find((p) => p.text)?.text || "card";
-    return `${firstText.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 20)}-${Date.now().toString(36)}`;
-  }, [pages]);
+    return `moments-${Date.now().toString(36)}`;
+  }, []);
 
   const displaySlug = customLink && customSlug ? customSlug : autoSlug;
 

@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { replaceUrgencyVariables, hexToRgba, getContrastColor, cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CONTENT_TRANSITION, TAP_SCALE } from "@/lib/animation";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 const HEADLINE_FONTS = [
@@ -161,8 +162,8 @@ const EventEditor = () => {
           <h1 className="font-bold text-zinc-900">{id ? "Edit Event" : "Create New Event"}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => handleSave(false)} disabled={!name || !slug}>
-            <Save className="mr-2 h-4 w-4" /> Save Draft
+          <Button variant="outline" size="icon" onClick={() => handleSave(false)} disabled={!name || !slug} title="Save Draft">
+            <Save className="h-4 w-4" />
           </Button>
           <Button onClick={() => handleSave(true)} disabled={!name || !slug} className="bg-pink-600 hover:bg-pink-700">
             <Sparkles className="mr-2 h-4 w-4" /> Publish Now
@@ -170,20 +171,22 @@ const EventEditor = () => {
         </div>
       </header>
 
-      <div className="flex-1 grid grid-cols-[1fr,400px]">
-        <main className="p-8 h-[calc(100vh-64px)] overflow-y-auto">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr,400px]">
+        <main className="p-4 sm:p-8 h-auto lg:h-[calc(100vh-64px)] lg:overflow-y-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-3xl mx-auto">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
-              <TabsTrigger value="general" className="gap-2"><Layout className="h-4 w-4" /> General</TabsTrigger>
-              <TabsTrigger value="appearance" className="gap-2"><Palette className="h-4 w-4" /> Appearance</TabsTrigger>
-              <TabsTrigger value="assets" className="gap-2"><Music className="h-4 w-4" /> Assets</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+              <TabsList className="flex w-max sm:w-full min-w-full sm:grid sm:grid-cols-3 mb-8">
+                <TabsTrigger value="general" className="gap-2 flex-1"><Layout className="h-4 w-4" /> General</TabsTrigger>
+                <TabsTrigger value="appearance" className="gap-2 flex-1"><Palette className="h-4 w-4" /> Appearance</TabsTrigger>
+                <TabsTrigger value="assets" className="gap-2 flex-1"><Music className="h-4 w-4" /> Assets</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="general" className="space-y-6 mt-0">
               <Card>
                 <CardHeader><CardTitle className="text-sm">Core Settings</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Event Name</Label>
                       <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Mother's Day 2024" />
@@ -193,7 +196,7 @@ const EventEditor = () => {
                       <Input value={slug} onChange={e => setSlug(e.target.value)} placeholder="e.g. mothers-day" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Tier</Label>
                       <Select value={tier.toString()} onValueChange={v => setTier(parseInt(v))}>
@@ -219,7 +222,7 @@ const EventEditor = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Status</Label>
                       <Select value={status} onValueChange={setStatus}>
@@ -250,7 +253,7 @@ const EventEditor = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Launch Date (Show on site)</Label>
                       <Popover>
@@ -296,22 +299,22 @@ const EventEditor = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">Platform Branding</CardTitle>
-                  <CardDescription>Customize the landing page appearance (Hero section, buttons, fonts).</CardDescription>
+                  <CardDescription>Customize the landing page appearance.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Branding Colors */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Base Color (Background)</Label>
                       <div className="flex gap-2">
-                        <Input type="color" className="p-1 h-9 w-12" value={theme.baseColor} onChange={e => setTheme({ ...theme, baseColor: e.target.value })} />
+                        <Input type="color" className="p-1 h-9 w-12 shrink-0" value={theme.baseColor} onChange={e => setTheme({ ...theme, baseColor: e.target.value })} />
                         <Input value={theme.baseColor} onChange={e => setTheme({ ...theme, baseColor: e.target.value })} />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label>Glow Color (Radial Halo)</Label>
                       <div className="flex gap-2">
-                        <Input type="color" className="p-1 h-9 w-12" value={theme.glowColor} onChange={e => setTheme({ ...theme, glowColor: e.target.value })} />
+                        <Input type="color" className="p-1 h-9 w-12 shrink-0" value={theme.glowColor} onChange={e => setTheme({ ...theme, glowColor: e.target.value })} />
                         <Input value={theme.glowColor} onChange={e => setTheme({ ...theme, glowColor: e.target.value })} />
                       </div>
                     </div>
@@ -326,9 +329,6 @@ const EventEditor = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      {/* Spacer */}
-                    </div>
-                    <div className="col-span-2 space-y-2">
                       <Label>Background Pattern</Label>
                       <Select value={theme.backgroundPattern || "sparkles"} onValueChange={(val) => setTheme({ ...theme, backgroundPattern: val })}>
                         <SelectTrigger><SelectValue placeholder="Select a pattern" /></SelectTrigger>
@@ -343,7 +343,7 @@ const EventEditor = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Headline Font</Label>
                       <Select value={theme.headlineFont || HEADLINE_FONTS[0]} onValueChange={(val) => setTheme({ ...theme, headlineFont: val })}>
@@ -384,11 +384,10 @@ const EventEditor = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">Hero Slides Content</CardTitle>
-                  <CardDescription>Customize the text for each of the 3 rotating slides.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Global Settings */}
-                  <div className="grid grid-cols-2 gap-4 pb-4 border-b">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b">
                     <div className="space-y-2">
                       <Label>CTA Button Text</Label>
                       <Input value={theme.ctaText} onChange={e => setTheme({ ...theme, ctaText: e.target.value })} />
@@ -402,40 +401,28 @@ const EventEditor = () => {
 
                   {/* Slide 1 */}
                   <div className="space-y-4">
-                    <Label className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Slide 1 (Main)</Label>
+                    <Label className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">Slide 1 (Main)</Label>
                     <div className="space-y-2">
                       <Label>Headline</Label>
                       <Input value={theme.headline} onChange={e => setTheme({ ...theme, headline: e.target.value })} placeholder="Default: Celebrate [Event]" />
                     </div>
                     <div className="space-y-2">
                       <Label>Subheadline</Label>
-                      <Textarea value={theme.subheadline} onChange={e => setTheme({ ...theme, subheadline: e.target.value })} placeholder="Default: Create a beautiful personalized card..." />
+                      <Textarea value={theme.subheadline} onChange={e => setTheme({ ...theme, subheadline: e.target.value })} rows={2} placeholder="Default: Create a beautiful personalized card..." />
                     </div>
                   </div>
 
-                  {/* Slide 2 */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <Label className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Slide 2</Label>
-                    <div className="space-y-2">
-                      <Label>Headline</Label>
-                      <Input value={theme.headline_2 || ""} onChange={e => setTheme({ ...theme, headline_2: e.target.value })} placeholder="Default: Your Photos. Your Words..." />
+                  {/* Slide 2 & 3 (Conditional / Compact) */}
+                  <div className="grid grid-cols-1 gap-6 pt-4 border-t">
+                    <div className="space-y-4">
+                      <Label className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">Slide 2</Label>
+                      <Input value={theme.headline_2 || ""} onChange={e => setTheme({ ...theme, headline_2: e.target.value })} placeholder="Headline" />
+                      <Textarea value={theme.subheadline_2 || ""} onChange={e => setTheme({ ...theme, subheadline_2: e.target.value })} rows={2} placeholder="Default: Add your memories and heartfelt message..." />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Subheadline</Label>
-                      <Textarea value={theme.subheadline_2 || ""} onChange={e => setTheme({ ...theme, subheadline_2: e.target.value })} placeholder="Default: Add your memories and heartfelt message..." />
-                    </div>
-                  </div>
-
-                  {/* Slide 3 */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <Label className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Slide 3</Label>
-                    <div className="space-y-2">
-                      <Label>Headline</Label>
-                      <Input value={theme.headline_3 || ""} onChange={e => setTheme({ ...theme, headline_3: e.target.value })} placeholder="Default: Share a Link They'll Never Forget" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Subheadline</Label>
-                      <Textarea value={theme.subheadline_3 || ""} onChange={e => setTheme({ ...theme, subheadline_3: e.target.value })} placeholder="Default: Beautiful moments, shared instantly..." />
+                    <div className="space-y-4 pt-4 border-t sm:pt-0 sm:border-t-0">
+                      <Label className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">Slide 3</Label>
+                      <Input value={theme.headline_3 || ""} onChange={e => setTheme({ ...theme, headline_3: e.target.value })} placeholder="Headline" />
+                      <Textarea value={theme.subheadline_3 || ""} onChange={e => setTheme({ ...theme, subheadline_3: e.target.value })} rows={2} placeholder="Default: Beautiful moments, shared instantly..." />
                     </div>
                   </div>
                 </CardContent>
@@ -443,105 +430,125 @@ const EventEditor = () => {
             </TabsContent>
 
             <TabsContent value="assets" className="space-y-6 mt-0">
-              <div className="space-y-8">
-                <section>
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-4">Themes</h3>
-                  <ThemePresetPicker
-                    selectedIds={theme.allowedThemeIds || []}
-                    onToggle={(id) => {
-                      const current = theme.allowedThemeIds || [];
-                      const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
-                      setTheme({ ...theme, allowedThemeIds: next });
-                    }}
-                  />
-                </section>
+              <Accordion type="multiple" className="w-full space-y-4">
+                <AccordionItem value="themes" className="border-none">
+                  <AccordionTrigger className="hover:no-underline py-0">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Available Themes</h3>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-6">
+                    <ThemePresetPicker
+                      selectedIds={theme.allowedThemeIds || []}
+                      onToggle={(id) => {
+                        const current = theme.allowedThemeIds || [];
+                        const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
+                        setTheme({ ...theme, allowedThemeIds: next });
+                      }}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-                <section>
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-4">Fonts</h3>
-                  <FontPicker
-                    selectedIds={theme.allowedFontIds || []}
-                    onToggle={(id) => {
-                      const current = theme.allowedFontIds || [];
-                      const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
-                      setTheme({ ...theme, allowedFontIds: next });
-                    }}
-                  />
-                </section>
+                <AccordionItem value="characters" className="border-none">
+                  <AccordionTrigger className="hover:no-underline py-0">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Selected Characters</h3>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-6">
+                    <CharacterPicker
+                      selectedIds={theme.characterIds || []}
+                      onToggle={(id) => {
+                        const current = theme.characterIds || [];
+                        const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
+                        setTheme({ ...theme, characterIds: next });
+                      }}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-                <section>
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-4">Characters</h3>
-                  <CharacterPicker
-                    selectedIds={theme.characterIds || []}
-                    onToggle={(id) => {
-                      const current = theme.characterIds || [];
-                      const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
-                      setTheme({ ...theme, characterIds: next });
-                    }}
-                  />
-                </section>
+                <AccordionItem value="music" className="border-none">
+                  <AccordionTrigger className="hover:no-underline py-0">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Music Selection</h3>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-6">
+                    <MusicPicker
+                      selectedIds={theme.musicTrackIds || []}
+                      onToggle={(id) => {
+                        const current = theme.musicTrackIds || [];
+                        const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
+                        setTheme({ ...theme, musicTrackIds: next });
+                      }}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-                <section>
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-4">Music Tracks</h3>
-                  <MusicPicker
-                    selectedIds={theme.musicTrackIds || []}
-                    onToggle={(id) => {
-                      const current = theme.musicTrackIds || [];
-                      const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
-                      setTheme({ ...theme, musicTrackIds: next });
-                    }}
-                  />
-                </section>
+                <AccordionItem value="fonts" className="border-none">
+                  <AccordionTrigger className="hover:no-underline py-0">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Allowed Fonts</h3>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-6">
+                    <FontPicker
+                      selectedIds={theme.allowedFontIds || []}
+                      onToggle={(id) => {
+                        const current = theme.allowedFontIds || [];
+                        const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
+                        setTheme({ ...theme, allowedFontIds: next });
+                      }}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-                <section>
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-4">Background Patterns</h3>
-                  <PatternPicker
-                    selectedIds={theme.patternIds || []}
-                    onToggle={(id) => {
-                      const current = theme.patternIds || [];
-                      const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
-                      setTheme({ ...theme, patternIds: next });
-                    }}
-                  />
-                </section>
-              </div>
+                <AccordionItem value="patterns" className="border-none">
+                  <AccordionTrigger className="hover:no-underline py-0">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Background Patterns</h3>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-6">
+                    <PatternPicker
+                      selectedIds={theme.patternIds || []}
+                      onToggle={(id) => {
+                        const current = theme.patternIds || [];
+                        const next = current.includes(id) ? current.filter(i => i !== id) : [...current, id];
+                        setTheme({ ...theme, patternIds: next });
+                      }}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </TabsContent>
           </Tabs>
         </main>
 
         {activeTab !== "assets" && (
-          <aside>
-            <div className="sticky top-6 space-y-4 pr-6">
+          <aside className="p-4 sm:p-8 pt-0 lg:pt-8 border-t lg:border-t-0 lg:border-l bg-zinc-50 lg:bg-transparent">
+            <div className="sticky top-20 space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Live Preview</Label>
-                <div className="flex bg-zinc-100 rounded-lg p-1">
+                <Label className="text-[10px] uppercase font-black tracking-widest text-zinc-400">Live Preview</Label>
+                <div className="flex bg-zinc-200/50 rounded-lg p-1">
                   <button
                     onClick={() => setPreviewMode("mobile")}
-                    className={`p-1.5 rounded-md transition-all ${previewMode === "mobile" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-400 hover:text-zinc-600"}`}
+                    className={`p-1.5 rounded-md transition-all ${previewMode === "mobile" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-500 hover:text-zinc-700"}`}
                   >
-                    <Smartphone className="h-4 w-4" />
+                    <Smartphone className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => setPreviewMode("desktop")}
-                    className={`p-1.5 rounded-md transition-all ${previewMode === "desktop" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-400 hover:text-zinc-600"}`}
+                    className={`p-1.5 rounded-md transition-all ${previewMode === "desktop" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-500 hover:text-zinc-700"}`}
                   >
-                    <Monitor className="h-4 w-4" />
+                    <Monitor className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
 
               <div className="flex justify-center relative group">
                 <div
-                  className="relative overflow-hidden shadow-2xl border-black/5 ring-1 ring-black/5 bg-white transition-all duration-300 rounded-xl"
+                  className="relative overflow-hidden shadow-xl border-4 border-zinc-900 bg-white transition-all duration-300 rounded-[2rem]"
                   style={{
-                    width: previewMode === "mobile" ? "275px" : "360px",
-                    height: previewMode === "mobile" ? "600px" : "300px",
+                    width: previewMode === "mobile" ? "260px" : "320px",
+                    height: previewMode === "mobile" ? "520px" : "180px",
                   }}
                 >
                   <div
                     style={{
                       width: previewMode === "mobile" ? "390px" : "1280px",
                       height: previewMode === "mobile" ? "844px" : "1066px",
-                      transform: `scale(${previewMode === "mobile" ? 0.705 : 0.281})`,
+                      transform: `scale(${previewMode === "mobile" ? 0.666 : 0.25})`,
                       transformOrigin: "top left",
                     }}
                     className="absolute inset-0 flex flex-col"

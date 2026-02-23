@@ -117,6 +117,21 @@ export const remove = mutation({
         }
 
         const track = await ctx.db.get(args.id);
+
+        // Handle Default Fallback
+        if (track?.isDefault) {
+            // Find the most recently created asset that isn't this one
+            const nextBest = await ctx.db.query("musicTracks")
+                .order("desc")
+                .first();
+            // Since we can't filter out args.id easily in convex before .first(), let's collect a few and pick
+            const candidates = await ctx.db.query("musicTracks").order("desc").take(2);
+            const fallback = candidates.find(c => c._id !== args.id);
+            if (fallback) {
+                await ctx.db.patch(fallback._id, { isDefault: true });
+            }
+        }
+
         if (track?.storageId) {
             await ctx.storage.delete(track.storageId);
         }

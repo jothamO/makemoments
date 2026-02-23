@@ -1,6 +1,4 @@
-import { useQuery } from "convex/react";
 import { useState } from "react";
-import { api } from "../../../convex/_generated/api";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Paintbrush } from "lucide-react";
@@ -14,14 +12,16 @@ interface ThemePickerProps {
     onSelect: (theme: Partial<EventTheme>) => void;
     currentPrimary?: string;
     whitelist?: string[];
+    availableThemes?: any[];
 }
 
-export function BackdropPicker({ onSelect, currentPrimary, whitelist }: ThemePickerProps) {
+export function BackdropPicker({ onSelect, currentPrimary, whitelist, availableThemes = [] }: ThemePickerProps) {
     const [open, setOpen] = useState(false);
-    const allThemes = useQuery(api.themes.list);
+
+    // Use the resolved assets passed down from CreatePage
     const themes = whitelist && whitelist.length > 0
-        ? allThemes?.filter(t => whitelist.includes(t._id))
-        : allThemes;
+        ? availableThemes.filter(t => whitelist.includes(t._id || t.id))
+        : availableThemes;
 
     return (
         <Popover open={open} onOpenChange={setOpen}>

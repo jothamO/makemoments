@@ -54,6 +54,16 @@ export const remove = mutation({
             throw new Error("Cannot delete theme: It is currently whitelisted for one or more events.");
         }
 
+        // Handle Default Fallback
+        const theme = await ctx.db.get(args.id);
+        if (theme?.isDefault) {
+            const candidates = await ctx.db.query("globalThemes").order("desc").take(2);
+            const fallback = candidates.find(c => c._id !== args.id);
+            if (fallback) {
+                await ctx.db.patch(fallback._id, { isDefault: true });
+            }
+        }
+
         await ctx.db.delete(args.id);
     },
 });
