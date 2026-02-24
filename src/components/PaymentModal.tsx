@@ -324,6 +324,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
 
   // ── Reset on close ──
   const handleClose = () => {
+    if (processing) return; // Prevent closing while Paystack is active
     if (confirmedSlug) {
       // Reset everything if closing after success
       setCelebrationId(null);
@@ -334,7 +335,11 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => !processing && !v && handleClose()}
+      modal={!processing}
+    >
       <DialogPortal>
         <DialogOverlay className="bg-black/60 backdrop-blur-sm" />
         <DialogPrimitive.Content
@@ -346,7 +351,8 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="absolute right-4 top-4 text-white/40 hover:text-white/80 transition-colors text-lg leading-none z-10"
+            disabled={processing}
+            className="absolute right-4 top-4 text-white/40 hover:text-white/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg leading-none z-10"
           >
             ✕
           </button>
