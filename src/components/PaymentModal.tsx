@@ -247,7 +247,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
         : autoSlug;
 
       const result = await initializePayment({
-        eventId: event.id as any,
+        eventId: event._id as any,
         slug,
         email,
         pages,
