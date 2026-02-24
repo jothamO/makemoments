@@ -2,11 +2,40 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Country → Currency mapping
 const COUNTRY_CURRENCY_MAP: Record<string, { code: string; symbol: string }> = {
+    // African (Paystack native)
     NG: { code: 'NGN', symbol: '₦' },
     GH: { code: 'GHS', symbol: 'GH₵' },
     KE: { code: 'KES', symbol: 'KSh' },
     ZA: { code: 'ZAR', symbol: 'R' },
     CI: { code: 'XOF', symbol: 'CFA' },
+
+    // North America
+    CA: { code: 'CAD', symbol: 'CA$' },
+
+    // UK
+    GB: { code: 'GBP', symbol: '£' },
+
+    // Eurozone
+    AT: { code: 'EUR', symbol: '€' },
+    BE: { code: 'EUR', symbol: '€' },
+    CY: { code: 'EUR', symbol: '€' },
+    EE: { code: 'EUR', symbol: '€' },
+    FI: { code: 'EUR', symbol: '€' },
+    FR: { code: 'EUR', symbol: '€' },
+    DE: { code: 'EUR', symbol: '€' },
+    GR: { code: 'EUR', symbol: '€' },
+    IE: { code: 'EUR', symbol: '€' },
+    IT: { code: 'EUR', symbol: '€' },
+    LV: { code: 'EUR', symbol: '€' },
+    LT: { code: 'EUR', symbol: '€' },
+    LU: { code: 'EUR', symbol: '€' },
+    MT: { code: 'EUR', symbol: '€' },
+    NL: { code: 'EUR', symbol: '€' },
+    PT: { code: 'EUR', symbol: '€' },
+    SK: { code: 'EUR', symbol: '€' },
+    SI: { code: 'EUR', symbol: '€' },
+    ES: { code: 'EUR', symbol: '€' },
+    HR: { code: 'EUR', symbol: '€' }
 };
 
 // Default for rest of world
