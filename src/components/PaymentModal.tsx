@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -36,7 +36,7 @@ function parseError(e: unknown): string {
 
 export function PaymentModal({ open, onClose, event, pages, musicTrackId }: PaymentModalProps) {
   const navigate = useNavigate();
-  const { currency, symbol, gateway, isNigeria } = useCurrency();
+  const { currency, symbol, isNigeria } = useCurrency();
 
   const [email, setEmail] = useState("");
   const [removeWatermark, setRemoveWatermark] = useState(false);
@@ -62,6 +62,18 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
   const characters = useQuery(api.characters.list) || [];
   const exchangeRates = useQuery(api.exchangeRates.list) || [];
   const gatewayConfig = useQuery(api.gatewayConfig.get);
+
+  // ── Gateway Routing (Admin Driven) ──
+  const activeGateway = useMemo(() => {
+    if (!gatewayConfig) return "paystack";
+    // Duck typing without explicitly casting as any
+    const pEnabled = "paystackEnabled" in gatewayConfig ? gatewayConfig.paystackEnabled : true;
+    const sEnabled = "stripeEnabled" in gatewayConfig ? gatewayConfig.stripeEnabled : true;
+
+    if (pEnabled) return "paystack";
+    if (sEnabled) return "stripe";
+    return "paystack"; // Fallback to Paystack
+  }, [gatewayConfig]);
 
   // Real-time payment status polling
   const paymentStatus = useQuery(
@@ -160,36 +172,43 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
   // ── Extra slides ──
   const extraSlides = Math.max(0, pages.length - 7);
 
-  // ── Total ──
+  // ── Total & Formatting ──
+  const getLocalRounded = useCallback((usdAmount: number) => {
+    if (isNigeria) return usdAmount;
+    const converted = usdAmount * exchangeRate;
+    return Math.round(converted * 2) / 2; // Round to nearest 0.50
+  }, [isNigeria, exchangeRate]);
+
   const { total, breakdown } = useMemo(() => {
-    let currentTotal = prices.base;
-    const items: { label: string; price: number }[] = [{ label: "Base Card", price: prices.base }];
+    const baseLocal = getLocalRounded(prices.base);
+    let currentTotal = baseLocal;
+    const items: { label: string; price: number }[] = [{ label: "Base Card", price: baseLocal }];
 
     // Extra slides
     if (extraSlides > 0) {
-      const slideCost = extraSlides * extraSlidePrice;
-      currentTotal += slideCost;
-      items.push({ label: `${extraSlides} extra slide${extraSlides > 1 ? "s" : ""}`, price: slideCost });
+      const slideCostLocal = getLocalRounded(extraSlidePrice) * extraSlides;
+      currentTotal += slideCostLocal;
+      items.push({ label: `${extraSlides} extra slide${extraSlides > 1 ? "s" : ""}`, price: slideCostLocal });
     }
 
     detectedAddons.forEach((addon) => {
-      currentTotal += addon.price;
-      items.push({ label: addon.label, price: addon.price });
+      const p = getLocalRounded(addon.price);
+      currentTotal += p;
+      items.push({ label: addon.label, price: p });
     });
 
-    if (removeWatermark && watermarkPrice > 0) { currentTotal += watermarkPrice; items.push({ label: "No watermark", price: watermarkPrice }); }
-    if (customLink && customLinkPrice > 0) { currentTotal += customLinkPrice; items.push({ label: "Custom link", price: customLinkPrice }); }
-    if (hdDownload && hdPrice > 0) { currentTotal += hdPrice; items.push({ label: "HD Download", price: hdPrice }); }
+    if (removeWatermark && watermarkPrice > 0) { const p = getLocalRounded(watermarkPrice); currentTotal += p; items.push({ label: "No watermark", price: p }); }
+    if (customLink && customLinkPrice > 0) { const p = getLocalRounded(customLinkPrice); currentTotal += p; items.push({ label: "Custom link", price: p }); }
+    if (hdDownload && hdPrice > 0) { const p = getLocalRounded(hdPrice); currentTotal += p; items.push({ label: "HD Download", price: p }); }
 
-    const displayTotal = isNigeria ? currentTotal : currentTotal * exchangeRate;
-    return { total: displayTotal, breakdown: items };
-  }, [prices, detectedAddons, removeWatermark, customLink, hdDownload, extraSlides, extraSlidePrice, hdPrice, customLinkPrice, isNigeria, exchangeRate]);
+    return { total: currentTotal, breakdown: items };
+  }, [prices, detectedAddons, removeWatermark, customLink, hdDownload, extraSlides, extraSlidePrice, hdPrice, customLinkPrice, getLocalRounded]);
 
   // ── Format price ──
-  const formatPrice = (amount: number, raw = false) => {
-    const displayAmount = raw || isNigeria ? amount : amount * exchangeRate;
-    if (isNigeria) return `₦${displayAmount.toLocaleString()}`;
-    return `${symbol}${displayAmount.toFixed(2)}`;
+  // Note: amount is now ASSUMED to be pre-converted and correctly rounded!
+  const formatPrice = (amount: number) => {
+    if (isNigeria) return `₦${amount.toLocaleString()}`;
+    return `${symbol}${amount.toFixed(2)}`;
   };
 
   // ── Slug ──
@@ -240,7 +259,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
         hdDownload,
         totalPaid: total,
         currency,
-        gateway,
+        gateway: activeGateway,
         paymentReference: paystackConfig.reference,
         createAccount,
         username,
@@ -249,7 +268,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
 
       setCelebrationId(result.celebrationId);
 
-      if (gateway === "paystack" && paystackPublicKey) {
+      if (activeGateway === "paystack" && paystackPublicKey) {
         initPaystack({
           onSuccess: () => { }, // Server-side verification via webhook
           onClose: () => {
@@ -463,7 +482,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
 
                 {/* Total */}
                 <p className="text-center text-3xl font-bold text-white mt-2">
-                  {formatPrice(total, true)}
+                  {formatPrice(total)}
                 </p>
 
                 {/* Link preview */}
@@ -493,7 +512,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
                         {addon.checked && <Check className="w-3 h-3" />}
                       </div>
                       <span className="text-sm text-white/90 font-medium block pr-6">{addon.label}</span>
-                      <span className="text-xs text-white/40 mt-0.5 block">+ {formatPrice(addon.price)}</span>
+                      <span className="text-xs text-white/40 mt-0.5 block">+ {formatPrice(getLocalRounded(addon.price))}</span>
                     </button>
                   ))}
                 </div>
@@ -502,7 +521,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
                 {extraSlides > 0 && (
                   <div className="mt-3 px-3 py-2 rounded-xl bg-white/5 border border-white/5">
                     <p className="text-xs text-white/50">
-                      <span className="text-white/70 font-medium">{extraSlides} extra slide{extraSlides > 1 ? "s" : ""}</span> — {formatPrice(extraSlides * extraSlidePrice)} added
+                      <span className="text-white/70 font-medium">{extraSlides} extra slide{extraSlides > 1 ? "s" : ""}</span> — {formatPrice(getLocalRounded(extraSlidePrice) * extraSlides)} added
                     </p>
                   </div>
                 )}
@@ -577,7 +596,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
                     </div>
                     <span className="text-sm text-white/70">Custom link</span>
                   </div>
-                  <span className="text-xs text-white/40">{customLinkPrice > 0 ? `+ ${formatPrice(customLinkPrice)}` : "Free"}</span>
+                  <span className="text-xs text-white/40">{customLinkPrice > 0 ? `+ ${formatPrice(getLocalRounded(customLinkPrice))}` : "Free"}</span>
                 </button>
 
                 {customLink && (
@@ -624,11 +643,11 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
                   )}
                   {processing
                     ? "Processing..."
-                    : `Pay ${formatPrice(total, true)}`}
+                    : `Pay ${formatPrice(total)}`}
                 </button>
 
                 <p className="text-[10px] text-center text-white/25 mt-2">
-                  Secure payment powered by {gateway === "paystack" ? "Paystack" : "Stripe"}
+                  Secure payment powered by {activeGateway === "paystack" ? "Paystack" : "Stripe"}
                 </p>
               </motion.div>
             )}
