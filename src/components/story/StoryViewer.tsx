@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence, useAnimate } from "framer-motion";
+import { motion, AnimatePresence, animate } from "framer-motion";
 import type { StoryPage, SlideTransition } from "@/data/types";
 import { Link } from "react-router-dom";
 import { hexToRgba } from "@/lib/utils";
@@ -62,8 +62,7 @@ export function StoryViewer({
   eventSlug,
 }: StoryViewerProps) {
   const [current, setCurrent] = useState(0);
-  const [scope, animate] = useAnimate();
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<ReturnType<typeof animate> | null>(null);
   const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressBarRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -82,22 +81,31 @@ export function StoryViewer({
     }
   }, [current]);
 
-  // Algorithmic Slide Engine: separate timer from bar animation so we can cancel reliably
+  // Algorithmic Slide Engine — identical to StoryPreviewPlayer: standalone animate() + setTimeout
   useEffect(() => {
     if (!autoPlay || current >= pages.length) return;
 
-    // Reset all bars via direct DOM writes — bypasses the animate() queue to avoid race conditions
+    // Reset all bars via direct DOM writes
     progressBarRefs.current.forEach((bar, i) => {
       if (bar) bar.style.width = i < current ? "100%" : "0%";
     });
 
     const pageDuration = (pages[current] as any).duration ? (pages[current] as any).duration * 1000 : autoPlayInterval;
 
-    // Animate the active bar filling — visual only, does NOT drive slide advance
-    controlsRef.current = animate(`#bar-${current}`, { width: "100%" }, {
-      duration: pageDuration / 1000,
-      ease: "linear",
-    });
+    const bar = progressBarRefs.current[current];
+    if (bar) {
+      // Get current width as starting point (normally 0 after reset)
+      const currentWidth = bar.style.width ? parseFloat(bar.style.width) / 100 : 0;
+
+      // Frame-accurate, direct-DOM fill animation via Framer's standalone animate()
+      controlsRef.current = animate(currentWidth, 1, {
+        duration: pageDuration / 1000,
+        ease: "linear",
+        onUpdate: (v) => {
+          bar.style.width = `${v * 100}%`;
+        },
+      });
+    }
 
     // A separate, cancellable timer drives the actual slide advance
     slideTimerRef.current = setTimeout(() => {
@@ -109,7 +117,7 @@ export function StoryViewer({
       if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
     };
 
-  }, [current, autoPlay, autoPlayInterval, pages, animate, goNext]);
+  }, [current, autoPlay, autoPlayInterval, pages, goNext]);
 
   const page = pages[current];
   if (!page) return null;
@@ -134,7 +142,7 @@ export function StoryViewer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" ref={scope}
+    <div className="fixed inset-0 z-50 flex flex-col"
       style={{
         backgroundColor: page.bgGradientStart,
         backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.bgGradientEnd, isDark ? 0.4 : 0.25)}, transparent 70%)`,
@@ -146,12 +154,11 @@ export function StoryViewer({
         <BackgroundPattern patternId={page.backgroundPattern} />
       )}
 
-      {/* Progress bars — adaptive to page.type, direct DOM refs for reliable resets */}
+      {/* Progress bars — adaptive to page.type, direct DOM refs for frame-accurate fills */}
       <div className="flex gap-1 px-3 pt-4 pb-2 z-20">
         {pages.map((_, i) => (
           <div key={i} className={`flex-1 h-[3px] rounded-full overflow-hidden ${trackColor}`}>
             <div
-              id={`bar-${i}`}
               ref={(el) => { progressBarRefs.current[i] = el; }}
               className={`h-full rounded-full ${fillColor}`}
               style={{ width: i < current ? "100%" : "0%" }}
