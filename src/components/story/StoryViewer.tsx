@@ -65,6 +65,7 @@ export function StoryViewer({
   const [scope, animate] = useAnimate();
   const controlsRef = useRef<any>(null);
   const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressBarRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const goNext = useCallback(() => {
     if (current < pages.length - 1) {
@@ -85,9 +86,9 @@ export function StoryViewer({
   useEffect(() => {
     if (!autoPlay || current >= pages.length) return;
 
-    // Reset all bars visually instantly
-    pages.forEach((_, i) => {
-      animate(`#bar-${i}`, { width: i < current ? "100%" : "0%" }, { duration: 0 });
+    // Reset all bars via direct DOM writes — bypasses the animate() queue to avoid race conditions
+    progressBarRefs.current.forEach((bar, i) => {
+      if (bar) bar.style.width = i < current ? "100%" : "0%";
     });
 
     const pageDuration = (pages[current] as any).duration ? (pages[current] as any).duration * 1000 : autoPlayInterval;
@@ -145,14 +146,15 @@ export function StoryViewer({
         <BackgroundPattern patternId={page.backgroundPattern} />
       )}
 
-      {/* Progress bars — adaptive to page.type */}
+      {/* Progress bars — adaptive to page.type, direct DOM refs for reliable resets */}
       <div className="flex gap-1 px-3 pt-4 pb-2 z-20">
         {pages.map((_, i) => (
           <div key={i} className={`flex-1 h-[3px] rounded-full overflow-hidden ${trackColor}`}>
-            <motion.div
+            <div
               id={`bar-${i}`}
+              ref={(el) => { progressBarRefs.current[i] = el; }}
               className={`h-full rounded-full ${fillColor}`}
-              initial={{ width: i < current ? "100%" : "0%" }}
+              style={{ width: i < current ? "100%" : "0%" }}
             />
           </div>
         ))}

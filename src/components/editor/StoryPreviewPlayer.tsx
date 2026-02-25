@@ -38,14 +38,16 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
         const completedBar = progressBarRefs.current[fromIndex];
         if (completedBar) completedBar.style.width = "100%";
 
-        if (nextIndex === 0 && audioRef.current) {
-            // Looped — restart music
-            audioRef.current.currentTime = 0;
-            audioRef.current.play().catch(() => { });
-            // Reset all bars
+        if (nextIndex === 0) {
+            // Looped — always reset all bars regardless of music
             progressBarRefs.current.forEach((b) => {
                 if (b) b.style.width = "0%";
             });
+            // Restart music only if available
+            if (audioRef.current) {
+                audioRef.current.currentTime = 0;
+                audioRef.current.play().catch(() => { });
+            }
         }
 
         setCurrentIndex(nextIndex);
