@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, animate } from "framer-motion";
 import type { StoryPage, SlideTransition } from "@/data/types";
 import { Link } from "react-router-dom";
-import { hexToRgba } from "@/lib/utils";
+import { hexToRgba, cn } from "@/lib/utils";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { CONTENT_TRANSITION } from "@/lib/animation";
 
@@ -214,31 +214,41 @@ export function StoryViewer({
                 </Link>
               </div>
             ) : (
-              /* ── Regular Slide — Manual Layout Replicating StoryPreviewPlayer ── */
+              /* ── Regular Slide — Manual Layout Replicating CreatePage editor ── */
               <>
-                {/* Master Layout Container — mathematically synced to CreatePage <main> dimensions (48px top chrome, 188px bottom chrome) */}
-                <div className="absolute inset-0 flex flex-col pt-[48px] pb-[188px] pointer-events-none">
-                  <div className="flex-1 relative flex flex-col items-center justify-center w-full">
+                {/* Master Layout Reference Frame — mathematically synced to CreatePage <main> dimensions (48px absolute top, 188px bottom chrome) */}
+                <div className="absolute inset-x-0 top-[21px] bottom-[188px] pointer-events-none overflow-hidden">
 
-                    {/* Text Layout Layer */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-10 pointer-events-none">
-                      {/* Spacer block to maintain layout parity with Create editor */}
-                      <div className="flex justify-center mb-4 min-h-[160px] w-full relative z-10" />
+                  {/* Text Layout Layer */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-10 pointer-events-none">
+                    {/* Spacer block to maintain layout parity with Create editor */}
+                    <div className="flex justify-center mb-4 min-h-[160px] w-full relative z-10" />
 
-                      <div className="text-center w-full z-20 flex items-start justify-center min-h-[60px]">
-                        <motion.h1
-                          className={`font-medium leading-tight ${getFontSize(page.text?.length || 0)}`}
-                          style={{
-                            fontFamily: page.fontFamily,
-                            color: page.textColor || "#FFFFFF",
-                          }}
-                          initial={{ opacity: 0, y: 16 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
-                        >
-                          {page.text || ""}
-                        </motion.h1>
-                      </div>
+                    {/* Text + Progress Wrapper — matching exact CreatePage DOM structure */}
+                    <div className="w-full relative z-20 px-0">
+                      <motion.textarea
+                        readOnly
+                        value={page.text || ""}
+                        className={cn(
+                          "bg-transparent font-medium leading-tight resize-none focus:outline-none w-full overflow-hidden pointer-events-none",
+                          getFontSize(page.text?.length || 0)
+                        )}
+                        style={{
+                          fontFamily: page.fontFamily,
+                          color: page.textColor || "#FFFFFF",
+                          textAlign: (page.textAlign || "center") as React.CSSProperties["textAlign"],
+                          minHeight: "60px",
+                        }}
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
+                        ref={(el) => {
+                          if (el) {
+                            el.style.height = 'auto';
+                            el.style.height = `${Math.max(60, Math.min(el.scrollHeight, 300))}px`;
+                          }
+                        }}
+                      />
 
                       {/* Ghost Progress Bar for identical flex-col vertical centering */}
                       <div className="mt-3 flex items-center gap-2 w-full opacity-0 select-none">
@@ -246,55 +256,55 @@ export function StoryViewer({
                         <span className="text-xs font-mono shrink-0">0/200</span>
                       </div>
                     </div>
-
-                    {/* Characters / Photos Layer */}
-                    {page.photos && page.photos.length > 0 && (
-                      <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
-                        {page.photos.map((photo, i) => (
-                          <div
-                            key={photo.id || i}
-                            className="absolute inset-0 flex items-center justify-center"
-                          >
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{
-                                opacity: 1,
-                                scale: 1,
-                                x: photo.transform.x,
-                                y: photo.transform.y,
-                                rotate: photo.transform.rotation,
-                              }}
-                              transition={{
-                                ...CONTENT_TRANSITION,
-                                delay: 0.05 + i * 0.05,
-                              }}
-                              style={{
-                                width: photo.transform.width,
-                                height: photo.transform.width,
-                              }}
-                              className="pointer-events-none"
-                            >
-                              <img src={photo.url} alt="" className="w-full h-full object-cover" />
-                            </motion.div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Stickers */}
-                    {page.stickers.map((s, idx) => (
-                      <motion.div
-                        key={idx}
-                        className="absolute text-5xl pointer-events-none select-none z-20"
-                        style={{ left: `${s.x}%`, top: `${s.y}%` }}
-                        initial={{ opacity: 0, scale: 0.6 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ ...CONTENT_TRANSITION, delay: 0.15 + idx * 0.05 }}
-                      >
-                        {s.emoji}
-                      </motion.div>
-                    ))}
                   </div>
+
+                  {/* Photos Layer — absolute inset-0 within the reference frame */}
+                  {page.photos && page.photos.length > 0 && (
+                    <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+                      {page.photos.map((photo, i) => (
+                        <div
+                          key={photo.id || i}
+                          className="absolute inset-0 flex items-center justify-center"
+                        >
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{
+                              opacity: 1,
+                              scale: 1,
+                              x: photo.transform.x,
+                              y: photo.transform.y,
+                              rotate: photo.transform.rotation,
+                            }}
+                            transition={{
+                              ...CONTENT_TRANSITION,
+                              delay: 0.05 + i * 0.05,
+                            }}
+                            style={{
+                              width: photo.transform.width,
+                              height: photo.transform.width,
+                            }}
+                            className="pointer-events-none"
+                          >
+                            <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                          </motion.div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Stickers — absolute inset-0 within the reference frame */}
+                  {page.stickers.map((s, idx) => (
+                    <motion.div
+                      key={idx}
+                      className="absolute text-5xl pointer-events-none select-none z-20"
+                      style={{ left: `${s.x}%`, top: `${s.y}%` }}
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ ...CONTENT_TRANSITION, delay: 0.15 + idx * 0.05 }}
+                    >
+                      {s.emoji}
+                    </motion.div>
+                  ))}
                 </div>
               </>
             )}
