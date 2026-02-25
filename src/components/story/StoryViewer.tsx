@@ -97,26 +97,28 @@ export function StoryViewer({
   if (!page) return null;
 
   const variant = transitionVariants[page.transition];
+  const isSyntheticCTA = (page as any)._id === "synthetic-watermark-slide";
+  const isDark = page.type === 'dark' || !page.type; // default to dark if unset
+  const trackColor = isDark ? "bg-white/20" : "bg-black/10";
+  const fillColor = isDark ? "bg-white" : "bg-black";
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col" ref={scope}>
-      {/* Progress bars */}
-      <div className="flex gap-1 px-3 pt-3 pb-1 z-10">
+      {/* Progress bars — adaptive to page.type */}
+      <div className="absolute top-0 left-0 right-0 flex gap-1 px-3 pt-3 pb-1 z-40">
         {pages.map((_, i) => (
-          <div key={i} className="flex-1 h-0.5 bg-white/30 rounded-full overflow-hidden">
+          <div key={i} className={`flex-1 h-[3px] rounded-full overflow-hidden ${trackColor}`}>
             <motion.div
               id={`bar-${i}`}
-              className="h-full bg-white rounded-full"
+              className={`h-full rounded-full ${fillColor}`}
               initial={{ width: i < current ? "100%" : "0%" }}
             />
           </div>
         ))}
       </div>
 
-      {/* Close button omitted for immersive trap */}
-
-      {/* Canvas Wrapper enforcing Full-Screen Edge-to-Edge */}
-      <div className="flex-1 relative overflow-hidden flex flex-col items-center" style={{ perspective: "1000px" }}>
+      {/* Canvas Wrapper — Full-Screen Edge-to-Edge */}
+      <div className="flex-1 relative overflow-hidden" style={{ perspective: "1000px" }}>
 
         <div className="relative w-full h-full">
           <AnimatePresence mode="wait">
@@ -128,7 +130,7 @@ export function StoryViewer({
               transition={{ duration: 0.4 }}
               className="absolute inset-0"
             >
-              {(page as any)._id === "synthetic-watermark-slide" ? (
+              {isSyntheticCTA ? (
                 <div
                   className="w-full h-full flex flex-col items-center justify-center p-8 gap-8"
                   style={{ backgroundColor: page.bgGradientStart, backgroundImage: (page as any).bgImage ? `url(${(page as any).bgImage})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}
@@ -139,7 +141,7 @@ export function StoryViewer({
                   >
                     {page.text}
                   </h1>
-                  <Link to={`/`}>
+                  <Link to="/">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -156,29 +158,31 @@ export function StoryViewer({
           </AnimatePresence>
         </div>
 
-        {/* Tap zones overlaying everything - 50/50 split with Hold-to-Pause functionality */}
-        <div className="absolute inset-0 flex z-30">
-          <div
-            className="w-1/2 h-full cursor-pointer"
-            onClick={goPrev}
-            onPointerDown={() => controlsRef.current?.pause()}
-            onPointerUp={() => controlsRef.current?.play()}
-            onPointerLeave={() => controlsRef.current?.play()}
-            onPointerCancel={() => controlsRef.current?.play()}
-          />
-          <div
-            className="w-1/2 h-full cursor-pointer"
-            onClick={goNext}
-            onPointerDown={() => controlsRef.current?.pause()}
-            onPointerUp={() => controlsRef.current?.play()}
-            onPointerLeave={() => controlsRef.current?.play()}
-            onPointerCancel={() => controlsRef.current?.play()}
-          />
-        </div>
+        {/* Tap zones — 50/50 split, hold-to-pause. Hidden on CTA slide so button is clickable. */}
+        {!isSyntheticCTA && (
+          <div className="absolute inset-0 flex z-30">
+            <div
+              className="w-1/2 h-full cursor-pointer"
+              onClick={goPrev}
+              onPointerDown={() => controlsRef.current?.pause()}
+              onPointerUp={() => controlsRef.current?.play()}
+              onPointerLeave={() => controlsRef.current?.play()}
+              onPointerCancel={() => controlsRef.current?.play()}
+            />
+            <div
+              className="w-1/2 h-full cursor-pointer"
+              onClick={goNext}
+              onPointerDown={() => controlsRef.current?.pause()}
+              onPointerUp={() => controlsRef.current?.play()}
+              onPointerLeave={() => controlsRef.current?.play()}
+              onPointerCancel={() => controlsRef.current?.play()}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Share on last page */}
-      {showShareOnLast && current === pages.length - 1 && shareContent && (
+      {/* Share buttons — suppressed on synthetic CTA slide */}
+      {showShareOnLast && current === pages.length - 1 && shareContent && !isSyntheticCTA && (
         <div className="p-4 z-10">{shareContent}</div>
       )}
 
