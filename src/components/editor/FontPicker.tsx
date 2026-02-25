@@ -55,25 +55,28 @@ export function FontPicker({ fontFamily, fontSize, whitelist, availableFonts = [
         <ScrollArea className="h-[350px]">
           <div className="p-2 space-y-1">
             {fonts.map((f: any) => (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.97 }}
                 key={f.id || f.value}
                 onClick={() => {
                   onFontChange(f.value);
                   setOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-xl transition-all group",
-                  fontFamily === f.value ? "bg-white/15 ring-1 ring-white/10" : "hover:bg-white/5"
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left",
+                  fontFamily === f.value ? "bg-white/10" : "hover:bg-white/5"
                 )}
               >
-                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 border border-white/5 group-hover:bg-white/20 transition-colors">
+                <div className="w-8 h-8 rounded-md bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
                   <span className="text-sm font-medium" style={{ fontFamily: f.value }}>Aa</span>
                 </div>
-                <span className="flex-1 text-sm font-semibold text-white/70 group-hover:text-white transition-colors text-left" style={{ fontFamily: f.value }}>{f.isDefault ? "Default" : f.name}</span>
+                <span className="flex-1 text-[13px] font-medium text-white/80 truncate" style={{ fontFamily: f.value }}>
+                  {f.isDefault ? "Default" : f.name}
+                </span>
                 {fontFamily === f.value && (
                   <motion.div layoutId="font-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-glow" />
                 )}
-              </button>
+              </motion.button>
             ))}
           </div>
         </ScrollArea>

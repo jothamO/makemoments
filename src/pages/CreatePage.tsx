@@ -588,7 +588,7 @@ export default function CreatePage() {
                         </div>
 
                         {/* Photos Layer - Now Absolute Inset to match StoryCanvas */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 overflow-hidden">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 overflow-hidden">
                             {(() => {
                                 const photos = currentPage.photos && currentPage.photos.length > 0
                                     ? currentPage.photos
@@ -635,7 +635,7 @@ export default function CreatePage() {
                         </div>
 
                         {/* Text Editor */}
-                        <div className="w-full relative z-20 px-0">
+                        <div className="w-full relative z-20 px-0 pointer-events-none">
                             {(() => {
                                 const getFontSize = (length: number) => {
                                     if (length <= 30) return 'text-5xl sm:text-6xl';
@@ -659,7 +659,7 @@ export default function CreatePage() {
                                         }}
                                         placeholder="Tap to write..."
                                         className={cn(
-                                            "bg-transparent font-medium leading-tight resize-none focus:outline-none w-full overflow-hidden",
+                                            "bg-transparent font-medium leading-tight resize-none focus:outline-none w-full overflow-hidden pointer-events-auto",
                                             getFontSize(currentPage.text.length),
                                             currentPage.type === 'dark'
                                                 ? "placeholder-white/30 caret-white"
@@ -676,7 +676,7 @@ export default function CreatePage() {
                             })()}
 
                             {/* Progress Bar + Character Count */}
-                            <div className="mt-3 flex items-center gap-2 w-full">
+                            <div className="mt-3 flex items-center gap-2 w-full pointer-events-none">
                                 <div className={cn(
                                     "flex-1 h-0.5 rounded-full overflow-hidden",
                                     currentPage.type === 'dark' ? "bg-white/10" : "bg-zinc-900/10"
