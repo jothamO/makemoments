@@ -49,12 +49,16 @@ const CelebrationView = () => {
   const shareUrl = encodeURIComponent(window.location.href);
   const shareText = encodeURIComponent("Check out this celebration card! 🎉");
 
+  const firstPage = celebration.pages?.[0];
+  const bgStart = firstPage?.bgGradientStart || t?.primary || "#ec4899";
+  const bgEnd = firstPage?.bgGradientEnd || t?.secondary || glowColor;
+
   // Intro screen
   if (!started) {
     return (
       <div
-        className="fixed inset-0 flex flex-col items-center justify-center cursor-pointer"
-        style={{ background: `linear-gradient(160deg, ${t.bgGradientStart}, ${t.bgGradientEnd})` }}
+        className="fixed inset-0 flex flex-col items-center justify-center cursor-pointer z-[100]"
+        style={{ background: `linear-gradient(160deg, ${bgStart}, ${bgEnd})` }}
         onClick={() => setStarted(true)}
       >
         <p className="text-white/60 text-sm mb-4 animate-pulse">Tap to begin</p>
@@ -101,14 +105,34 @@ const CelebrationView = () => {
     </div>
   );
 
+  // Inject the Ourheart-style synthetic CTA watermark slide
+  const pages = [...(celebration.pages as any)];
+  if (!celebration.removeWatermark) {
+    pages.push({
+      _id: "synthetic-watermark-slide",
+      type: "dark",
+      text: "Create your own\nunforgettable story.",
+      fontFamily: "var(--font-headline)",
+      textColor: t.textLight || "#ffffff",
+      textAlign: "center",
+      bgImage: "",
+      bgGradientStart: bgStart,
+      bgGradientEnd: bgEnd,
+      stickers: [],
+      transition: "fade",
+      duration: 5,
+    });
+  }
+
   return (
     <StoryViewer
-      pages={celebration.pages as any}
+      pages={pages}
       showWatermark={!celebration.removeWatermark}
       glowColor={glowColor}
       autoPlay
       showShareOnLast
       shareContent={shareButtons}
+      eventSlug={event.slug}
     />
   );
 };

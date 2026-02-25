@@ -37,6 +37,7 @@ interface StoryViewerProps {
   onClose?: () => void;
   showShareOnLast?: boolean;
   shareContent?: React.ReactNode;
+  eventSlug?: string;
 }
 
 export function StoryViewer({
@@ -48,38 +49,48 @@ export function StoryViewer({
   onClose,
   showShareOnLast = false,
   shareContent,
+  eventSlug,
 }: StoryViewerProps) {
   const [current, setCurrent] = useState(0);
-  const [progress, setProgress] = useState(0);
+  const [scope, animate] = motion.useAnimate();
 
   const goNext = useCallback(() => {
     if (current < pages.length - 1) {
       setCurrent((c) => c + 1);
-      setProgress(0);
     }
   }, [current, pages.length]);
 
   const goPrev = useCallback(() => {
     if (current > 0) {
       setCurrent((c) => c - 1);
-      setProgress(0);
     }
   }, [current]);
 
-  // Auto-advance timer
+  // Algorithmic Slide Engine: The visual progress bar drives the data transition
   useEffect(() => {
-    if (!autoPlay) return;
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) {
-          goNext();
-          return 0;
-        }
-        return p + 100 / (autoPlayInterval / 100);
-      });
-    }, 100);
-    return () => clearInterval(interval);
-  }, [autoPlay, autoPlayInterval, goNext]);
+    if (!autoPlay || current >= pages.length) return;
+
+    // Reset all bars visually instantly
+    pages.forEach((_, i) => {
+      animate(`#bar-${i}`, { width: i < current ? "100%" : "0%" }, { duration: 0 });
+    });
+
+    const pageDuration = pages[current].duration ? pages[current].duration * 1000 : autoPlayInterval;
+
+    // Animate current bar to 100% and then automatically go next
+    const controls = animate(`#bar-${current}`, { width: "100%" }, {
+      duration: pageDuration / 1000,
+      ease: "linear",
+    });
+
+    controls.then(() => {
+      goNext();
+    }).catch(() => { });
+
+    return () => {
+      controls.stop();
+    };
+  }, [current, autoPlay, autoPlayInterval, pages, animate, goNext]);
 
   const page = pages[current];
   if (!page) return null;
@@ -87,51 +98,70 @@ export function StoryViewer({
   const variant = transitionVariants[page.transition];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col" ref={scope}>
       {/* Progress bars */}
       <div className="flex gap-1 px-3 pt-3 pb-1 z-10">
         {pages.map((_, i) => (
           <div key={i} className="flex-1 h-0.5 bg-white/30 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-white rounded-full transition-all duration-100"
-              style={{
-                width: i < current ? "100%" : i === current ? `${progress}%` : "0%",
-              }}
+            <motion.div
+              id={`bar-${i}`}
+              className="h-full bg-white rounded-full"
+              initial={{ width: i < current ? "100%" : "0%" }}
             />
           </div>
         ))}
       </div>
 
-      {/* Close button */}
-      {onClose && (
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition-colors"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
+      {/* Close button omitted for immersive trap */}
 
-      {/* Canvas */}
-      <div className="flex-1 relative overflow-hidden" style={{ perspective: "1000px" }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current}
-            initial={variant.initial}
-            animate={variant.animate}
-            exit={variant.exit}
-            transition={{ duration: 0.4 }}
-            className="absolute inset-0 p-4"
-          >
-            <StoryCanvas page={page} />
-          </motion.div>
-        </AnimatePresence>
+      {/* Canvas Wrapper enforcing Editor WYSIWYG Parity */}
+      <div className="flex-1 relative overflow-hidden flex flex-col items-center" style={{ perspective: "1000px" }}>
 
-        {/* Tap zones */}
-        <div className="absolute inset-0 flex z-10">
+        {/* Top spacer matching Editor's 160px header gap */}
+        <div className="w-full shrink-0 z-10" style={{ height: "160px", pointerEvents: "none" }} />
+
+        <div className="relative w-full flex-1 flex flex-col items-start px-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={current}
+              initial={variant.initial}
+              animate={variant.animate}
+              exit={variant.exit}
+              transition={{ duration: 0.4 }}
+              className="absolute inset-x-4 inset-y-0"
+            >
+              {page._id === "synthetic-watermark-slide" ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-8 gap-8">
+                  <h1
+                    className="text-4xl text-center leading-tight tracking-tight font-bold"
+                    style={{ color: page.textColor, fontFamily: page.fontFamily }}
+                  >
+                    {page.text}
+                  </h1>
+                  <Link to={`/create/${eventSlug || ""}`}>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-8 py-4 rounded-full font-bold shadow-2xl flex items-center justify-center bg-white text-black"
+                    >
+                      Start Creating &rarr;
+                    </motion.button>
+                  </Link>
+                </div>
+              ) : (
+                <StoryCanvas page={page} />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Bottom padding offset matching editor's 188px */}
+        <div className="w-full shrink-0 z-10" style={{ height: "188px", pointerEvents: "none" }} />
+
+        {/* Tap zones overlaying everything - BIASED towards progression */}
+        <div className="absolute inset-0 flex z-30">
           <div className="w-1/3 h-full cursor-pointer" onClick={goPrev} />
-          <div className="w-1/3 h-full" />
-          <div className="w-1/3 h-full cursor-pointer" onClick={goNext} />
+          <div className="w-2/3 h-full cursor-pointer" onClick={goNext} />
         </div>
       </div>
 
@@ -140,25 +170,6 @@ export function StoryViewer({
         <div className="p-4 z-10">{shareContent}</div>
       )}
 
-      {/* Watermark */}
-      {showWatermark && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.5 }}
-          transition={{ delay: 2, duration: 0.6 }}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20"
-        >
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full backdrop-blur-md bg-white/90 no-underline hover:bg-white transition-colors"
-            style={{ textDecoration: "none" }}
-          >
-            <span className="text-[11px] font-medium" style={{ color: glowColor }}>
-              Created with makemoments.xyz
-            </span>
-          </Link>
-        </motion.div>
-      )}
     </div>
   );
 }

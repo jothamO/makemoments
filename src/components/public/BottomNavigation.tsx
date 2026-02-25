@@ -14,10 +14,9 @@ export function BottomNavigation() {
     const activeEvent = useQuery(api.events.getActive);
     const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-    // Hide on editor page, admin pages, and if no active event
-    const isEditor = location.pathname.includes("/create");
-    const isAdminPage = location.pathname.startsWith("/admin");
-    if (isEditor || isAdminPage) return null;
+    // Only show dock on primary application pages
+    const isRootPage = ["/", "/my-moments", "/login"].includes(location.pathname);
+    if (!isRootPage) return null;
 
     const theme = activeEvent?.theme;
     const primaryColor = theme?.primary || "hsl(var(--primary))";
