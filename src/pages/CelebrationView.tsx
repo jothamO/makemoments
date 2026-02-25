@@ -7,6 +7,7 @@ import { StoryViewer } from "@/components/story/StoryViewer";
 import { Copy, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 const CelebrationView = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -64,14 +65,31 @@ const CelebrationView = () => {
         style={{ backgroundColor: introBgColor, backgroundImage: introBgImage, color: introTextColor, backgroundSize: 'cover', backgroundPosition: 'center' }}
         onClick={() => setStarted(true)}
       >
-        <p className="opacity-60 text-sm mb-4 animate-pulse">Tap to begin</p>
-        <h1
+        <motion.p
+          className="opacity-60 text-sm mb-4 animate-pulse"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 0.6, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          Tap to begin
+        </motion.p>
+        <motion.h1
           className="text-3xl md:text-5xl font-bold text-center px-8 leading-tight"
           style={{ fontFamily: defaultFont }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
         >
           A love story awaits…
-        </h1>
-        <p className="opacity-40 text-xs mt-8">Made with MakeMoments</p>
+        </motion.h1>
+        <motion.p
+          className="opacity-40 text-xs mt-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.4 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          Made with MakeMoments
+        </motion.p>
       </div>
     );
   }

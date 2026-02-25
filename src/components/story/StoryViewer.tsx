@@ -154,11 +154,11 @@ export function StoryViewer({
       {/* Slide Content Area — identical structure to StoryPreviewPlayer */}
       <div
         className="flex-1 relative cursor-pointer select-none"
-        onClick={isSyntheticCTA ? undefined : handleTap}
-        onPointerDown={isSyntheticCTA ? undefined : () => controlsRef.current?.pause()}
-        onPointerUp={isSyntheticCTA ? undefined : () => controlsRef.current?.play()}
-        onPointerLeave={isSyntheticCTA ? undefined : () => controlsRef.current?.play()}
-        onPointerCancel={isSyntheticCTA ? undefined : () => controlsRef.current?.play()}
+        onClick={handleTap}
+        onPointerDown={() => controlsRef.current?.pause()}
+        onPointerUp={() => controlsRef.current?.play()}
+        onPointerLeave={() => controlsRef.current?.play()}
+        onPointerCancel={() => controlsRef.current?.play()}
         style={{ touchAction: 'manipulation' }}
       >
         <AnimatePresence mode="wait">
@@ -187,7 +187,7 @@ export function StoryViewer({
                 >
                   {page.text}
                 </h1>
-                <Link to="/">
+                <Link to="/" onClick={(e) => e.stopPropagation()}>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
