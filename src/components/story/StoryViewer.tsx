@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useAnimate } from "framer-motion";
 import { X } from "lucide-react";
 import type { StoryPage, SlideTransition } from "@/data/types";
 import { StoryCanvas } from "@/components/editor/StoryCanvas";
@@ -52,7 +52,7 @@ export function StoryViewer({
   eventSlug,
 }: StoryViewerProps) {
   const [current, setCurrent] = useState(0);
-  const [scope, animate] = motion.useAnimate();
+  const [scope, animate] = useAnimate();
 
   const goNext = useCallback(() => {
     if (current < pages.length - 1) {
