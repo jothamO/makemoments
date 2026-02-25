@@ -64,6 +64,7 @@ export function StoryViewer({
   const [current, setCurrent] = useState(0);
   const [scope, animate] = useAnimate();
   const controlsRef = useRef<any>(null);
+  const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const goNext = useCallback(() => {
     if (current < pages.length - 1) {
@@ -73,11 +74,14 @@ export function StoryViewer({
 
   const goPrev = useCallback(() => {
     if (current > 0) {
+      // Cancel pending auto-advance before navigating back
+      if (controlsRef.current) controlsRef.current.stop();
+      if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
       setCurrent((c) => c - 1);
     }
   }, [current]);
 
-  // Algorithmic Slide Engine: The visual progress bar drives the data transition
+  // Algorithmic Slide Engine: separate timer from bar animation so we can cancel reliably
   useEffect(() => {
     if (!autoPlay || current >= pages.length) return;
 
@@ -88,19 +92,22 @@ export function StoryViewer({
 
     const pageDuration = (pages[current] as any).duration ? (pages[current] as any).duration * 1000 : autoPlayInterval;
 
-    // Animate current bar to 100% and then automatically go next
+    // Animate the active bar filling — visual only, does NOT drive slide advance
     controlsRef.current = animate(`#bar-${current}`, { width: "100%" }, {
       duration: pageDuration / 1000,
       ease: "linear",
     });
 
-    controlsRef.current.then(() => {
+    // A separate, cancellable timer drives the actual slide advance
+    slideTimerRef.current = setTimeout(() => {
       goNext();
-    }).catch(() => { });
+    }, pageDuration);
 
     return () => {
       controlsRef.current?.stop();
+      if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
     };
+
   }, [current, autoPlay, autoPlayInterval, pages, animate, goNext]);
 
   const page = pages[current];
