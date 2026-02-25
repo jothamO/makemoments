@@ -471,7 +471,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
                   transition={{ delay: 0.8 }}
                   onClick={() => {
                     handleClose();
-                    navigate(`/create/${event.slug || ""}`);
+                    navigate(`/${event.slug || ""}/create`);
                   }}
                   className="mt-4 text-xs underline decoration-dotted text-white/30 hover:text-white/60 transition-colors"
                 >

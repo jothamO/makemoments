@@ -13,6 +13,7 @@ const CelebrationView = () => {
   const { toast } = useToast();
   const celebration = useQuery(api.celebrations.getBySlug, slug ? { slug } : "skip");
   const event = useQuery(api.events.getById, celebration?.eventId ? { id: celebration.eventId } : "skip");
+  const fonts = useQuery(api.fonts.list);
   const incrementViews = useMutation(api.celebrations.incrementViews);
   const [started, setStarted] = useState(false);
 
@@ -49,26 +50,28 @@ const CelebrationView = () => {
   const shareUrl = encodeURIComponent(window.location.href);
   const shareText = encodeURIComponent("Check out this celebration card! 🎉");
 
-  const firstPage = celebration.pages?.[0];
-  const bgStart = firstPage?.bgGradientStart || t?.primary || "#ec4899";
-  const bgEnd = firstPage?.bgGradientEnd || t?.secondary || glowColor;
+  const firstPage = celebration.pages?.[0] as any;
+  const introBgColor = firstPage?.bgGradientStart || t?.primary || "#000";
+  const introBgImage = firstPage?.bgImage ? `url(${firstPage.bgImage})` : undefined;
+  const introTextColor = firstPage?.textColor || t?.textLight || "#fff";
+  const defaultFont = fonts?.find((f: any) => f.isDefault)?.fontFamily || "Inter";
 
   // Intro screen
   if (!started) {
     return (
       <div
         className="fixed inset-0 flex flex-col items-center justify-center cursor-pointer z-[100]"
-        style={{ background: `linear-gradient(160deg, ${bgStart}, ${bgEnd})` }}
+        style={{ backgroundColor: introBgColor, backgroundImage: introBgImage, color: introTextColor, backgroundSize: 'cover', backgroundPosition: 'center' }}
         onClick={() => setStarted(true)}
       >
-        <p className="text-white/60 text-sm mb-4 animate-pulse">Tap to begin</p>
+        <p className="opacity-60 text-sm mb-4 animate-pulse">Tap to begin</p>
         <h1
-          className="text-3xl md:text-5xl font-bold text-white text-center px-8 leading-tight"
-          style={{ fontFamily: "var(--font-headline)" }}
+          className="text-3xl md:text-5xl font-bold text-center px-8 leading-tight"
+          style={{ fontFamily: defaultFont }}
         >
           A love story awaits…
         </h1>
-        <p className="text-white/40 text-xs mt-8">Made with MakeMoments</p>
+        <p className="opacity-40 text-xs mt-8">Made with MakeMoments</p>
       </div>
     );
   }
@@ -90,18 +93,7 @@ const CelebrationView = () => {
           </a>
         </Button>
       </div>
-      <div className="text-center">
-        <Button
-          asChild
-          size="sm"
-          className="rounded-full border-0"
-          style={{ background: `linear-gradient(135deg, ${t.primary}, ${t.secondary})`, color: t.textLight }}
-        >
-          <Link to={`/create/${event.slug}`}>
-            <Sparkles className="mr-2 h-4 w-4" /> Create Your Own
-          </Link>
-        </Button>
-      </div>
+      {/* Secondary CTA intentionally removed per requirements */}
     </div>
   );
 
@@ -112,12 +104,12 @@ const CelebrationView = () => {
       _id: "synthetic-watermark-slide",
       type: "dark",
       text: "Create your own\nunforgettable story.",
-      fontFamily: "var(--font-headline)",
-      textColor: t.textLight || "#ffffff",
+      fontFamily: defaultFont,
+      textColor: introTextColor,
       textAlign: "center",
-      bgImage: "",
-      bgGradientStart: bgStart,
-      bgGradientEnd: bgEnd,
+      bgImage: firstPage?.bgImage || "",
+      bgGradientStart: introBgColor,
+      bgGradientEnd: introBgColor, // explicitly discarding multi-color gradients
       stickers: [],
       transition: "fade",
       duration: 5,

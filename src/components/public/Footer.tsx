@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 
+import { useEventTheme } from "@/contexts/ThemeContext";
+
 export function PublicFooter() {
+  const { event } = useEventTheme();
   return (
     <footer className="bg-foreground/5 border-t py-10">
       <div className="mx-auto max-w-6xl px-4">
@@ -15,7 +18,7 @@ export function PublicFooter() {
             <h4 className="font-semibold mb-3">Quick Links</h4>
             <ul className="space-y-2 text-muted-foreground">
               <li><Link to="/" className="hover:underline">Home</Link></li>
-              <li><Link to="/create/womens-day" className="hover:underline">Create Card</Link></li>
+              <li><Link to={`/${event?.slug || 'womens-day'}/create`} className="hover:underline">Create Card</Link></li>
             </ul>
           </div>
           <div>

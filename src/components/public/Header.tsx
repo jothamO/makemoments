@@ -6,7 +6,7 @@ import { UserMenu } from "@/components/auth/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
 
 export function PublicHeader() {
-  const { theme } = useEventTheme();
+  const { event, theme } = useEventTheme();
   const { isLoggedIn, logout } = useAuth();
 
   return (
@@ -20,7 +20,7 @@ export function PublicHeader() {
         {/* Desktop */}
         <nav className="hidden md:flex items-center gap-6 text-sm" style={{ fontFamily: "var(--font-body)" }}>
           <Link to="/" className="hover:opacity-70 transition-opacity">Home</Link>
-          <Link to="/create/womens-day" className="hover:opacity-70 transition-opacity">Create</Link>
+          <Link to={`/${event?.slug || 'womens-day'}/create`} className="hover:opacity-70 transition-opacity">Create</Link>
           <UserMenu />
         </nav>
 
