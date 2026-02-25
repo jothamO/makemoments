@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useAnimate } from "framer-motion";
-import { X } from "lucide-react";
 import type { StoryPage, SlideTransition } from "@/data/types";
-import { StoryCanvas } from "@/components/editor/StoryCanvas";
 import { Link } from "react-router-dom";
+import { hexToRgba } from "@/lib/utils";
+import { BackgroundPattern } from "@/components/BackgroundPattern";
+import { CONTENT_TRANSITION } from "@/lib/animation";
 
 const transitionVariants: Record<SlideTransition, { initial: Record<string, number | string>; animate: Record<string, number | string>; exit: Record<string, number | string> }> = {
   fade: {
@@ -26,6 +27,15 @@ const transitionVariants: Record<SlideTransition, { initial: Record<string, numb
     animate: { rotateY: 0, opacity: 1 },
     exit: { rotateY: -90, opacity: 0 },
   },
+};
+
+// Dynamic font size helper — identical to StoryPreviewPlayer & StoryCanvas
+const getFontSize = (length: number) => {
+  if (length <= 30) return 'text-5xl sm:text-6xl';
+  if (length <= 60) return 'text-4xl sm:text-5xl';
+  if (length <= 100) return 'text-3xl sm:text-4xl';
+  if (length <= 150) return 'text-2xl sm:text-3xl';
+  return 'text-xl sm:text-2xl';
 };
 
 interface StoryViewerProps {
@@ -102,10 +112,34 @@ export function StoryViewer({
   const trackColor = isDark ? "bg-white/20" : "bg-black/10";
   const fillColor = isDark ? "bg-white" : "bg-black";
 
+  // Tap handler using coordinate-based 50/50 split — identical to StoryPreviewPlayer
+  const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const isLeftHalf = x < rect.width / 2;
+
+    if (isLeftHalf) {
+      goPrev();
+    } else {
+      goNext();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col" ref={scope}>
+    <div className="fixed inset-0 z-50 flex flex-col" ref={scope}
+      style={{
+        backgroundColor: page.bgGradientStart,
+        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.bgGradientEnd, isDark ? 0.4 : 0.25)}, transparent 70%)`,
+        transition: "background-color 0.5s, background-image 0.5s",
+      }}
+    >
+      {/* Background Pattern */}
+      {page.backgroundPattern && (
+        <BackgroundPattern patternId={page.backgroundPattern} />
+      )}
+
       {/* Progress bars — adaptive to page.type */}
-      <div className="absolute top-0 left-0 right-0 flex gap-1 px-3 pt-3 pb-1 z-40">
+      <div className="flex gap-1 px-3 pt-4 pb-2 z-20">
         {pages.map((_, i) => (
           <div key={i} className={`flex-1 h-[3px] rounded-full overflow-hidden ${trackColor}`}>
             <motion.div
@@ -117,72 +151,143 @@ export function StoryViewer({
         ))}
       </div>
 
-      {/* Canvas Wrapper — Full-Screen Edge-to-Edge */}
-      <div className="flex-1 relative overflow-hidden" style={{ perspective: "1000px" }}>
-
-        <div className="relative w-full h-full">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={current}
-              initial={variant.initial}
-              animate={variant.animate}
-              exit={variant.exit}
-              transition={{ duration: 0.4 }}
-              className="absolute inset-0"
-            >
-              {isSyntheticCTA ? (
-                <div
-                  className="w-full h-full flex flex-col items-center justify-center p-8 gap-8"
-                  style={{ backgroundColor: page.bgGradientStart, backgroundImage: (page as any).bgImage ? `url(${(page as any).bgImage})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      {/* Slide Content Area — identical structure to StoryPreviewPlayer */}
+      <div
+        className="flex-1 relative cursor-pointer select-none"
+        onClick={isSyntheticCTA ? undefined : handleTap}
+        onPointerDown={isSyntheticCTA ? undefined : () => controlsRef.current?.pause()}
+        onPointerUp={isSyntheticCTA ? undefined : () => controlsRef.current?.play()}
+        onPointerLeave={isSyntheticCTA ? undefined : () => controlsRef.current?.play()}
+        onPointerCancel={isSyntheticCTA ? undefined : () => controlsRef.current?.play()}
+        style={{ touchAction: 'manipulation' }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current}
+            initial={variant.initial}
+            animate={variant.animate}
+            exit={variant.exit}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0"
+          >
+            {isSyntheticCTA ? (
+              /* ── Synthetic CTA Slide ── */
+              <div
+                className="w-full h-full flex flex-col items-center justify-center p-8 gap-8"
+                style={{
+                  backgroundColor: page.bgGradientStart,
+                  backgroundImage: (page as any).bgImage ? `url(${(page as any).bgImage})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <h1
+                  className="text-4xl text-center leading-tight tracking-tight font-bold"
+                  style={{ color: page.textColor, fontFamily: page.fontFamily }}
                 >
-                  <h1
-                    className="text-4xl text-center leading-tight tracking-tight font-bold"
-                    style={{ color: page.textColor, fontFamily: page.fontFamily }}
+                  {page.text}
+                </h1>
+                <Link to="/">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-8 py-4 rounded-full font-bold shadow-2xl flex items-center justify-center bg-white text-black"
                   >
-                    {page.text}
-                  </h1>
-                  <Link to="/">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-8 py-4 rounded-full font-bold shadow-2xl flex items-center justify-center bg-white text-black"
-                    >
-                      Start Creating with MakeMoments
-                    </motion.button>
-                  </Link>
-                </div>
-              ) : (
-                <StoryCanvas page={page} />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+                    Start Creating with MakeMoments
+                  </motion.button>
+                </Link>
+              </div>
+            ) : (
+              /* ── Regular Slide — Manual Layout Replicating StoryPreviewPlayer ── */
+              <>
+                {/* Master Layout Container — mathematically synced to CreatePage <main> dimensions (48px top chrome, 188px bottom chrome) */}
+                <div className="absolute inset-0 flex flex-col pt-[48px] pb-[188px] pointer-events-none">
+                  <div className="flex-1 relative flex flex-col items-center justify-center w-full">
 
-        {/* Tap zones — 50/50 split, hold-to-pause. Hidden on CTA slide so button is clickable. */}
-        {!isSyntheticCTA && (
-          <div className="absolute inset-0 flex z-30">
-            <div
-              className="w-1/2 h-full cursor-pointer"
-              onClick={goPrev}
-              onPointerDown={() => controlsRef.current?.pause()}
-              onPointerUp={() => controlsRef.current?.play()}
-              onPointerLeave={() => controlsRef.current?.play()}
-              onPointerCancel={() => controlsRef.current?.play()}
-            />
-            <div
-              className="w-1/2 h-full cursor-pointer"
-              onClick={goNext}
-              onPointerDown={() => controlsRef.current?.pause()}
-              onPointerUp={() => controlsRef.current?.play()}
-              onPointerLeave={() => controlsRef.current?.play()}
-              onPointerCancel={() => controlsRef.current?.play()}
-            />
-          </div>
-        )}
+                    {/* Text Layout Layer */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-10 pointer-events-none">
+                      {/* Spacer block to maintain layout parity with Create editor */}
+                      <div className="flex justify-center mb-4 min-h-[160px] w-full relative z-10" />
+
+                      <div className="text-center w-full z-20 flex items-start justify-center min-h-[60px]">
+                        <motion.h1
+                          className={`font-medium leading-tight ${getFontSize(page.text?.length || 0)}`}
+                          style={{
+                            fontFamily: page.fontFamily,
+                            color: page.textColor || "#FFFFFF",
+                          }}
+                          initial={{ opacity: 0, y: 16 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
+                        >
+                          {page.text || ""}
+                        </motion.h1>
+                      </div>
+
+                      {/* Ghost Progress Bar for identical flex-col vertical centering */}
+                      <div className="mt-3 flex items-center gap-2 w-full opacity-0 select-none">
+                        <div className="flex-1 h-0.5" />
+                        <span className="text-xs font-mono shrink-0">0/200</span>
+                      </div>
+                    </div>
+
+                    {/* Characters / Photos Layer */}
+                    {page.photos && page.photos.length > 0 && (
+                      <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
+                        {page.photos.map((photo, i) => (
+                          <div
+                            key={photo.id || i}
+                            className="absolute inset-0 flex items-center justify-center"
+                          >
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{
+                                opacity: 1,
+                                scale: 1,
+                                x: photo.transform.x,
+                                y: photo.transform.y,
+                                rotate: photo.transform.rotation,
+                              }}
+                              transition={{
+                                ...CONTENT_TRANSITION,
+                                delay: 0.05 + i * 0.05,
+                              }}
+                              style={{
+                                width: photo.transform.width,
+                                height: photo.transform.width,
+                              }}
+                              className="pointer-events-none"
+                            >
+                              <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                            </motion.div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Stickers */}
+                    {page.stickers.map((s, idx) => (
+                      <motion.div
+                        key={idx}
+                        className="absolute text-5xl pointer-events-none select-none z-20"
+                        style={{ left: `${s.x}%`, top: `${s.y}%` }}
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ ...CONTENT_TRANSITION, delay: 0.15 + idx * 0.05 }}
+                      >
+                        {s.emoji}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      {/* Share buttons — suppressed on synthetic CTA slide */}
-      {showShareOnLast && current === pages.length - 1 && shareContent && !isSyntheticCTA && (
+      {/* Share on last page — dynamically colored based on backdrop */}
+      {showShareOnLast && current === pages.length - 1 && shareContent && (
         <div className="p-4 z-10">{shareContent}</div>
       )}
 

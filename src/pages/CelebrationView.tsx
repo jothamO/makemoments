@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { StoryViewer } from "@/components/story/StoryViewer";
-import { Copy, Share2, Sparkles } from "lucide-react";
+import { Copy, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
@@ -76,24 +76,29 @@ const CelebrationView = () => {
     );
   }
 
+  // Dynamic share button styling based on the first slide's type
+  const shareIsDark = firstPage?.type === 'dark' || !firstPage?.type;
+  const shareBtnClass = shareIsDark
+    ? "gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
+    : "gap-2 bg-black/10 border-black/20 text-black hover:bg-black/20";
+
   const shareButtons = (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 justify-center">
-        <Button variant="outline" size="sm" onClick={copyLink} className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20">
+        <Button variant="outline" size="sm" onClick={copyLink} className={shareBtnClass}>
           <Copy className="h-4 w-4" /> Copy Link
         </Button>
-        <Button variant="outline" size="sm" asChild className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20">
+        <Button variant="outline" size="sm" asChild className={shareBtnClass}>
           <a href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`} target="_blank" rel="noreferrer">
             <Share2 className="h-4 w-4" /> Twitter
           </a>
         </Button>
-        <Button variant="outline" size="sm" asChild className="gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20">
+        <Button variant="outline" size="sm" asChild className={shareBtnClass}>
           <a href={`https://wa.me/?text=${shareText}%20${shareUrl}`} target="_blank" rel="noreferrer">
             <Share2 className="h-4 w-4" /> WhatsApp
           </a>
         </Button>
       </div>
-      {/* Secondary CTA intentionally removed per requirements */}
     </div>
   );
 
@@ -102,14 +107,14 @@ const CelebrationView = () => {
   if (!celebration.removeWatermark) {
     pages.push({
       _id: "synthetic-watermark-slide",
-      type: "dark",
+      type: firstPage?.type || "dark",
       text: "Create your own\nunforgettable story.",
       fontFamily: defaultFont,
       textColor: introTextColor,
       textAlign: "center",
       bgImage: firstPage?.bgImage || "",
       bgGradientStart: introBgColor,
-      bgGradientEnd: introBgColor, // explicitly discarding multi-color gradients
+      bgGradientEnd: introBgColor,
       stickers: [],
       transition: "fade",
       duration: 5,
