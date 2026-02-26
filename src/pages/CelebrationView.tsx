@@ -52,7 +52,7 @@ const CelebrationView = () => {
   const shareText = encodeURIComponent("Check out this celebration card! 🎉");
 
   const firstPage = celebration.pages?.[0] as any;
-  const introBgColor = firstPage?.bgGradientStart || t?.primary || "#000";
+  const introBgColor = firstPage?.baseColor || t?.primary || "#000";
   const introBgImage = firstPage?.bgImage ? `url(${firstPage.bgImage})` : undefined;
   const introTextColor = firstPage?.textColor || t?.textLight || "#fff";
   const defaultFont = fonts?.find((f: any) => f.isDefault)?.fontFamily || "Inter";
@@ -131,8 +131,8 @@ const CelebrationView = () => {
       textColor: introTextColor,
       textAlign: "center",
       bgImage: firstPage?.bgImage || "",
-      bgGradientStart: introBgColor,
-      bgGradientEnd: introBgColor,
+      baseColor: introBgColor,
+      glowColor: introBgColor,
       stickers: [],
       transition: "fade",
       duration: 5,

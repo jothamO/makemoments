@@ -65,15 +65,17 @@ export function ImageTransformEditor({
         const startY = e.clientY;
         const startW = transform.width;
 
-        const xDir = corner.includes("left") ? -1 : 1;
-        const yDir = corner.includes("top") ? -1 : 1;
+        const xDir = corner.includes("w") ? -1 : 1;
+        const yDir = corner.includes("n") ? -1 : 1;
 
         const onMove = (moveEvent: PointerEvent) => {
             const deltaX = (moveEvent.clientX - startX) * xDir;
             const deltaY = (moveEvent.clientY - startY) * yDir;
 
             // Average X and Y delta for uniform square resize
-            const delta = (deltaX + deltaY) / 2;
+            // We do NOT divide by 2 because the image is scaled from its center point.
+            // Increasing width by 2x ensures the visual corner perfectly tracks 1:1 with the pointer.
+            const delta = deltaX + deltaY;
             const newWidth = Math.max(48, Math.min(400, startW + delta));
 
             onUpdate({

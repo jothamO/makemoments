@@ -197,8 +197,8 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 z-[100] flex flex-col story-viewer"
                     style={{
-                        backgroundColor: page.bgGradientStart,
-                        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || "#ffffff", page.type === 'dark' ? 0.4 : 0.25)}, transparent 70%)`,
+                        backgroundColor: page.baseColor,
+                        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.baseColor, page.type === 'dark' ? 0.4 : 0.35)}, transparent 70%)`,
                         transition: "background-color 0.5s, background-image 0.5s",
                     }}
                 >

@@ -1,0 +1,205 @@
+[
+  {
+    "_creationTime": 1771507166428.5205,
+    "_id": "jx7b1yqbc4tj33ft4f47jazsex81e7n9",
+    "baseColor": "#ffd6d6",
+    "createdAt": 1771507166428,
+    "glowColor": "#ffffff",
+    "isPremium": false,
+    "name": "Blush",
+    "price": 0,
+    "type": "light"
+  },
+  {
+    "_creationTime": 1771507166428.5203,
+    "_id": "jx76bfsb1h9avb8950tznq8prx81evf1",
+    "baseColor": "#ffffff",
+    "createdAt": 1771507166428,
+    "glowColor": "#e2e8f0",
+    "isPremium": false,
+    "name": "Classic White",
+    "type": "light"
+  },
+  {
+    "_creationTime": 1771507166428.52,
+    "_id": "jx7ab5az76sk9d2ejscf0ez7td81fpqz",
+    "baseColor": "#ffffff",
+    "createdAt": 1771507166428,
+    "glowColor": "#ff6161",
+    "isPremium": false,
+    "name": "Peach Fuzz",
+    "price": 0,
+    "type": "light"
+  },
+  {
+    "_creationTime": 1771507166428.5198,
+    "_id": "jx72jn5gth7xr7fss8h9s80ews81fajy",
+    "baseColor": "#faf5ff",
+    "createdAt": 1771507166428,
+    "glowColor": "#d8b4fe",
+    "isPremium": false,
+    "name": "Lavender Soft",
+    "type": "light"
+  },
+  {
+    "_creationTime": 1771507166428.5195,
+    "_id": "jx73nmchy6rmrybz6ctben8bv181e97s",
+    "baseColor": "#f0fdf4",
+    "createdAt": 1771507166428,
+    "glowColor": "#86efac",
+    "isPremium": false,
+    "name": "Mint Fresh",
+    "type": "light"
+  },
+  {
+    "_creationTime": 1771507166428.5193,
+    "_id": "jx7f7ex0yzxw98grwa5f48esw981eh40",
+    "baseColor": "#fffbeb",
+    "createdAt": 1771507166428,
+    "glowColor": "#fcd34d",
+    "isPremium": false,
+    "name": "Cream & Gold",
+    "type": "light"
+  },
+  {
+    "_creationTime": 1771507166428.519,
+    "_id": "jx7c7vph0wkmym2sn5raa2b1p981fkq5",
+    "baseColor": "#f8fafc",
+    "createdAt": 1771507166428,
+    "glowColor": "#bae6fd",
+    "isPremium": false,
+    "name": "Morning Mist",
+    "type": "light"
+  },
+  {
+    "_creationTime": 1771507166428.5188,
+    "_id": "jx73ajfdrr8ntf2r0fxs6evgkd81enkr",
+    "baseColor": "#fff1f2",
+    "createdAt": 1771507166428,
+    "glowColor": "#fda4af",
+    "isPremium": false,
+    "name": "Cotton Candy",
+    "type": "light"
+  },
+  {
+    "_creationTime": 1771507166428.5186,
+    "_id": "jx7d9am5exy21v7zvjvqxvcw7s81e989",
+    "baseColor": "#171717",
+    "createdAt": 1771507166428,
+    "glowColor": "#22c55e",
+    "isDefault": true,
+    "isPremium": false,
+    "name": "Neon Cyber",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.5183,
+    "_id": "jx7e522ny7nn4j5vd1dv4591xs81fn8b",
+    "baseColor": "#09090b",
+    "createdAt": 1771507166428,
+    "glowColor": "#e4e4e7",
+    "isPremium": false,
+    "name": "Eclipse",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.518,
+    "_id": "jx75qpm8sgsp1as2avetp4btxs81f37d",
+    "baseColor": "#1e293b",
+    "createdAt": 1771507166428,
+    "glowColor": "#94a3b8",
+    "isPremium": false,
+    "name": "Slate Minimal",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.5178,
+    "_id": "jx7awwzyzyb2c8zm28yhaj5jp981ekcj",
+    "baseColor": "#3b0764",
+    "createdAt": 1771507166428,
+    "glowColor": "#d8b4fe",
+    "isPremium": false,
+    "name": "Amethyst",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.5176,
+    "_id": "jx7506f59vgsej9ef0zkmdhqc581f5ps",
+    "baseColor": "#0c4a6e",
+    "createdAt": 1771507166428,
+    "glowColor": "#0ea5e9",
+    "isPremium": false,
+    "name": "Ocean Depth",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.5173,
+    "_id": "jx7b78s2n823w465yzwabtv5fn81fsh5",
+    "baseColor": "#1c1917",
+    "createdAt": 1771507166428,
+    "glowColor": "#fbbf24",
+    "isPremium": false,
+    "name": "Charcoal Gold",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.517,
+    "_id": "jx719bjvbdxgyz46p71cys7gbn81egr0",
+    "baseColor": "#450a0a",
+    "createdAt": 1771507166428,
+    "glowColor": "#f87171",
+    "isPremium": false,
+    "name": "Crimson Night",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.5168,
+    "_id": "jx7dyjp87mv5k3jadztfhtq34181eae5",
+    "baseColor": "#020617",
+    "createdAt": 1771507166428,
+    "glowColor": "#6366f1",
+    "isPremium": false,
+    "name": "Galaxy",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.5166,
+    "_id": "jx764s4kb29kvthq40fmewhvpn81fnjz",
+    "baseColor": "#2e1065",
+    "createdAt": 1771507166428,
+    "glowColor": "#a78bfa",
+    "isPremium": false,
+    "name": "Royal Velvet",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.5164,
+    "_id": "jx7exxzcdbhjkcd3v4m3kw8p9s81exjz",
+    "baseColor": "#052e16",
+    "createdAt": 1771507166428,
+    "glowColor": "#4ade80",
+    "isPremium": false,
+    "name": "Deep Forest",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.516,
+    "_id": "jx7b11kj9nsjst48gck3qne92181frn3",
+    "baseColor": "#000000",
+    "createdAt": 1771507166428,
+    "glowColor": "#fb7185",
+    "isPremium": false,
+    "name": "Obsidian Rose",
+    "type": "dark"
+  },
+  {
+    "_creationTime": 1771507166428.5159,
+    "_id": "jx738xq0qzrd346y2sqddkqj7181e5kn",
+    "baseColor": "#0f172a",
+    "createdAt": 1771507166428,
+    "glowColor": "#38bdf8",
+    "isPremium": false,
+    "name": "Midnight Luxe",
+    "type": "dark"
+  }
+]

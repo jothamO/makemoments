@@ -2,8 +2,6 @@ export interface EventTheme {
   primary: string;
   secondary: string;
   accent: string;
-  bgGradientStart: string;
-  bgGradientEnd: string;
   baseColor?: string;
   glowColor?: string;
   textDark: string;
@@ -66,8 +64,8 @@ export interface StoryPage {
   fontSize: FontSize;
   textAlign: "left" | "center" | "right";
   textColor: string;
-  bgGradientStart: string;
-  bgGradientEnd: string;
+  themeId?: string;
+  baseColor: string;
   glowColor?: string;
   transition: SlideTransition;
   backgroundPattern?: string;

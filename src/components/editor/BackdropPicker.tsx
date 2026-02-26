@@ -10,12 +10,12 @@ import type { EventTheme } from "@/data/types";
 
 interface ThemePickerProps {
     onSelect: (theme: Partial<EventTheme>) => void;
-    currentPrimary?: string;
+    currentThemeId?: string;
     whitelist?: string[];
     availableThemes?: any[];
 }
 
-export function BackdropPicker({ onSelect, currentPrimary, whitelist, availableThemes = [] }: ThemePickerProps) {
+export function BackdropPicker({ onSelect, currentThemeId, whitelist, availableThemes = [] }: ThemePickerProps) {
     const [open, setOpen] = useState(false);
 
     // Use the resolved assets passed down from CreatePage
@@ -51,7 +51,7 @@ export function BackdropPicker({ onSelect, currentPrimary, whitelist, availableT
                                 }}
                                 className={cn(
                                     "flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all text-left",
-                                    currentPrimary === (theme.baseColor || theme.primary)
+                                    currentThemeId === (theme._id || theme.id)
                                         ? "bg-white/10"
                                         : "hover:bg-white/5"
                                 )}

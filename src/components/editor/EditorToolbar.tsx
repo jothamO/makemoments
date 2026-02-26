@@ -52,7 +52,7 @@ export function EditorToolbar({
 
         <BackdropPicker
           onSelect={onBackdropSelect}
-          currentPrimary={page.bgGradientStart}
+          currentThemeId={page.themeId}
           whitelist={allowedThemeIds}
           availableThemes={availableThemes} />
 

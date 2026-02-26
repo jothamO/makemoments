@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Edit, Music as MusicIcon, Sparkles, Type, Upload, Loader2, User, X, Image as ImageIcon, DollarSign, Play, Star } from "lucide-react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
@@ -473,7 +473,9 @@ export default function FilesPage() {
                                                 <div className="absolute inset-0 z-0"
                                                     style={{
                                                         backgroundColor: newTheme.baseColor,
-                                                        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(newTheme.glowColor || "#ffffff", 0.08)}, transparent 70%)`
+                                                        backgroundImage: newTheme.glowColor
+                                                            ? `radial-gradient(circle at 50% 0%, ${newTheme.glowColor} 0%, transparent 60%)`
+                                                            : 'none'
                                                     }}
                                                 />
                                                 <div className="relative z-10 text-center">
@@ -492,8 +494,23 @@ export default function FilesPage() {
                         <CardContent className="p-4 sm:p-6">
                             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {themes.map((theme) => (
-                                    <Drawer key={theme._id}>
-                                        <DrawerTrigger asChild>
+                                    <Dialog key={theme._id} open={editingThemeId === theme._id} onOpenChange={(open) => {
+                                        if (open) {
+                                            setEditingThemeId(theme._id);
+                                            setNewTheme({
+                                                name: theme.name || "",
+                                                baseColor: theme.baseColor || "#ffffff",
+                                                glowColor: theme.glowColor || "#ffffff",
+                                                type: theme.type || "light",
+                                                isPremium: theme.isPremium || false,
+                                                price: theme.price || 0
+                                            });
+                                        } else {
+                                            setEditingThemeId(null);
+                                            setNewTheme({ name: "", baseColor: "#ffffff", glowColor: "#ffffff", type: "light", isPremium: false, price: 0 });
+                                        }
+                                    }}>
+                                        <DialogTrigger asChild>
                                             <div className="flex flex-col gap-4 p-4 rounded-2xl bg-zinc-50 border border-zinc-200 hover:border-zinc-300 transition-all group relative overflow-hidden shadow-sm cursor-pointer active:scale-[0.98]">
                                                 <div
                                                     className="absolute top-0 right-0 w-24 h-24 blur-3xl opacity-10 pointer-events-none"
@@ -505,7 +522,9 @@ export default function FilesPage() {
                                                         className="w-10 h-10 rounded-full border border-zinc-200 shadow-md"
                                                         style={{
                                                             backgroundColor: theme.baseColor,
-                                                            backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(theme.glowColor || "#ffffff", 0.08)}, transparent 70%)`
+                                                            backgroundImage: theme.glowColor
+                                                                ? `radial-gradient(circle at 50% 0%, ${theme.glowColor} 0%, transparent 60%)`
+                                                                : 'none'
                                                         }}
                                                     />
                                                     <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
@@ -538,20 +557,23 @@ export default function FilesPage() {
                                                     <p className="font-semibold text-zinc-900 text-sm">{theme.name}</p>
                                                     <div className="flex gap-1.5 flex-wrap">
                                                         <div className="px-2 py-0.5 rounded-md bg-zinc-100 text-[9px] font-mono text-zinc-500 uppercase border border-zinc-200">{theme.baseColor}</div>
+                                                        {theme.glowColor && (
+                                                            <div className="px-2 py-0.5 rounded-md bg-zinc-50 text-[9px] font-mono text-zinc-400 uppercase border border-zinc-100">{theme.glowColor}</div>
+                                                        )}
                                                         <div className="px-2 py-0.5 rounded-md bg-zinc-100 text-[9px] font-mono text-zinc-500 uppercase border border-zinc-200">{theme.type}</div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </DrawerTrigger>
+                                        </DialogTrigger>
 
 
-                                        <DrawerContent className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[20px] p-6 outline-none z-50 max-h-[92vh] overflow-y-auto">
+                                        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl p-6">
 
                                             <div className="space-y-6">
-                                                <DrawerHeader className="text-left">
-                                                    <DrawerTitle>Edit Theme</DrawerTitle>
-                                                    <DrawerDescription>Update naming and branding colors.</DrawerDescription>
-                                                </DrawerHeader>
+                                                <DialogHeader className="text-left">
+                                                    <DialogTitle>Edit Theme</DialogTitle>
+                                                    <DialogDescription>Update naming and branding colors.</DialogDescription>
+                                                </DialogHeader>
 
                                                 <div className="space-y-4">
                                                     <div className="space-y-2">
@@ -572,14 +594,14 @@ export default function FilesPage() {
                                                                 <Input
                                                                     type="color"
                                                                     className="p-1 h-10 w-12 shrink-0 border-zinc-200"
-                                                                    defaultValue={theme.baseColor}
+                                                                    value={newTheme.baseColor}
                                                                     onChange={e => {
                                                                         setEditingThemeId(theme._id);
                                                                         setNewTheme(p => ({ ...p, baseColor: e.target.value }));
                                                                     }}
                                                                 />
                                                                 <Input
-                                                                    defaultValue={theme.baseColor}
+                                                                    value={newTheme.baseColor}
                                                                     className="font-mono text-xs uppercase"
                                                                     onChange={e => {
                                                                         setEditingThemeId(theme._id);
@@ -594,14 +616,14 @@ export default function FilesPage() {
                                                                 <Input
                                                                     type="color"
                                                                     className="p-1 h-10 w-12 shrink-0 border-zinc-200"
-                                                                    defaultValue={theme.glowColor}
+                                                                    value={newTheme.glowColor}
                                                                     onChange={e => {
                                                                         setEditingThemeId(theme._id);
                                                                         setNewTheme(p => ({ ...p, glowColor: e.target.value }));
                                                                     }}
                                                                 />
                                                                 <Input
-                                                                    defaultValue={theme.glowColor}
+                                                                    value={newTheme.glowColor}
                                                                     className="font-mono text-xs uppercase"
                                                                     onChange={e => {
                                                                         setEditingThemeId(theme._id);
@@ -649,7 +671,9 @@ export default function FilesPage() {
                                                             className="flex flex-col items-center justify-center h-32 rounded-xl relative overflow-hidden transition-all duration-300 border border-zinc-100 shadow-inner"
                                                             style={{
                                                                 backgroundColor: newTheme.baseColor || theme.baseColor,
-                                                                backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(newTheme.glowColor || theme.glowColor || "#ffffff", 0.08)}, transparent 70%)`
+                                                                backgroundImage: (newTheme.glowColor || theme.glowColor)
+                                                                    ? `radial-gradient(circle at 50% 0%, ${newTheme.glowColor || theme.glowColor} 0%, transparent 60%)`
+                                                                    : 'none'
                                                             }}
                                                         >
                                                             <span
@@ -663,9 +687,9 @@ export default function FilesPage() {
                                                 </div>
 
                                                 <div className="flex gap-3 pt-6">
-                                                    <DrawerClose asChild>
+                                                    <DialogClose asChild>
                                                         <Button variant="outline" className="flex-1">Cancel</Button>
-                                                    </DrawerClose>
+                                                    </DialogClose>
                                                     <Button
                                                         className="flex-1"
                                                         onClick={async () => {
@@ -689,9 +713,9 @@ export default function FilesPage() {
                                                     </Button>
                                                 </div>
                                             </div>
-                                        </DrawerContent>
+                                        </DialogContent>
 
-                                    </Drawer>
+                                    </Dialog>
                                 ))}
                             </div>
                         </CardContent>
@@ -980,8 +1004,8 @@ export default function FilesPage() {
                             ) : (
                                 <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                                     {characters.map((char) => (
-                                        <Drawer key={char._id}>
-                                            <DrawerTrigger asChild>
+                                        <Dialog key={char._id}>
+                                            <DialogTrigger asChild>
                                                 <div className="relative group rounded-xl border border-zinc-100 bg-zinc-50 p-2 flex flex-col items-center gap-2 hover:border-zinc-300 transition-all shadow-sm cursor-pointer active:scale-95">
                                                     <div className="aspect-square w-full flex items-center justify-center">
                                                         <img src={char.url} alt={char.name} className="max-w-full max-h-full object-contain drop-shadow-md" />
@@ -1029,14 +1053,14 @@ export default function FilesPage() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </DrawerTrigger>
+                                            </DialogTrigger>
 
 
-                                            <DrawerContent className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[20px] p-6 outline-none z-50">
-                                                <DrawerHeader className="text-left">
-                                                    <DrawerTitle>Edit Character</DrawerTitle>
-                                                    <DrawerDescription>Update the name and preview the character image.</DrawerDescription>
-                                                </DrawerHeader>
+                                            <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-md p-6">
+                                                <DialogHeader className="text-left">
+                                                    <DialogTitle>Edit Character</DialogTitle>
+                                                    <DialogDescription>Update the name and preview the character image.</DialogDescription>
+                                                </DialogHeader>
                                                 <div className="space-y-8 pt-4">
                                                     <div className="flex flex-col items-center gap-4">
                                                         <div className="w-32 h-32 flex items-center justify-center bg-zinc-50 rounded-2xl border border-zinc-100 p-4">
@@ -1075,21 +1099,21 @@ export default function FilesPage() {
                                                         </div>
 
                                                         <div className="pt-6 border-t border-zinc-100">
-                                                            <Drawer>
-                                                                <DrawerTrigger asChild>
+                                                            <Dialog>
+                                                                <DialogTrigger asChild>
                                                                     <Button variant="ghost" className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 gap-2">
                                                                         <Trash2 className="h-4 w-4" /> Delete Character
                                                                     </Button>
-                                                                </DrawerTrigger>
+                                                                </DialogTrigger>
 
 
-                                                                <DrawerContent className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[20px] p-6 outline-none z-[60]">
+                                                                <DialogContent className="sm:max-w-sm p-6">
 
                                                                     <div className="space-y-6 text-center">
-                                                                        <DrawerHeader>
-                                                                            <DrawerTitle>Delete Character?</DrawerTitle>
-                                                                            <DrawerDescription>This action cannot be undone. This character will be removed from all events.</DrawerDescription>
-                                                                        </DrawerHeader>
+                                                                        <DialogHeader>
+                                                                            <DialogTitle>Delete Character?</DialogTitle>
+                                                                            <DialogDescription>This action cannot be undone. This character will be removed from all events.</DialogDescription>
+                                                                        </DialogHeader>
                                                                         <div className="flex flex-col gap-2">
                                                                             <Button
                                                                                 variant="destructive"
@@ -1100,20 +1124,20 @@ export default function FilesPage() {
                                                                             >
                                                                                 Delete Permenantly
                                                                             </Button>
-                                                                            <DrawerClose asChild>
+                                                                            <DialogClose asChild>
                                                                                 <Button variant="ghost" className="w-full h-12">Cancel</Button>
-                                                                            </DrawerClose>
+                                                                            </DialogClose>
                                                                         </div>
                                                                     </div>
-                                                                </DrawerContent>
+                                                                </DialogContent>
 
-                                                            </Drawer>
+                                                            </Dialog>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </DrawerContent>
+                                            </DialogContent>
 
-                                        </Drawer>
+                                        </Dialog>
                                     ))}
                                 </div>
                             )}

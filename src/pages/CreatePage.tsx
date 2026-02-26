@@ -34,15 +34,15 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 
 // ---------------------------------------------------------------------------
 
-const createInitialPage = (primary: string, secondary: string, glowColor?: string, type: "light" | "dark" = "light", initialFont: string = "system-ui"): StoryPage => ({
+const createInitialPage = (themeId: string | undefined, baseColor: string, glowColor?: string, type: "light" | "dark" = "light", initialFont: string = "system-ui"): StoryPage => ({
     id: `page-${Math.random().toString(36).slice(2, 9)}`,
     text: "",
     fontFamily: initialFont,
     fontSize: "medium",
     textAlign: "center",
     textColor: type === 'dark' ? "#FFFFFF" : "#18181B",
-    bgGradientStart: primary,
-    bgGradientEnd: secondary,
+    themeId: themeId,
+    baseColor: baseColor,
     glowColor: glowColor,
     transition: "fade",
     stickers: [],
@@ -193,8 +193,8 @@ export default function CreatePage() {
             const firstGlobal = availableThemes[0] as any;
             const eventTheme = activeEvent?.theme as any;
 
+            const initialThemeId = firstGlobal?._id || firstGlobal?.id || eventTheme?._id || eventTheme?.id;
             const initialPrimary = firstGlobal?.baseColor || firstGlobal?.primary || eventTheme?.baseColor || eventTheme?.primary || "#FFFFFF";
-            const initialSecondary = firstGlobal?.glowColor || firstGlobal?.secondary || eventTheme?.glowColor || eventTheme?.secondary || "#F4F4F5";
             const initialGlow = firstGlobal?.glowColor || eventTheme?.glowColor || "#ffffff";
             const initialType = firstGlobal?.type || eventTheme?.type || "light";
 
@@ -202,7 +202,7 @@ export default function CreatePage() {
             const defaultFontObj = availableFonts.find(f => f.isDefault);
             const initialFont = defaultFontObj?.value || "system-ui";
 
-            setPages([createInitialPage(initialPrimary, initialSecondary, initialGlow, initialType, initialFont)]);
+            setPages([createInitialPage(initialThemeId, initialPrimary, initialGlow, initialType, initialFont)]);
         }
     }, [pages.length, activeEvent, availableThemes, availableFonts, location.state]);
 
@@ -220,8 +220,8 @@ export default function CreatePage() {
         setPages((prev) =>
             prev.map((p) => ({
                 ...p,
-                bgGradientStart: firstTheme.baseColor || firstTheme.primary || p.bgGradientStart,
-                bgGradientEnd: firstTheme.glowColor || firstTheme.secondary || p.bgGradientEnd,
+                themeId: firstTheme._id || firstTheme.id || p.themeId,
+                baseColor: firstTheme.baseColor || firstTheme.primary || p.baseColor,
                 glowColor: firstTheme.glowColor || firstTheme.themeGlow || p.glowColor,
                 textColor: firstTheme.textLight || (type === "dark" ? "#FFFFFF" : "#18181B"),
                 type: type,
@@ -342,13 +342,13 @@ export default function CreatePage() {
         setSelectedElement("image");
     }, [pages, currentPageIndex, updateCurrentPage]);
 
-    const handleBackdropSelect = (theme: Partial<EventTheme>) => {
+    const handleBackdropSelect = (theme: Partial<EventTheme> | any) => {
         const type = theme.type || "light";
         const updates = {
-            bgGradientStart: (theme as any).baseColor || theme.primary,
-            bgGradientEnd: (theme as any).glowColor || theme.secondary,
-            glowColor: (theme as any).glowColor || theme.themeGlow || theme.glowColor,
-            textColor: (theme as any).textLight || (type === "dark" ? "#FFFFFF" : "#18181B"),
+            themeId: theme._id || theme.id,
+            baseColor: theme.baseColor || theme.primary,
+            glowColor: theme.glowColor || theme.themeGlow,
+            textColor: theme.textLight || (type === "dark" ? "#FFFFFF" : "#18181B"),
             type: type
         };
 
@@ -447,8 +447,8 @@ export default function CreatePage() {
     const addPage = () => {
         if (!currentPage) return;
         const newPage = createInitialPage(
-            currentPage.bgGradientStart || "#E2F0E9",
-            currentPage.bgGradientEnd || "#C5E3D5",
+            currentPage.themeId,
+            currentPage.baseColor || "#E2F0E9",
             currentPage.glowColor,
             currentPage.type || "light"
         );
@@ -489,8 +489,8 @@ export default function CreatePage() {
             <div
                 className="absolute inset-0 transition-colors duration-500"
                 style={{
-                    backgroundColor: currentPage.bgGradientStart,
-                    backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(currentPage.glowColor || currentPage.bgGradientEnd, currentPage.type === 'dark' ? 0.4 : 0.25)}, transparent 70%)`,
+                    backgroundColor: currentPage.baseColor,
+                    backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(currentPage.glowColor || currentPage.baseColor, currentPage.type === 'dark' ? 0.4 : 0.35)}, transparent 70%)`,
                 }}
             >
                 {currentPage.backgroundPattern && (

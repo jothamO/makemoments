@@ -144,8 +144,8 @@ export function StoryViewer({
   return (
     <div className="fixed inset-0 z-50 flex flex-col"
       style={{
-        backgroundColor: page.bgGradientStart,
-        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.bgGradientEnd, isDark ? 0.4 : 0.25)}, transparent 70%)`,
+        backgroundColor: page.baseColor,
+        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.baseColor, isDark ? 0.4 : 0.35)}, transparent 70%)`,
         transition: "background-color 0.5s, background-image 0.5s",
       }}
     >
@@ -191,7 +191,7 @@ export function StoryViewer({
               <div
                 className="w-full h-full flex flex-col items-center justify-center p-8 gap-8"
                 style={{
-                  backgroundColor: page.bgGradientStart,
+                  backgroundColor: page.baseColor,
                   backgroundImage: (page as any).bgImage ? `url(${(page as any).bgImage})` : undefined,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',

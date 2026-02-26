@@ -24,7 +24,7 @@ export const EventHero = ({ theme, children, className, isScaled = false }: Even
             (isDark ? "#FFFFFF" : "#18181B");
 
     // Opacity constants for visual consistency
-    const glowOpacity = isDark ? 0.4 : 0.25;
+    const glowOpacity = isDark ? 0.4 : 0.35;
     const glowColor = theme.glowColor || "#ffffff";
     const baseColor = theme.baseColor || "#E2F0E9";
 

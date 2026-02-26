@@ -26,8 +26,8 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
     <div
       className="relative w-full h-full rounded-2xl overflow-hidden flex flex-col"
       style={{
-        backgroundColor: page.bgGradientStart,
-        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.bgGradientEnd, page.type === 'dark' ? 0.4 : 0.25)}, transparent 70%)`
+        backgroundColor: page.baseColor,
+        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.baseColor, page.type === 'dark' ? 0.4 : 0.35)}, transparent 70%)`
       }}
     >
       {/* Background Pattern */}
