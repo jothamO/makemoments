@@ -22,6 +22,19 @@ import { replaceUrgencyVariables, hexToRgba, getContrastColor, cn } from "@/lib/
 import { format } from "date-fns";
 import { CONTENT_TRANSITION, TAP_SCALE } from "@/lib/animation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Globe,
+  Save,
+  Sparkles,
+  Layout,
+  Palette,
+  Music,
+  Calendar as CalendarIcon,
+  Smartphone,
+  Monitor,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 
 
 const HEADLINE_FONTS = [

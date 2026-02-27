@@ -29,7 +29,13 @@ export function BottomNavigation() {
     return (
         <>
             {/* iOS Floating Dock for Mobile */}
-            <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto">
+            <div
+                className={cn(
+                    "md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out",
+                    drawerOpen ? "opacity-0 translate-y-20 scale-90 pointer-events-none" : "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+                )}
+                {...(drawerOpen ? { inert: "" } : {})}
+            >
                 <div className="relative flex items-center gap-6 px-8 py-4 rounded-full backdrop-blur-3xl bg-white/80 border border-black/5 shadow-2xl">
 
                     {/* Home Link */}

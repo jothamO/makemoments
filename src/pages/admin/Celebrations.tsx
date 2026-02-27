@@ -13,9 +13,14 @@ import { Link } from "react-router-dom";
 const AdminCelebrations = () => {
   const celebrations = useQuery(api.celebrations.list) || [];
   const events = useQuery(api.events.getAll) || [];
+  const updateCelebrationStatus = useMutation(api.celebrations.updateStatus);
   const [search, setSearch] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
 
   const eventMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -46,9 +51,25 @@ const AdminCelebrations = () => {
     return { total: celebrations.length, paid, pending, totalViews };
   }, [celebrations]);
 
+  // Pagination Logic
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(start, start + itemsPerPage);
+  }, [filtered, currentPage]);
+
   if (celebrations === undefined) {
     return <GlobalLoader transparent />;
   }
+
+  const handleStatusUpdate = async (id: any, status: "pending" | "paid" | "failed") => {
+    try {
+      await updateCelebrationStatus({ id, status });
+      toast.success(`Status updated to ${status}`);
+    } catch (error) {
+      toast.error("Failed to update status");
+    }
+  };
 
   return (
     <div className="space-y-6 p-6 bg-white min-h-screen text-zinc-950">
@@ -75,19 +96,22 @@ const AdminCelebrations = () => {
           <Input
             placeholder="Search by slug, email, or event..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1); // Reset to page 1 on search
+            }}
             className="pl-9 h-9 text-sm"
           />
         </div>
         <div className="grid grid-cols-2 sm:flex gap-2">
-          <Select value={eventFilter} onValueChange={setEventFilter}>
+          <Select value={eventFilter} onValueChange={(val) => { setEventFilter(val); setCurrentPage(1); }}>
             <SelectTrigger className="w-full sm:w-48 h-9 text-xs sm:text-sm"><SelectValue placeholder="All Events" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Events</SelectItem>
               {events.map((e) => <SelectItem key={e._id} value={e._id}>{e.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}>
             <SelectTrigger className="w-full sm:w-36 h-9 text-xs sm:text-sm"><SelectValue placeholder="All Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
@@ -118,7 +142,7 @@ const AdminCelebrations = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.slice(0, 100).map((c) => (
+              {paginatedData.map((c) => (
                 <TableRow key={c._id} className="hover:bg-zinc-50/50 transition-colors">
                   <TableCell className="text-[11px] text-zinc-500 whitespace-nowrap">
                     {new Date(c.createdAt).toLocaleDateString()}
@@ -147,15 +171,19 @@ const AdminCelebrations = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${c.paymentStatus === "paid" ? "text-green-600"
-                      : c.paymentStatus === "failed" ? "text-red-500"
-                        : "text-amber-500"
-                      }`}>
-                      {c.paymentStatus === "paid" && <CheckCircle2 className="h-3.5 w-3.5" />}
-                      {c.paymentStatus === "failed" && <XCircle className="h-3.5 w-3.5" />}
-                      {c.paymentStatus === "pending" && <Clock className="h-3.5 w-3.5" />}
-                      {c.paymentStatus}
-                    </span>
+                    <Select defaultValue={c.paymentStatus} onValueChange={(val: any) => handleStatusUpdate(c._id, val)}>
+                      <SelectTrigger className={cn(
+                        "h-7 w-28 text-[10px] font-bold uppercase tracking-wider border-none bg-transparent shadow-none focus:ring-0",
+                        c.paymentStatus === "paid" ? "text-green-600" : c.paymentStatus === "failed" ? "text-red-500" : "text-amber-500"
+                      )}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="paid" className="text-[10px] font-bold uppercase tracking-wider text-green-600">Paid</SelectItem>
+                        <SelectItem value="pending" className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Pending</SelectItem>
+                        <SelectItem value="failed" className="text-[10px] font-bold uppercase tracking-wider text-red-500">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell className="text-center">
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900" asChild>
@@ -170,7 +198,7 @@ const AdminCelebrations = () => {
 
         {/* Mobile Card List View */}
         <div className="md:hidden divide-y divide-zinc-100">
-          {filtered.slice(0, 100).map((c) => (
+          {paginatedData.map((c) => (
             <div key={c._id} className="p-4 space-y-3">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
@@ -187,7 +215,7 @@ const AdminCelebrations = () => {
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-zinc-500">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 text-[10px]">
                   <span className="truncate max-w-[120px]">{c.email}</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -195,12 +223,19 @@ const AdminCelebrations = () => {
                     <Eye className="h-3 w-3" />
                     <span>{c.views || 0}</span>
                   </div>
-                  <span className={`font-bold uppercase ${c.paymentStatus === "paid" ? "text-green-600"
-                    : c.paymentStatus === "failed" ? "text-red-500"
-                      : "text-amber-500"
-                    }`}>
-                    {c.paymentStatus}
-                  </span>
+                  <Select defaultValue={c.paymentStatus} onValueChange={(val: any) => handleStatusUpdate(c._id, val)}>
+                    <SelectTrigger className={cn(
+                      "h-6 w-24 text-[10px] font-bold uppercase tracking-widest border-none bg-zinc-50 px-2 rounded",
+                      c.paymentStatus === "paid" ? "text-green-600" : c.paymentStatus === "failed" ? "text-red-500" : "text-amber-500"
+                    )}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="paid" className="text-[10px] font-bold uppercase text-green-600">Paid</SelectItem>
+                      <SelectItem value="pending" className="text-[10px] font-bold uppercase text-amber-500">Pending</SelectItem>
+                      <SelectItem value="failed" className="text-[10px] font-bold uppercase text-red-500">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -213,6 +248,35 @@ const AdminCelebrations = () => {
           ))}
         </div>
 
+        {/* Pagination Footer */}
+        {totalPages > 1 && (
+          <div className="border-t border-zinc-100 bg-zinc-50/50 p-4 flex items-center justify-between gap-4">
+            <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
+              Page {currentPage} of {totalPages} ({filtered.length} total)
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-[11px] font-bold"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-[11px] font-bold"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+
         {filtered.length === 0 && (
           <div className="text-center text-zinc-400 py-16">
             <Search className="h-10 w-10 mx-auto mb-4 opacity-10" />
@@ -220,10 +284,6 @@ const AdminCelebrations = () => {
           </div>
         )}
       </div>
-
-      {filtered.length > 100 && (
-        <p className="text-[10px] font-medium text-zinc-400 text-center bg-zinc-50 py-2 rounded-lg">Showing first 100 of {filtered.length} results</p>
-      )}
     </div>
   );
 };

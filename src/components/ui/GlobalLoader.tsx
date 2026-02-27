@@ -17,12 +17,12 @@ export function GlobalLoader({ transparent = false }: GlobalLoaderProps) {
         >
             <div className="relative w-48 h-48 md:w-64 md:h-64 flex items-center justify-center pointer-events-none">
                 <video
-                    src="/assets/animated-logo.webm"
+                    src="/assets/loading-animation.webm"
                     autoPlay
                     loop
                     muted
                     playsInline
-                    className="w-full h-full object-contain mix-blend-multiply" // Assuming a white bg on the webm, this helps it blend if ever needed
+                    className="w-full h-full object-contain"
                 />
             </div>
 

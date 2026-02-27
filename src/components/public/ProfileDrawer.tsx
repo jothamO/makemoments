@@ -11,7 +11,7 @@ import {
     DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Heart, Settings, LayoutDashboard, HelpCircle, ShieldAlert, FileText, Lock, User, X } from "lucide-react";
+import { Heart, Settings, LayoutDashboard, HelpCircle, ShieldAlert, FileText, Lock, User, X, LogOut } from "lucide-react";
 import { SettingsModal } from "../auth/SettingsModal";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
@@ -32,7 +32,7 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
     return (
         <>
             <Drawer open={open} onOpenChange={onOpenChange}>
-                <DrawerContent className="px-6 pb-8 bg-white/90 backdrop-blur-xl border-t border-black/5 rounded-t-[32px] shadow-2xl">
+                <DrawerContent className="px-6 pb-12 bg-white/90 backdrop-blur-xl border-t border-black/5 rounded-t-[32px] shadow-2xl">
                     <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-zinc-300/50 my-4" />
 
                     <DrawerHeader className="text-left px-0 pb-4">
@@ -52,15 +52,15 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
                         </VisuallyHidden.Root>
                     </DrawerHeader>
 
-                    <div className="space-y-6 py-2">
+                    <div className="pt-2 pb-4">
                         {/* Primary Actions Group */}
-                        <div className="flex flex-col gap-2 bg-white rounded-[24px] p-2 shadow-sm border border-black/5">
+                        <div className="flex flex-col gap-2 bg-zinc-50 rounded-[24px] p-2 border border-black/[0.03]">
                             {isLoggedIn ? (
                                 <>
                                     {isAdmin ? (
                                         <Button
                                             variant="ghost"
-                                            className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-zinc-50"
+                                            className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-white hover:shadow-sm transition-all"
                                             asChild
                                             onClick={handleLinkClick}
                                         >
@@ -73,7 +73,7 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
                                         <>
                                             <Button
                                                 variant="ghost"
-                                                className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-zinc-50"
+                                                className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-white hover:shadow-sm transition-all"
                                                 asChild
                                                 onClick={handleLinkClick}
                                             >
@@ -84,7 +84,7 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
                                             </Button>
                                             <Button
                                                 variant="ghost"
-                                                className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-zinc-50"
+                                                className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-white hover:shadow-sm transition-all"
                                                 onClick={() => {
                                                     setSettingsOpen(true);
                                                     onOpenChange(false);
@@ -95,61 +95,33 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
                                             </Button>
                                         </>
                                     )}
+
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-red-500 hover:bg-red-50 transition-all mt-1"
+                                        onClick={() => {
+                                            logout();
+                                            onOpenChange(false);
+                                        }}
+                                    >
+                                        <LogOut className="mr-3 h-5 w-5 opacity-70" strokeWidth={2.5} />
+                                        Sign Out
+                                    </Button>
                                 </>
                             ) : (
                                 <Button
-                                    className="w-full h-14 text-base rounded-[16px] font-bold bg-black text-white hover:bg-zinc-800"
+                                    className="w-full h-15 text-lg rounded-[20px] font-bold bg-zinc-900 text-white hover:bg-black shadow-lg shadow-black/5 active:scale-[0.98] transition-all"
                                     onClick={() => {
                                         navigate("/login");
                                         onOpenChange(false);
                                     }}
                                 >
-                                    <User className="mr-2 h-5 w-5" strokeWidth={2.5} />
+                                    <User className="mr-3 h-5 w-5" strokeWidth={2.5} />
                                     Sign In
                                 </Button>
                             )}
                         </div>
-
-                        {/* Secondary Actions Group */}
-                        <div className="flex flex-col gap-1 bg-white rounded-[24px] p-2 shadow-sm border border-black/5">
-                            <Button variant="ghost" className="w-full justify-start h-12 text-[15px] px-4 rounded-[12px] font-medium text-zinc-600 hover:bg-zinc-50" asChild onClick={handleLinkClick}>
-                                <Link to="/help">
-                                    <HelpCircle className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2} />
-                                    Help Center
-                                </Link>
-                            </Button>
-                            <Button variant="ghost" className="w-full justify-start h-12 text-[15px] px-4 rounded-[12px] font-medium text-zinc-600 hover:bg-zinc-50" asChild onClick={handleLinkClick}>
-                                <Link to="/terms">
-                                    <FileText className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2} />
-                                    Terms of Service
-                                </Link>
-                            </Button>
-                            <Button variant="ghost" className="w-full justify-start h-12 text-[15px] px-4 rounded-[12px] font-medium text-zinc-600 hover:bg-zinc-50" asChild onClick={handleLinkClick}>
-                                <Link to="/privacy">
-                                    <Lock className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2} />
-                                    Privacy Policy
-                                </Link>
-                            </Button>
-                            {isLoggedIn && (
-                                <Button
-                                    variant="ghost"
-                                    className="w-full justify-start h-12 text-[15px] px-4 rounded-[12px] font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 mt-2"
-                                    onClick={() => {
-                                        logout();
-                                        onOpenChange(false);
-                                    }}
-                                >
-                                    Sign Out
-                                </Button>
-                            )}
-                        </div>
                     </div>
-
-                    <DrawerFooter className="px-0 pt-2">
-                        <DrawerClose asChild>
-                            <Button variant="outline" className="w-full h-12 rounded-full font-bold">Close</Button>
-                        </DrawerClose>
-                    </DrawerFooter>
                 </DrawerContent>
             </Drawer>
 

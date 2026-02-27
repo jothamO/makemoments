@@ -31,7 +31,8 @@ export const EventHero = ({ theme, children, className, isScaled = false }: Even
     return (
         <div
             className={cn(
-                "w-full h-full min-h-full flex flex-col items-center justify-center text-center relative overflow-hidden",
+                "w-full h-full flex flex-col items-center justify-center text-center relative overflow-hidden",
+                !isScaled && "min-h-screen",
                 className
             )}
             style={{
@@ -44,6 +45,11 @@ export const EventHero = ({ theme, children, className, isScaled = false }: Even
             <BackgroundPattern
                 patternId={theme.backgroundPattern || "sparkles"}
             />
+
+            {/* Subtle Vignette for Spatial Depth */}
+            {!isScaled && (
+                <div className="absolute inset-0 bg-black/10 pointer-events-none z-10" />
+            )}
 
             {/* Animated decorative circles */}
             <motion.div
@@ -66,7 +72,7 @@ export const EventHero = ({ theme, children, className, isScaled = false }: Even
             />
 
             {/* Slide Content wrapper */}
-            <div className="relative z-20 w-full h-full flex flex-col items-center justify-center py-12">
+            <div className="relative z-20 w-full h-full flex flex-col items-center justify-center">
                 {children}
             </div>
         </div>

@@ -66,14 +66,22 @@ export function MusicPicker({
         </div>
         <ScrollArea className="h-[380px]">
           <div className="p-2 space-y-1">
-            <motion.button
+            <motion.div
+              role="button"
+              tabIndex={0}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
                 onSelect(undefined);
                 setOpen(false);
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  onSelect(undefined);
+                  setOpen(false);
+                }
+              }}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-white/20",
                 !selectedId ? "bg-white/10" : "hover:bg-white/5"
               )}
             >
@@ -82,22 +90,30 @@ export function MusicPicker({
               </div>
               <span className="flex-1 text-[13px] font-medium text-white/80 truncate">No Music</span>
               {!selectedId && <motion.div layoutId="music-indicator" className="w-1.5 h-1.5 rounded-full bg-white shadow-glow" />}
-            </motion.button>
+            </motion.div>
 
             {tracks?.map((track) => {
               const trackId = (track as any)._id || (track as any).id;
               const isSelected = selectedId === trackId;
 
               return (
-                <motion.button
+                <motion.div
+                  role="button"
+                  tabIndex={0}
                   whileTap={{ scale: 0.97 }}
                   key={trackId}
                   onClick={() => {
                     onSelect(trackId);
                     setOpen(false);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      onSelect(trackId);
+                      setOpen(false);
+                    }
+                  }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left",
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-white/20",
                     isSelected ? "bg-white/10" : "hover:bg-white/5"
                   )}
                 >
@@ -128,7 +144,7 @@ export function MusicPicker({
                   {isSelected && (
                     <motion.div layoutId="music-indicator" className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-glow" />
                   )}
-                </motion.button>
+                </motion.div>
               );
             })}
           </div>

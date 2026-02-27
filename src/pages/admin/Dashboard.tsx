@@ -129,6 +129,7 @@ const AdminDashboard = () => {
               </TableHeader>
               <TableBody>
                 {celebrations
+                  .filter((c) => c.paymentStatus === "paid")
                   .sort((a, b) => b.createdAt - a.createdAt)
                   .slice(0, 10)
                   .map((c) => (
@@ -137,10 +138,7 @@ const AdminDashboard = () => {
                       <TableCell>{c.email}</TableCell>
                       <TableCell>{c.currency === "USD" ? "$" : "₦"}{(c.totalPaid || 0).toLocaleString()}</TableCell>
                       <TableCell>
-                        <span className={`text-xs font-medium uppercase tracking-wider ${c.paymentStatus === "paid" ? "text-green-600"
-                          : c.paymentStatus === "failed" ? "text-red-500"
-                            : "text-amber-500"
-                          }`}>
+                        <span className="text-xs font-bold uppercase tracking-wider text-green-600">
                           {c.paymentStatus}
                         </span>
                       </TableCell>
@@ -154,6 +152,7 @@ const AdminDashboard = () => {
           {/* Mobile List Fallback */}
           <div className="sm:hidden divide-y">
             {celebrations
+              .filter((c) => c.paymentStatus === "paid")
               .sort((a, b) => b.createdAt - a.createdAt)
               .slice(0, 10)
               .map((c) => (
@@ -166,10 +165,7 @@ const AdminDashboard = () => {
                     <div className="text-[10px] text-muted-foreground font-mono bg-zinc-50 px-1.5 py-0.5 rounded border border-zinc-100">/{c.slug}</div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-muted-foreground">{c.views || 0} views</span>
-                      <span className={`text-[10px] font-bold uppercase ${c.paymentStatus === "paid" ? "text-green-600"
-                        : c.paymentStatus === "failed" ? "text-red-500"
-                          : "text-amber-500"
-                        }`}>
+                      <span className="text-[10px] font-bold uppercase text-green-600">
                         {c.paymentStatus}
                       </span>
                     </div>

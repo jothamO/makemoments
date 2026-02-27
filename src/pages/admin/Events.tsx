@@ -48,7 +48,7 @@ const AdminEvents = () => {
   };
 
   // Show loading state while initial data is fetching
-  if (events === undefined) {
+  if (events === undefined || celebrations === undefined) {
     return <GlobalLoader transparent />;
   }
 

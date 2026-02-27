@@ -89,3 +89,13 @@ export const listByUser = query({
         return results;
     },
 });
+
+export const updateStatus = mutation({
+    args: {
+        id: v.id("celebrations"),
+        status: v.union(v.literal("pending"), v.literal("paid"), v.literal("failed"))
+    },
+    handler: async (ctx, args) => {
+        await ctx.db.patch(args.id, { paymentStatus: args.status });
+    },
+});
