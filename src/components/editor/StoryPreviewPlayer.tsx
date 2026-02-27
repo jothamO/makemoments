@@ -20,7 +20,9 @@ interface StoryPreviewPlayerProps {
 export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPreviewPlayerProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
+    const [textHeight, setTextHeight] = useState(0);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const textWrapperRef = useRef<HTMLDivElement | null>(null);
 
     // ── JS-driven progress bar refs ──────────────────────────
     const progressBarRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -145,6 +147,15 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
             advanceSlide(currentIndex);
         }, remainingRef.current);
     }, [isPaused, currentIndex, advanceSlide]);
+
+    useEffect(() => {
+        // Measure text block height whenever the slide changes or text updates
+        if (textWrapperRef.current) {
+            setTextHeight(textWrapperRef.current.getBoundingClientRect().height);
+        } else {
+            setTextHeight(0);
+        }
+    }, [currentIndex, pages]);
 
     // ── Tap navigation ───────────────────────────────────────
     const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -299,42 +310,62 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                                             </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Photos Layer — absolute inset-0 within the reference frame */}
+                                {/* Photos and Stickers Layer — EXACT reference frame bounds, but NO overflow-hidden so corners can bleed visually */}
+                                <div className="absolute inset-x-0 top-[21px] bottom-[188px] pointer-events-none">
+                                    {/* Photos Layer */}
                                     {page.photos && page.photos.length > 0 && (
                                         <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-                                            {page.photos.map((photo, i) => (
-                                                <div
-                                                    key={photo.id || i}
-                                                    className="absolute inset-0 flex items-center justify-center"
-                                                >
-                                                    <motion.div
-                                                        initial={{ opacity: 0, scale: 0.95 }}
-                                                        animate={{
-                                                            opacity: 1,
-                                                            scale: 1,
-                                                            x: photo.transform.x,
-                                                            y: photo.transform.y,
-                                                            rotate: photo.transform.rotation,
-                                                        }}
-                                                        transition={{
-                                                            ...CONTENT_TRANSITION,
-                                                            delay: 0.05 + i * 0.05,
-                                                        }}
-                                                        style={{
-                                                            width: photo.transform.width,
-                                                            height: photo.transform.width,
-                                                        }}
-                                                        className="pointer-events-auto"
+                                            {page.photos.map((photo, i) => {
+                                                let safeMaxHeight = 128; // Default max
+                                                if (textHeight > 0) {
+                                                    const isTopHemisphere = (photo.transform.yp || 0) < 0;
+                                                }
+
+                                                return (
+                                                    <div
+                                                        key={photo.id || i}
+                                                        className="absolute inset-0 pointer-events-none"
                                                     >
-                                                        <img src={photo.url} alt="" className="w-full h-full object-cover" />
-                                                    </motion.div>
-                                                </div>
-                                            ))}
+                                                        <motion.div
+                                                            initial={{ opacity: 0, scale: 0.95 }}
+                                                            animate={{
+                                                                opacity: 1,
+                                                                scale: 1,
+                                                                left: photo.transform.xp !== undefined ? `calc(50% + ${photo.transform.xp}%)` : "50%",
+                                                                top: photo.transform.yp !== undefined
+                                                                    ? (photo.transform.yp > 5 && textHeight > 0
+                                                                        ? `calc(max(50% + ${photo.transform.yp}%, 50% + ${textHeight / 2}px + ${(photo.transform.width || 128) / 2}px + 20px))`
+                                                                        : `calc(50% + ${photo.transform.yp}%)`)
+                                                                    : "50%",
+                                                                x: photo.transform.xp !== undefined ? "-50%" : `calc(-50% + ${photo.transform.x}px)`,
+                                                                y: photo.transform.yp !== undefined ? "-50%" : `calc(-50% + ${photo.transform.y}px)`,
+                                                                rotate: photo.transform.rotation,
+                                                            }}
+                                                            transition={{
+                                                                ...CONTENT_TRANSITION,
+                                                                delay: 0.05 + i * 0.05,
+                                                            }}
+                                                            style={{
+                                                                position: "absolute",
+                                                                // Keep max size to original width, but scale down if the container is narrow (mobile)
+                                                                // Using 25vw on narrow devices guarantees a ~97px character downscale on 390px iPhones
+                                                                // Further clamped by the dynamic textHeight boundary AROUND the text block.
+                                                                width: `min(${photo.transform.width}px, 25vw, calc(50dvh - 118px - ${textHeight / 2}px - 32px))`,
+                                                                height: `min(${photo.transform.width}px, 25vw, calc(50dvh - 118px - ${textHeight / 2}px - 32px))`,
+                                                            }}
+                                                            className="pointer-events-auto"
+                                                        >
+                                                            <img src={photo.url} alt="" className="w-full h-full object-cover pointer-events-none" />
+                                                        </motion.div>
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
                                     )}
 
-                                    {/* Stickers — absolute inset-0 within the reference frame */}
+                                    {/* Stickers */}
                                     {page.stickers.map((s, idx) => (
                                         <motion.div
                                             key={idx}

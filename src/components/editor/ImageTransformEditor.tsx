@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 interface ImageTransform {
     x: number;
     y: number;
+    xp?: number;
+    yp?: number;
     width: number;
     rotation: number;
 }
@@ -35,9 +37,15 @@ export function ImageTransformEditor({
 
     // Sync motion values on transform prop change (e.g., slide switch)
     useEffect(() => {
-        imgX.set(transform.x);
-        imgY.set(transform.y);
-    }, [transform.x, transform.y, imgX, imgY]);
+        if (transform.xp !== undefined && transform.yp !== undefined && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            imgX.set((transform.xp / 100) * rect.width);
+            imgY.set((transform.yp / 100) * rect.height);
+        } else {
+            imgX.set(transform.x);
+            imgY.set(transform.y);
+        }
+    }, [transform.x, transform.y, transform.xp, transform.yp, imgX, imgY, containerRef]);
 
     const handleDragEnd = () => {
         let x = Math.round(imgX.get());
@@ -53,7 +61,15 @@ export function ImageTransformEditor({
             animate(imgY, 0, { type: "spring", stiffness: 500, damping: 30 });
         }
 
-        onUpdate({ ...transform, x, y });
+        let xp = 0;
+        let yp = 0;
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            xp = (x / rect.width) * 100;
+            yp = (y / rect.height) * 100;
+        }
+
+        onUpdate({ ...transform, x, y, xp, yp });
     };
 
     const handleResizeStart = (e: React.PointerEvent, corner: string) => {

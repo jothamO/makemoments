@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Calendar, Layout, DollarSign, Heart, Settings, Wallet, FolderOpen, Mail as MailIcon, Users as UsersIcon, Home } from "lucide-react";
+import { LayoutDashboard, Calendar, Layout, DollarSign, Heart, Settings, Wallet, FolderOpen, Mail as MailIcon, Users as UsersIcon, Home, Bug } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -34,8 +35,8 @@ function AdminSidebar() {
   return (
     <Sidebar className="border-r">
       <div className="p-4 border-b">
-        <Link to="/admin" className="font-bold text-lg" onClick={() => setOpenMobile(false)}>
-          <span className="text-indigo-600">Make</span>Moments
+        <Link to="/admin" onClick={() => setOpenMobile(false)}>
+          <img src="/assets/logo.webp" alt="MakeMoments" className="h-6 w-auto" />
         </Link>
         <p className="text-xs text-muted-foreground">Admin Panel</p>
       </div>
@@ -69,6 +70,18 @@ function AdminSidebar() {
 }
 
 export default function AdminLayout() {
+  const [isDebugMode, setIsDebugMode] = useState(() => {
+    return localStorage.getItem('mm_debug_mode') === 'true';
+  });
+
+  const toggleDebugMode = () => {
+    const newState = !isDebugMode;
+    setIsDebugMode(newState);
+    localStorage.setItem('mm_debug_mode', String(newState));
+    // Dispatch custom event to sync across tabs/components
+    window.dispatchEvent(new Event('mm_debug_mode_changed'));
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-muted/30">
@@ -79,13 +92,25 @@ export default function AdminLayout() {
               <SidebarTrigger />
               <span className="text-sm font-medium text-muted-foreground">Admin</span>
             </div>
-            <Button variant="ghost" size="sm" asChild className="gap-2">
-              <Link to="/">
-                <LayoutDashboard className="h-4 w-4" />
-                <span className="hidden sm:inline">Home</span>
-                <Home className="h-4 w-4 sm:hidden" />
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={isDebugMode ? "default" : "outline"}
+                size="sm"
+                onClick={toggleDebugMode}
+                className={`gap-2 ${isDebugMode ? 'bg-cyan-600 hover:bg-cyan-700' : ''}`}
+                title="Toggle Global Debug Mode"
+              >
+                <Bug className="h-4 w-4" />
+                <span className="hidden sm:inline">Debug {isDebugMode ? "ON" : "OFF"}</span>
+              </Button>
+              <Button variant="ghost" size="sm" asChild className="gap-2">
+                <Link to="/">
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span className="hidden sm:inline">Home</span>
+                  <Home className="h-4 w-4 sm:hidden" />
+                </Link>
+              </Button>
+            </div>
           </header>
           <main className="flex-1 p-4 md:p-6">
             <Outlet />

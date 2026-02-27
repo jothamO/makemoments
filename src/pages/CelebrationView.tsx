@@ -8,12 +8,14 @@ import { Copy, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
 
 const CelebrationView = () => {
   const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
   const celebration = useQuery(api.celebrations.getBySlug, slug ? { slug } : "skip");
   const event = useQuery(api.events.getById, celebration?.eventId ? { id: celebration.eventId } : "skip");
+  const musicTrack = useQuery(api.music.getById, celebration?.musicTrackId ? { id: celebration.musicTrackId } : "skip");
   const fonts = useQuery(api.fonts.list);
   const incrementViews = useMutation(api.celebrations.incrementViews);
   const [started, setStarted] = useState(false);
@@ -25,11 +27,7 @@ const CelebrationView = () => {
   }, [slug]);
 
   if (celebration === undefined || event === undefined) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-      </div>
-    );
+    return <GlobalLoader />;
   }
 
   if (!celebration || !event) {
@@ -80,7 +78,7 @@ const CelebrationView = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
         >
-          A love story awaits…
+          Your Moment awaits…
         </motion.h1>
         <motion.p
           className="opacity-40 text-xs mt-8"
@@ -145,9 +143,10 @@ const CelebrationView = () => {
       showWatermark={!celebration.removeWatermark}
       glowColor={glowColor}
       autoPlay
-      showShareOnLast
+      showShareOnLast={!celebration.removeWatermark}
       shareContent={shareButtons}
       eventSlug={event.slug}
+      musicTrack={musicTrack ?? undefined}
     />
   );
 };

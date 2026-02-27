@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, ArrowUpDown, TrendingUp, Wallet, Shield, RefreshCw, CheckCircle2, XCircle, Search, Download } from "lucide-react";
+import { CreditCard, History, RefreshCcw, DollarSign, Activity, AlertCircle, CircleDashed, Save, ArrowUpDown, TrendingUp, Wallet, Shield, RefreshCw, CheckCircle2, XCircle, Search, Download } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
 
 // Currency definitions for exchange rate management
 const SUPPORTED_CURRENCIES = [
@@ -172,11 +173,7 @@ export default function PaymentsPage() {
     };
 
     if (!gatewayConfig) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
-            </div>
-        );
+        return <GlobalLoader transparent />;
     }
 
     return (

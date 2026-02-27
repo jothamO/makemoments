@@ -15,6 +15,7 @@ import {
     Check,
     Heart,
     Loader2,
+    Ruler,
 } from "lucide-react";
 import { EditorToolbar } from "@/components/editor/EditorToolbar";
 import { ImageTransformEditor } from "@/components/editor/ImageTransformEditor";
@@ -23,14 +24,16 @@ import type { StoryPage, EventTheme, MusicTrack } from "@/data/types";
 import { cn, hexToRgba } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentModal } from "@/components/PaymentModal";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { StoryPreviewPlayer } from "@/components/editor/StoryPreviewPlayer";
+import { Tooltip, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { StoryPreviewPlayer, createStoryPages } from "@/components/editor/StoryPreviewPlayer";
 import { CharacterPicker } from "@/components/CharacterPicker";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { getWiseAssMessage } from "@/lib/statusUtils";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useAuth } from "@/hooks/useAuth";
 
 // ---------------------------------------------------------------------------
 
@@ -87,8 +90,26 @@ export default function CreatePage() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [selectedElement, setSelectedElement] = useState<"image" | "text" | null>(null);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+    const [restoredDraft, setRestoredDraft] = useState<any>(null);
+    const [showDraftBanner, setShowDraftBanner] = useState(false);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+    useEffect(() => {
+        setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches);
+    }, []);
 
     const { isNigeria } = useCurrency();
+    const { isAdmin } = useAuth();
+    const [showDebugGrid, setShowDebugGrid] = useState(false);
+    const [isDebugMode, setIsDebugMode] = useState(() => localStorage.getItem('mm_debug_mode') === 'true');
+
+    useEffect(() => {
+        const handleDebugChange = () => {
+            setIsDebugMode(localStorage.getItem('mm_debug_mode') === 'true');
+        };
+        window.addEventListener('mm_debug_mode_changed', handleDebugChange);
+        return () => window.removeEventListener('mm_debug_mode_changed', handleDebugChange);
+    }, []);
 
     // Pricing
     const globalPricing = useQuery(api.pricing.list) || [];
@@ -190,6 +211,23 @@ export default function CreatePage() {
                 return;
             }
 
+            // Check for drafts
+            try {
+                const draftRaw = localStorage.getItem("mm-draft-v1");
+                if (draftRaw) {
+                    const draft = JSON.parse(draftRaw);
+                    const TTL = 75 * 60 * 1000; // 75 mins
+                    if (Date.now() - draft.savedAt > TTL) {
+                        localStorage.removeItem("mm-draft-v1");
+                    } else if (draft.pages && draft.pages.length > 0) {
+                        setRestoredDraft(draft);
+                        setShowDraftBanner(true);
+                    }
+                }
+            } catch {
+                localStorage.removeItem("mm-draft-v1");
+            }
+
             const firstGlobal = availableThemes[0] as any;
             const eventTheme = activeEvent?.theme as any;
 
@@ -236,6 +274,25 @@ export default function CreatePage() {
         }
     }, [pages.length, availableThemes, location, navigate]);
 
+    // Save draft on every change
+    useEffect(() => {
+        if (pages.length === 0) return;
+        // Don't save if it's the pure initial empty slide
+        if (pages.length === 1 && pages[0].text === "" && !pages[0].photoUrl && (!pages[0].photos || pages[0].photos.length === 0)) return;
+
+        const savePayload = {
+            pages: pages.map(p => ({
+                ...p,
+                photos: p.photos?.map(photo => ({
+                    ...photo,
+                    url: (photo.url.startsWith('blob:') || photo.url.startsWith('data:image/')) ? null : photo.url
+                }))
+            })),
+            selectedMusicId,
+            savedAt: Date.now()
+        };
+        localStorage.setItem("mm-draft-v1", JSON.stringify(savePayload));
+    }, [pages, selectedMusicId]);
 
     // Imperatively manage audio: load new source, then play
     const lastLoadedUrl = useRef<string | null>(null);
@@ -374,74 +431,6 @@ export default function CreatePage() {
         }
     };
 
-    // Loading State
-    if (eventResponse === undefined) {
-        return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
-                <Loader2 className="w-8 h-8 text-white/20 animate-spin" />
-            </div>
-        );
-    }
-
-    // "Wise-Ass" Expired / Not Found State
-    if (eventResponse.status === "EXPIRED" || eventResponse.status === "NOT_FOUND" || eventResponse.status === "UPCOMING") {
-        const wiseAss = activeEvent ? getWiseAssMessage(activeEvent) : null;
-
-        const headline = eventResponse.status === "NOT_FOUND"
-            ? "Event Not Found"
-            : (wiseAss?.headline || "Sorry, Wise-Ass.😝");
-
-        const subheadline = eventResponse.status === "NOT_FOUND"
-            ? "We couldn't find the celebration you're looking for."
-            : (wiseAss?.subheadline || "This celebration is no longer accepting new creations. You missed the magic timing!");
-
-        return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6 overflow-hidden relative">
-                {activeEvent?.theme?.baseColor && (
-                    <div
-                        className="absolute inset-0 opacity-20"
-                        style={{ background: `radial-gradient(circle at center, ${activeEvent.theme.glowColor || activeEvent.theme.baseColor}, transparent 70%)` }}
-                    />
-                )}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent opacity-50" />
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="max-w-md w-full bg-zinc-900/50 backdrop-blur-2xl border border-white/10 rounded-[32px] p-8 text-center relative z-10 shadow-2xl"
-                >
-                    <div className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        {eventResponse.status === "NOT_FOUND" ? (
-                            <X className="w-10 h-10 text-white/40" />
-                        ) : (
-                            <span className="text-4xl">{activeEvent?.theme?.headline?.split(' ')?.[0] || "😝"}</span>
-                        )}
-                    </div>
-                    <h1 className="text-2xl font-bold text-white mb-2 leading-tight">
-                        {headline}
-                    </h1>
-                    <p className="text-zinc-400 mb-8 px-4">
-                        {subheadline}
-                    </p>
-                    <button
-                        onClick={() => navigate('/')}
-                        className="w-full bg-white text-zinc-900 font-bold py-4 rounded-2xl hover:bg-zinc-100 transition-all shadow-lg active:scale-95"
-                    >
-                        Head Back Home
-                    </button>
-                </motion.div>
-            </div>
-        );
-    }
-
-    /*
-    ### Premium UI & Patterns Fixes
-    1.  **Centered Popovers**: Open each toolbar item (Backdrop, Font, Music, Patterns). Verify they are centered above the button and have no "arrow" (Floating Island style).
-    2.  **Backdrop 2-Column Grid**: Open the Backdrop picker. Verify it is now a 2-column grid instead of a single list.
-    3.  **Patterns List**: Open the Patterns picker (formerly Slide Effects). Verify it is now a single-column list.
-    4.  **Glassmorphism**: Ensure all popovers have a deep blur (`backdrop-blur-2xl` or `3xl`) and look premium against the background.
-    5.  **Hover States**: Check that the new "ring" selection indicator and hover backgrounds feel smooth and responsive.
-    */
-    // task.md
     const currentPage = pages[currentPageIndex];
 
     const addPage = () => {
@@ -471,11 +460,7 @@ export default function CreatePage() {
     // Derived State / Utils
     // -----------------------------------------------------------------------
     if (!event || !currentTheme || !currentPage) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-        );
+        return <GlobalLoader />;
     }
 
     const hasContent = pages.some(p => p.photoUrl || p.text.trim().length > 0);
@@ -485,6 +470,34 @@ export default function CreatePage() {
     // -----------------------------------------------------------------------
     return (
         <div className="fixed inset-0 flex flex-col overflow-hidden">
+            {showDraftBanner && restoredDraft && (
+                <div className="absolute top-0 z-[100] w-full bg-blue-600/95 backdrop-blur-sm text-white text-[13px] py-3 px-5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-lg shadow-blue-900/10">
+                    <span className="font-medium">Wait! We found an unsaved moment from your last session.</span>
+                    <div className="flex gap-5 items-center justify-end sm:justify-start">
+                        <button
+                            onClick={() => {
+                                setPages(restoredDraft.pages);
+                                if (restoredDraft.selectedMusicId) setSelectedMusicId(restoredDraft.selectedMusicId);
+                                setShowDraftBanner(false);
+                                setRestoredDraft(null);
+                            }}
+                            className="font-bold tracking-tight bg-white text-blue-700 px-4 py-1.5 rounded-full hover:bg-blue-50 active:scale-95 transition-all shadow-sm"
+                        >
+                            Restore
+                        </button>
+                        <button
+                            onClick={() => {
+                                localStorage.removeItem("mm-draft-v1");
+                                setShowDraftBanner(false);
+                                setRestoredDraft(null);
+                            }}
+                            className="font-medium opacity-70 hover:opacity-100 transition-opacity"
+                        >
+                            Discard
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* BACKGROUND — solid colour + radial accent glow from top */}
             <div
                 className="absolute inset-0 transition-colors duration-500"
@@ -503,7 +516,7 @@ export default function CreatePage() {
             {/* HEADER */}
             <header className="relative z-20 flex items-center justify-between px-5 pt-5 pb-2">
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate('/')}
                     className={cn(
                         "transition-colors",
                         currentPage.type === 'dark' ? "text-white/60 hover:text-white" : "text-zinc-500 hover:text-zinc-900"
@@ -512,12 +525,29 @@ export default function CreatePage() {
                     <ArrowLeft className="w-5 h-5" />
                 </button>
 
-                <span className={cn(
-                    "text-sm font-medium",
-                    currentPage.type === 'dark' ? "text-white/60" : "text-zinc-500"
-                )}>
-                    {currentPageIndex + 1} / {pages.length}
-                </span>
+                <div className="flex items-center gap-4">
+                    {isAdmin && isDebugMode && (
+                        <button
+                            onClick={() => setShowDebugGrid(!showDebugGrid)}
+                            className={cn(
+                                "transition-colors",
+                                showDebugGrid
+                                    ? "text-cyan-500"
+                                    : (currentPage.type === 'dark' ? "text-white/40 hover:text-white" : "text-zinc-400 hover:text-zinc-900")
+                            )}
+                            title="Toggle Debug Ruler"
+                        >
+                            <Ruler className="w-5 h-5" />
+                        </button>
+                    )}
+
+                    <span className={cn(
+                        "text-sm font-medium",
+                        currentPage.type === 'dark' ? "text-white/60" : "text-zinc-500"
+                    )}>
+                        {currentPageIndex + 1} / {pages.length}
+                    </span>
+                </div>
 
                 <button
                     onClick={deletePage}
@@ -553,6 +583,63 @@ export default function CreatePage() {
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         className="absolute inset-0 flex flex-col items-center justify-center p-10"
                     >
+                        {/* Mobile Safe Zone Guide — desktop only */}
+                        {!isTouchDevice && !isDebugMode && selectedElement === "image" && (
+                            <div
+                                className="absolute pointer-events-none z-10 box-border"
+                                style={{
+                                    inset: '10% 16.5%',
+                                    border: `1px dashed ${currentPage.type === 'dark'
+                                        ? 'rgba(255,255,255,0.08)'
+                                        : 'rgba(0,0,0,0.08)'
+                                        }`,
+                                    borderRadius: '12px',
+                                }}
+                            />
+                        )}
+
+                        {/* Admin Debug Ruler Overlay */}
+                        {isAdmin && isDebugMode && showDebugGrid && (
+                            <div className="absolute inset-0 pointer-events-none z-50">
+                                {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((pct) => (
+                                    <div key={pct}>
+                                        {/* Horizontal (X) Axis Ticks */}
+                                        <div
+                                            className="absolute top-0 bottom-0 border-l flex flex-col items-start justify-start opacity-70"
+                                            style={{
+                                                left: `${pct}%`,
+                                                borderStyle: pct === 50 ? 'solid' : 'dashed',
+                                                borderColor: pct === 50 ? '#06b6d4' : (currentPage.type === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'),
+                                            }}
+                                        >
+                                            <span
+                                                className="text-[10px] font-mono font-bold mt-1 ml-1"
+                                                style={{ color: pct === 50 ? '#06b6d4' : (currentPage.type === 'dark' ? '#fff' : '#000') }}
+                                            >
+                                                {pct}%
+                                            </span>
+                                        </div>
+                                        {/* Vertical (Y) Axis Ticks */}
+                                        <div
+                                            className="absolute left-0 right-0 border-t flex items-start justify-start opacity-70"
+                                            style={{
+                                                top: `${pct}%`,
+                                                borderStyle: pct === 50 ? 'solid' : 'dashed',
+                                                borderColor: pct === 50 ? '#06b6d4' : (currentPage.type === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'),
+                                            }}
+                                        >
+                                            <span
+                                                className="text-[10px] font-mono font-bold ml-1 mt-0.5"
+                                                style={{ color: pct === 50 ? '#06b6d4' : (currentPage.type === 'dark' ? '#fff' : '#000') }}
+                                            >
+                                                {pct}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Photo Slot — Hidden/Ghost for layout spacing but Photos move to Absolute Inset */}
                         <div
                             className="flex justify-center mb-4 min-h-[160px] w-full relative z-10"
@@ -562,7 +649,7 @@ export default function CreatePage() {
                                 return (
                                     <>
                                         {/* Add/Unlock Button */}
-                                        {photosCount < 3 && (
+                                        {photosCount < (isDebugMode ? 99 : 3) && (
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -853,7 +940,7 @@ export default function CreatePage() {
                             transform: currentPage.imageTransform || { x: 0, y: 0, width: 128, rotation: 0 }
                         }] : []);
 
-                    if (photos.length >= 3) return;
+                    if (photos.length >= (isDebugMode ? 99 : 3)) return;
 
                     // Offset slightly if there are already photos
                     const offset = photos.length * 20;

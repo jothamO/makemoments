@@ -9,7 +9,9 @@ export function PublicFooter() {
       <div className="mx-auto max-w-6xl px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
           <div>
-            <h4 className="font-semibold mb-3" style={{ fontFamily: "var(--font-headline)" }}>MakeMoments</h4>
+            <div className="mb-3">
+              <img src="/assets/logo.webp" alt="MakeMoments" className="h-6 w-auto" />
+            </div>
             <p className="text-muted-foreground" style={{ fontFamily: "var(--font-body)" }}>
               Create personalized celebration cards for every special occasion.
             </p>

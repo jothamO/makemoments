@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 import { Drawer } from "vaul";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { MoreVertical, ExternalLink as ExternalLinkIcon } from "lucide-react";
 
 const AdminEvents = () => {
@@ -47,8 +48,8 @@ const AdminEvents = () => {
   };
 
   // Show loading state while initial data is fetching
-  if (!events || !celebrations) {
-    return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>;
+  if (events === undefined) {
+    return <GlobalLoader transparent />;
   }
 
   const monthCelebrations = celebrations.filter(c => isSameMonth(new Date(c.createdAt), currentMonth));

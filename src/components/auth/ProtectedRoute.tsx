@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
 
 interface ProtectedRouteProps {
     children: ReactNode;
@@ -13,11 +13,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     const location = useLocation();
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-zinc-950">
-                <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
-            </div>
-        );
+        return <GlobalLoader />;
     }
 
     if (!isLoggedIn) {

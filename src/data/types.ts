@@ -43,6 +43,8 @@ export type SlideTransition = "fade" | "slide" | "zoom" | "flip";
 export interface ImageTransform {
   x: number;
   y: number;
+  xp?: number;
+  yp?: number;
   width: number;
   rotation: number;
 }

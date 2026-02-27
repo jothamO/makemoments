@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Music, Loader2, Play } from "lucide-react";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ interface AssetPickerProps {
 export const CharacterPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
     const characters = useQuery(api.characters.list);
 
-    if (!characters) return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>;
+    if (!characters) return <GlobalLoader transparent />;
 
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -74,7 +74,7 @@ export const MusicPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
         }
     };
 
-    if (!tracks) return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>;
+    if (!tracks) return <GlobalLoader transparent />;
 
     return (
         <div className="space-y-2">
@@ -123,7 +123,7 @@ export const MusicPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
 export const ThemePresetPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
     const themes = useQuery(api.themes.list);
 
-    if (!themes) return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>;
+    if (!themes) return <GlobalLoader transparent />;
 
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -164,7 +164,7 @@ export const ThemePresetPicker = ({ selectedIds, onToggle }: AssetPickerProps) =
 export const FontPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
     const fonts = useQuery(api.fonts.list);
 
-    if (!fonts) return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>;
+    if (!fonts) return <GlobalLoader transparent />;
 
     return (
         <div className="space-y-2">
@@ -195,7 +195,7 @@ export const FontPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
 export const PatternPicker = ({ selectedIds, onToggle }: AssetPickerProps) => {
     const patterns = useQuery(api.patterns.list);
 
-    if (!patterns) return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>;
+    if (!patterns) return <GlobalLoader transparent />;
 
     return (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">

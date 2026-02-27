@@ -11,6 +11,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { usePaystackPayment } from "react-paystack";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PaymentModalProps {
   open: boolean;
@@ -37,6 +38,7 @@ function parseError(e: unknown): string {
 export function PaymentModal({ open, onClose, event, pages, musicTrackId }: PaymentModalProps) {
   const navigate = useNavigate();
   const { currency, symbol, isNigeria } = useCurrency();
+  const { token, isAdmin } = useAuth();
 
   const [email, setEmail] = useState("");
   const [removeWatermark, setRemoveWatermark] = useState(false);
@@ -84,6 +86,10 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
   // Detect when server confirms payment
   useEffect(() => {
     if (paymentStatus?.paid && paymentStatus.slug) {
+      // Clear the local draft so it doesn't reappear
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("mm-draft-v1");
+      }
       setConfirmedSlug(paymentStatus.slug);
       setProcessing(false);
     }
@@ -219,7 +225,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
   const displaySlug = customLink && customSlug ? customSlug : autoSlug;
 
   // ── Validation ──
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidEmail = isAdmin ? true : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isCustomLinkValid = !customLink || customSlug.trim().length > 0;
   const canPay = isValidEmail && isCustomLinkValid && !processing;
 
@@ -249,7 +255,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
       const result = await initializePayment({
         eventId: event._id as any,
         slug,
-        email,
+        email: isAdmin ? "admin@makemoments.xyz" : email,
         pages,
         musicTrackId: musicTrackId as any || undefined,
         removeWatermark,
@@ -264,9 +270,16 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
         createAccount,
         username,
         password,
+        token: token || undefined,
       });
 
       setCelebrationId(result.celebrationId);
+
+      // If admin, the backend mutation instantly marks it as "paid". 
+      // The useEffect polling block above will catch it, clear drafts, and set confirmedSlug automatically.
+      if (isAdmin) {
+        return;
+      }
 
       if (activeGateway === "paystack" && paystackPublicKey) {
         initPaystack({
@@ -533,38 +546,42 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
                 )}
 
                 {/* Email */}
-                <div className="mt-5">
-                  <label className="text-xs text-white/40 font-medium mb-1.5 block">Your email</label>
-                  <Input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/25 rounded-xl h-11 focus-visible:ring-1"
-                    style={{ borderColor: isValidEmail && email ? `${glowColor}40` : undefined }}
-                  />
-                </div>
+                {!isAdmin && (
+                  <div className="mt-5">
+                    <label className="text-xs text-white/40 font-medium mb-1.5 block">Your email</label>
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/25 rounded-xl h-11 focus-visible:ring-1"
+                      style={{ borderColor: isValidEmail && email ? `${glowColor}40` : undefined }}
+                    />
+                  </div>
+                )}
 
                 {/* Create account */}
-                <button
-                  onClick={() => setCreateAccount((v) => !v)}
-                  className={`mt-3 w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-left ${createAccount
-                    ? "border-white/20"
-                    : "border-white/5 hover:border-white/10"
-                    }`}
-                  style={{ backgroundColor: createAccount ? `${glowColor}10` : "rgba(255,255,255,0.02)" }}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${createAccount ? "text-white" : "border border-white/20"
+                {!isAdmin && (
+                  <button
+                    onClick={() => setCreateAccount((v) => !v)}
+                    className={`mt-3 w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-left ${createAccount
+                      ? "border-white/20"
+                      : "border-white/5 hover:border-white/10"
                       }`}
-                    style={{ backgroundColor: createAccount ? glowColor : "transparent" }}
+                    style={{ backgroundColor: createAccount ? `${glowColor}10` : "rgba(255,255,255,0.02)" }}
                   >
-                    {createAccount ? <Check className="w-3 h-3" /> : <UserPlus className="w-3 h-3 text-white/30" />}
-                  </div>
-                  <span className="text-sm text-white/70">Create an account</span>
-                </button>
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${createAccount ? "text-white" : "border border-white/20"
+                        }`}
+                      style={{ backgroundColor: createAccount ? glowColor : "transparent" }}
+                    >
+                      {createAccount ? <Check className="w-3 h-3" /> : <UserPlus className="w-3 h-3 text-white/30" />}
+                    </div>
+                    <span className="text-sm text-white/70">Create an account</span>
+                  </button>
+                )}
 
-                {createAccount && (
+                {!isAdmin && createAccount && (
                   <div className="mt-2 space-y-2">
                     <Input
                       type="text"

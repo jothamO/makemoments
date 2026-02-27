@@ -4,14 +4,15 @@ import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { DollarSign, ShoppingCart, TrendingUp, Percent, Loader2 } from "lucide-react";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { DollarSign, ShoppingCart, TrendingUp, Percent } from "lucide-react";
 
 type Range = "today" | "7d" | "30d" | "all";
 
 const AdminSales = () => {
   const [range, setRange] = useState<Range>("7d");
-  const celebrations = useQuery(api.celebrations.list) || [];
-  const events = useQuery(api.events.getAll) || [];
+  const celebrations = useQuery(api.celebrations.list);
+  const events = useQuery(api.events.getAll);
 
   const now = Date.now();
   const rangeStart: Record<Range, number> = {
@@ -22,6 +23,7 @@ const AdminSales = () => {
   };
 
   const filtered = useMemo(() => {
+    if (!celebrations) return []; // Handle loading state for celebrations
     return celebrations
       .filter((c) => c.paymentStatus === "paid" && c.createdAt >= rangeStart[range]);
   }, [celebrations, range]);
@@ -56,7 +58,7 @@ const AdminSales = () => {
     ];
   }, [filtered]);
 
-  const conversionRate = celebrations.length > 0
+  const conversionRate = celebrations && celebrations.length > 0
     ? Math.round((celebrations.filter((c) => c.paymentStatus === "paid").length / celebrations.length) * 100)
     : 0;
 
@@ -67,12 +69,8 @@ const AdminSales = () => {
     { title: "Conversion Rate", value: `${conversionRate}%`, icon: Percent },
   ];
 
-  if (!celebrations.length && !events.length) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
-      </div>
-    );
+  if (celebrations === undefined || events === undefined) {
+    return <GlobalLoader transparent />;
   }
 
   return (

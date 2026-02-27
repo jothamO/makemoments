@@ -3,7 +3,8 @@ import { api } from "../../convex/_generated/api";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ExternalLink, Calendar, Eye, Download, Repeat, Clock, AlertTriangle } from "lucide-react";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { ExternalLink, Calendar, Eye, Download, Repeat, Clock, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
@@ -18,11 +19,7 @@ export default function MyMoments() {
     );
 
     if (authLoading || celebrations === undefined) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-                <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
-            </div>
-        );
+        return <GlobalLoader />;
     }
 
     return (

@@ -147,12 +147,11 @@ export default function PricingPage() {
         { id: 'extraSlide', label: 'Extra Slide (per slide)', icon: Layers },
     ];
 
-    if (!themes.length && !fonts.length) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
-            </div>
-        );
+    // Check if any of the main data sources are still loading (undefined)
+    const isLoading = themes === undefined || fonts === undefined || music === undefined || patterns === undefined || characters === undefined || globalPricing === undefined;
+
+    if (isLoading) {
+        return <GlobalLoader transparent />;
     }
 
     return (
@@ -264,6 +263,7 @@ export default function PricingPage() {
 }
 
 import { Play, Pause } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function AssetTable({ items, type, premiumStatus, setPremiumStatus }: any) {
     const [playingId, setPlayingId] = useState<string | null>(null);

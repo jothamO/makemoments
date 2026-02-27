@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Send, Mail, Settings, Layout, Key, AtSign, Bell } from "lucide-react";
+import { Save, Send, Mail, Settings, Layout, Key, AtSign, Bell } from "lucide-react";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
 
 export default function AdminMail() {
     const { toast } = useToast();
@@ -69,12 +70,8 @@ export default function AdminMail() {
         }
     };
 
-    if (config === undefined) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
-            </div>
-        );
+    if (templates === undefined || config === undefined) {
+        return <GlobalLoader transparent />;
     }
 
     const categories = [

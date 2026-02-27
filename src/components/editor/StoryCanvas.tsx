@@ -56,15 +56,17 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
             {photos.map((photo, i) => (
               <div
                 key={(photo as any).id || i}
-                className="absolute inset-0 flex items-center justify-center"
+                className="absolute inset-0 pointer-events-none"
               >
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{
                     opacity: 1,
                     scale: 1,
-                    x: photo.transform.x,
-                    y: photo.transform.y,
+                    left: photo.transform.xp !== undefined ? `calc(50% + ${photo.transform.xp}%)` : "50%",
+                    top: photo.transform.yp !== undefined ? `calc(50% + ${photo.transform.yp}%)` : "50%",
+                    x: photo.transform.xp !== undefined ? "-50%" : `calc(-50% + ${photo.transform.x}px)`,
+                    y: photo.transform.yp !== undefined ? "-50%" : `calc(-50% + ${photo.transform.y}px)`,
                     rotate: photo.transform.rotation,
                   }}
                   transition={{
@@ -73,13 +75,14 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
                     ease: [0.23, 1, 0.32, 1] // Apple-style ease out
                   }}
                   style={{
+                    position: "absolute",
                     width: photo.transform.width,
                     height: photo.transform.width,
                   }}
                   className="pointer-events-auto cursor-pointer"
                   onClick={onPhotoClick}
                 >
-                  <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                  <img src={photo.url} alt="" className="w-full h-full object-cover pointer-events-none" />
                 </motion.div>
               </div>
             ))}

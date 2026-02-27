@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Palette, Music, Layout, Save, Globe, Sparkles, Smartphone, Monitor, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { CharacterPicker, MusicPicker, ThemePresetPicker, FontPicker, PatternPicker } from "@/components/admin/GlobalAssetPickers";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { EventHero } from "@/components/public/EventHero";
@@ -144,7 +144,7 @@ const EventEditor = () => {
     previewSlides.push(rawPreviewSlides[0]);
   }
 
-  if (id && !event) return <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin text-zinc-400" /></div>;
+  if (id && !event) return <GlobalLoader transparent />;
 
   const nextPreviewSlide = () => setCurrentPreviewSlide((prev) => (prev + 1) % previewSlides.length);
   const prevPreviewSlide = () => setCurrentPreviewSlide((prev) => (prev - 1 + previewSlides.length) % previewSlides.length);

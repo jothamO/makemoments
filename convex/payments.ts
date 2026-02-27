@@ -1,7 +1,7 @@
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
-import { createPasswordHash } from "./auth";
+import { createPasswordHash, checkAdmin } from "./auth";
 
 // Initialize a payment — creates celebration with "pending" status
 export const initializePayment = mutation({
@@ -24,11 +24,14 @@ export const initializePayment = mutation({
         createAccount: v.optional(v.boolean()),
         username: v.optional(v.string()),
         password: v.optional(v.string()),
+        token: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const { createAccount, username, password, ...celebrationData } = args;
+        const { createAccount, username, password, token, ...celebrationData } = args;
 
         let userId: string | undefined;
+
+        const isAdmin = await checkAdmin(ctx, token);
 
         if (createAccount && password) {
             // Check if user already exists
@@ -66,7 +69,7 @@ export const initializePayment = mutation({
         const celebrationId = await ctx.db.insert("celebrations", {
             ...celebrationData,
             userId: userId as any,
-            paymentStatus: "pending",
+            paymentStatus: isAdmin ? "paid" : "pending",
             views: 0,
             expiresAt: Date.now() + 365 * 24 * 60 * 60 * 1000,
             createdAt: Date.now(),

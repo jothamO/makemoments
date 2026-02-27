@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, ExternalLink, Search, Loader2, Sparkles, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { Eye, ExternalLink, Search, Sparkles, CheckCircle2, XCircle, Clock, MoreHorizontal, Trash2, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AdminCelebrations = () => {
@@ -45,12 +46,8 @@ const AdminCelebrations = () => {
     return { total: celebrations.length, paid, pending, totalViews };
   }, [celebrations]);
 
-  if (!celebrations.length && !events.length) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
-      </div>
-    );
+  if (celebrations === undefined) {
+    return <GlobalLoader transparent />;
   }
 
   return (

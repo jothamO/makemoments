@@ -4,7 +4,8 @@ import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { DollarSign, Heart, Calendar, TrendingUp, Loader2 } from "lucide-react";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { DollarSign, Heart, Calendar, TrendingUp } from "lucide-react";
 
 const AdminDashboard = () => {
   const celebrations = useQuery(api.celebrations.list) || [];
@@ -48,11 +49,7 @@ const AdminDashboard = () => {
   }, [celebrations]);
 
   if (!celebrations.length && !events.length) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
-      </div>
-    );
+    return <GlobalLoader transparent />;
   }
 
   const metrics = [

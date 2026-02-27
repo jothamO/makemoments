@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, animate } from "framer-motion";
-import type { StoryPage, SlideTransition } from "@/data/types";
+import type { StoryPage, SlideTransition, MusicTrack } from "@/data/types";
 import { Link } from "react-router-dom";
 import { hexToRgba, cn } from "@/lib/utils";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
@@ -48,6 +48,7 @@ interface StoryViewerProps {
   showShareOnLast?: boolean;
   shareContent?: React.ReactNode;
   eventSlug?: string;
+  musicTrack?: MusicTrack;
 }
 
 export function StoryViewer({
@@ -60,64 +61,169 @@ export function StoryViewer({
   showShareOnLast = false,
   shareContent,
   eventSlug,
+  musicTrack,
 }: StoryViewerProps) {
   const [current, setCurrent] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [textHeight, setTextHeight] = useState(0);
+
   const controlsRef = useRef<ReturnType<typeof animate> | null>(null);
   const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressBarRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const textWrapperRef = useRef<HTMLDivElement | null>(null);
 
-  const goNext = useCallback(() => {
-    if (current < pages.length - 1) {
-      setCurrent((c) => c + 1);
+  const slideStartTimeRef = useRef<number>(0);
+
+  // Base duration is passed from pages, defaulting to autoPlayInterval internally.
+  const remainingRef = useRef<number>(autoPlayInterval);
+
+  // ── Advance to next slide ────────────────────────
+  const advanceSlide = useCallback((fromIndex: number) => {
+    const nextIndex = fromIndex + 1;
+
+    // Mark the completed bar at 100%
+    const completedBar = progressBarRefs.current[fromIndex];
+    if (completedBar) completedBar.style.width = "100%";
+
+    if (nextIndex < pages.length) {
+      setCurrent(nextIndex);
+      // Determine duration for the next slide immediately
+      remainingRef.current = (pages[nextIndex] as any).duration
+        ? (pages[nextIndex] as any).duration * 1000
+        : autoPlayInterval;
     }
-  }, [current, pages.length]);
+  }, [pages.length, pages, autoPlayInterval]);
+
+  // ── Start a progress bar fill for the given slide ────────
+  const startProgressBar = useCallback((index: number, durationMs: number) => {
+    // Stop any previous animation
+    if (controlsRef.current) controlsRef.current.stop();
+    if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+
+    const bar = progressBarRefs.current[index];
+    if (!bar) return;
+
+    // Get current width percentage as starting point
+    const currentWidth = bar.style.width ? parseFloat(bar.style.width) / 100 : 0;
+
+    // Use Framer's animate() on a DOM ref for frame-accurate, pausable progress
+    controlsRef.current = animate(currentWidth, 1, {
+      duration: (durationMs / 1000) * (1 - currentWidth), // Adjust duration if resuming
+      ease: "linear",
+      onUpdate: (v) => {
+        bar.style.width = `${v * 100}%`;
+      },
+    });
+
+    remainingRef.current = durationMs;
+    slideStartTimeRef.current = performance.now();
+
+    // Advance slide after duration
+    slideTimerRef.current = setTimeout(() => {
+      advanceSlide(index);
+    }, durationMs);
+  }, [advanceSlide]);
+
+  // ── Kick off progress whenever current changes ──────
+  useEffect(() => {
+    if (!autoPlay || current >= pages.length) return;
+    if (isPaused) return;
+
+    // Reset current bar to 0 ONLY if we haven't started playing it yet
+    const bar = progressBarRefs.current[current];
+    if (bar && !bar.style.width) bar.style.width = "0%";
+
+    // Ensure music is playing if it should
+    if (audioRef.current && audioRef.current.paused) {
+      audioRef.current.play().catch((e) => console.log("Audio play blocked:", e));
+    }
+
+    startProgressBar(current, remainingRef.current);
+
+    return () => {
+      if (controlsRef.current) controlsRef.current.stop();
+      if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+    };
+  }, [current, autoPlay, startProgressBar, pages.length, isPaused]);
+
+  useEffect(() => {
+    // Measure text block height whenever the slide changes or text updates
+    if (textWrapperRef.current) {
+      setTextHeight(textWrapperRef.current.getBoundingClientRect().height);
+    } else {
+      setTextHeight(0);
+    }
+  }, [current, pages]);
+
+  // ── Pause logic ──────────────────────────────────────────
+  const handlePause = useCallback(() => {
+    if (isPaused) return;
+    setIsPaused(true);
+
+    const elapsed = performance.now() - slideStartTimeRef.current;
+    remainingRef.current = Math.max(0, remainingRef.current - elapsed);
+
+    if (controlsRef.current) controlsRef.current.pause();
+    if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+    if (audioRef.current) audioRef.current.pause();
+  }, [isPaused]);
+
+  const handleResume = useCallback(() => {
+    if (!isPaused) return;
+    setIsPaused(false);
+    slideStartTimeRef.current = performance.now();
+
+    if (controlsRef.current) controlsRef.current.play();
+    if (audioRef.current) audioRef.current.play().catch(() => { });
+
+    if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+    slideTimerRef.current = setTimeout(() => {
+      advanceSlide(current);
+    }, remainingRef.current);
+  }, [isPaused, current, advanceSlide]);
 
   const goPrev = useCallback(() => {
     if (current > 0) {
-      // Cancel pending auto-advance before navigating back
       if (controlsRef.current) controlsRef.current.stop();
       if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
-      setCurrent((c) => c - 1);
+
+      const bar = progressBarRefs.current[current];
+      if (bar) bar.style.width = "0%";
+
+      const prevIndex = current - 1;
+      remainingRef.current = (pages[prevIndex] as any).duration
+        ? (pages[prevIndex] as any).duration * 1000
+        : autoPlayInterval;
+
+      // Restart music
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => { });
+      }
+
+      setCurrent(prevIndex);
+      setIsPaused(false);
     }
-  }, [current]);
+  }, [current, pages, autoPlayInterval]);
 
-  // Algorithmic Slide Engine — identical to StoryPreviewPlayer: standalone animate() + setTimeout
-  useEffect(() => {
-    if (!autoPlay || current >= pages.length) return;
-
-    // Reset all bars via direct DOM writes
-    progressBarRefs.current.forEach((bar, i) => {
-      if (bar) bar.style.width = i < current ? "100%" : "0%";
-    });
-
-    const pageDuration = (pages[current] as any).duration ? (pages[current] as any).duration * 1000 : autoPlayInterval;
-
-    const bar = progressBarRefs.current[current];
-    if (bar) {
-      // Get current width as starting point (normally 0 after reset)
-      const currentWidth = bar.style.width ? parseFloat(bar.style.width) / 100 : 0;
-
-      // Frame-accurate, direct-DOM fill animation via Framer's standalone animate()
-      controlsRef.current = animate(currentWidth, 1, {
-        duration: pageDuration / 1000,
-        ease: "linear",
-        onUpdate: (v) => {
-          bar.style.width = `${v * 100}%`;
-        },
-      });
-    }
-
-    // A separate, cancellable timer drives the actual slide advance
-    slideTimerRef.current = setTimeout(() => {
-      goNext();
-    }, pageDuration);
-
-    return () => {
-      controlsRef.current?.stop();
+  const goNext = useCallback(() => {
+    if (current < pages.length - 1) {
+      if (controlsRef.current) controlsRef.current.stop();
       if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
-    };
 
-  }, [current, autoPlay, autoPlayInterval, pages, goNext]);
+      const bar = progressBarRefs.current[current];
+      if (bar) bar.style.width = "100%";
+
+      const nextIndex = current + 1;
+      remainingRef.current = (pages[nextIndex] as any).duration
+        ? (pages[nextIndex] as any).duration * 1000
+        : autoPlayInterval;
+
+      setCurrent(nextIndex);
+      setIsPaused(false);
+    }
+  }, [current, pages.length, pages, autoPlayInterval]);
 
   const page = pages[current];
   if (!page) return null;
@@ -171,10 +277,11 @@ export function StoryViewer({
       <div
         className="flex-1 relative cursor-pointer select-none"
         onClick={handleTap}
-        onPointerDown={() => controlsRef.current?.pause()}
-        onPointerUp={() => controlsRef.current?.play()}
-        onPointerLeave={() => controlsRef.current?.play()}
-        onPointerCancel={() => controlsRef.current?.play()}
+        onMouseDown={handlePause}
+        onMouseUp={handleResume}
+        onMouseLeave={handleResume}
+        onTouchStart={handlePause}
+        onTouchEnd={handleResume}
         style={{ touchAction: 'manipulation' }}
       >
         <AnimatePresence mode="wait">
@@ -225,7 +332,7 @@ export function StoryViewer({
                     <div className="flex justify-center mb-4 min-h-[160px] w-full relative z-10" />
 
                     {/* Text + Progress Wrapper — matching exact CreatePage DOM structure */}
-                    <div className="w-full relative z-20 px-0">
+                    <div className="w-full relative z-20 px-0" ref={textWrapperRef}>
                       <motion.textarea
                         readOnly
                         value={page.text || ""}
@@ -257,42 +364,72 @@ export function StoryViewer({
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Photos Layer — absolute inset-0 within the reference frame */}
+                {/* Photos and Stickers Layer — EXACT reference frame bounds, but NO overflow-hidden so corners can bleed visually */}
+                <div className="absolute inset-x-0 top-[21px] bottom-[188px] pointer-events-none">
+                  {/* Photos Layer */}
                   {page.photos && page.photos.length > 0 && (
                     <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-                      {page.photos.map((photo, i) => (
-                        <div
-                          key={photo.id || i}
-                          className="absolute inset-0 flex items-center justify-center"
-                        >
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{
-                              opacity: 1,
-                              scale: 1,
-                              x: photo.transform.x,
-                              y: photo.transform.y,
-                              rotate: photo.transform.rotation,
-                            }}
-                            transition={{
-                              ...CONTENT_TRANSITION,
-                              delay: 0.05 + i * 0.05,
-                            }}
-                            style={{
-                              width: photo.transform.width,
-                              height: photo.transform.width,
-                            }}
-                            className="pointer-events-none"
+                      {page.photos.map((photo, i) => {
+                        // Dynamic Boundary Mathematics (Space AROUND the text)
+                        // The master frame is 100vh - 48px(top) - 188px(bottom)
+                        // The text wrapper is vertically centered in this frame.
+                        // We calculate the available top/bottom safe heights by dividing the remaining space.
+
+                        let safeMaxHeight = 128; // Default max
+                        if (textHeight > 0) {
+                          const isTopHemisphere = (photo.transform.yp || 0) < 0;
+
+                          // The theoretical height of the master frame (vh representation)
+                          // We use '100dvh' minus chrome safely via CSS calc in style below, 
+                          // but mathematically we assume worst-case phone (approx 650-236 = 414px free)
+                          // We'll let CSS handle the exact screen height clamping dynamically:
+                          // Top Safe Zone: `calc(50dvh - 118px - ${textHeight / 2}px - 32px)` 
+                          // Bottom Safe Zone: `calc(50dvh - 118px - ${textHeight / 2}px - 32px)`
+                          // Where 118px is half the offset chrome (48 top + 188 bot) / 2 = 118
+                        }
+
+                        return (
+                          <div
+                            key={photo.id || i}
+                            className="absolute inset-0 pointer-events-none"
                           >
-                            <img src={photo.url} alt="" className="w-full h-full object-cover" />
-                          </motion.div>
-                        </div>
-                      ))}
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{
+                                opacity: 1,
+                                scale: 1,
+                                left: photo.transform.xp !== undefined ? `calc(50% + ${photo.transform.xp}%)` : "50%",
+                                top: photo.transform.yp !== undefined
+                                  ? (photo.transform.yp > 5 && textHeight > 0
+                                    ? `calc(max(50% + ${photo.transform.yp}%, 50% + ${textHeight / 2}px + ${(photo.transform.width || 128) / 2}px + 20px))`
+                                    : `calc(50% + ${photo.transform.yp}%)`)
+                                  : "50%",
+                                x: photo.transform.xp !== undefined ? "-50%" : `calc(-50% + ${photo.transform.x}px)`,
+                                y: photo.transform.yp !== undefined ? "-50%" : `calc(-50% + ${photo.transform.y}px)`,
+                                rotate: photo.transform.rotation,
+                              }}
+                              transition={{
+                                ...CONTENT_TRANSITION,
+                                delay: 0.05 + i * 0.05,
+                              }}
+                              style={{
+                                position: "absolute",
+                                width: `min(${photo.transform.width}px, 25vw, calc(50dvh - 118px - ${textHeight / 2}px - 32px))`,
+                                height: `min(${photo.transform.width}px, 25vw, calc(50dvh - 118px - ${textHeight / 2}px - 32px))`,
+                              }}
+                              className="pointer-events-none"
+                            >
+                              <img src={photo.url} alt="" className="w-full h-full object-cover pointer-events-none" />
+                            </motion.div>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
 
-                  {/* Stickers — absolute inset-0 within the reference frame */}
+                  {/* Stickers */}
                   {page.stickers.map((s, idx) => (
                     <motion.div
                       key={idx}
@@ -310,6 +447,43 @@ export function StoryViewer({
             )}
           </motion.div>
         </AnimatePresence>
+
+        {/* Pause Overlay */}
+        <AnimatePresence>
+          {isPaused && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none"
+            >
+              <div className="w-16 h-16 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center">
+                <div className="flex gap-1.5">
+                  <div className="w-2 h-7 bg-white rounded-sm" />
+                  <div className="w-2 h-7 bg-white rounded-sm" />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Dynamic Watermark Pill */}
+        {showWatermark && !isSyntheticCTA && (
+          <Link
+            to="/"
+            onClick={(e) => {
+              e.stopPropagation(); // prevent slide increment
+            }}
+            className={cn(
+              "absolute bottom-6 right-4 z-50 px-3 py-1.5 rounded-full text-[10px] font-medium tracking-tight whitespace-nowrap shadow-sm backdrop-blur-md transition-all border",
+              isDark
+                ? "bg-white/10 text-white/90 border-white/10 hover:bg-white/20"
+                : "bg-black/5 text-black/70 border-black/5 hover:bg-black/10"
+            )}
+          >
+            Made with MakeMoments.xyz
+          </Link>
+        )}
       </div>
 
       {/* Share on last page — dynamically colored based on backdrop */}
@@ -317,6 +491,13 @@ export function StoryViewer({
         <div className="p-4 z-10">{shareContent}</div>
       )}
 
+      {musicTrack?.url && (
+        <audio
+          ref={audioRef}
+          src={musicTrack.url}
+          loop={true}
+        />
+      )}
     </div>
   );
 }

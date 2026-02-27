@@ -53,6 +53,21 @@ export const getByEvent = query({
     },
 });
 
+export const getById = query({
+    args: { id: v.id("musicTracks") },
+    handler: async (ctx, args) => {
+        const track = await ctx.db.get(args.id);
+        if (!track) return null;
+
+        return {
+            ...track,
+            url: track.storageId
+                ? await ctx.storage.getUrl(track.storageId)
+                : track.url,
+        };
+    },
+});
+
 export const update = mutation({
     args: {
         id: v.id("musicTracks"),
