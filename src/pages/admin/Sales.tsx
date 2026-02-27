@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { DollarSign, ShoppingCart, TrendingUp, Percent } from "lucide-react";
+import { formatPlatformDate } from "@/lib/utils";
 
 type Range = "today" | "7d" | "30d" | "all";
 
@@ -41,7 +42,7 @@ const AdminSales = () => {
       const next = d.getTime() + 86400000;
       const daySales = filtered.filter((c) => c.createdAt >= d.getTime() && c.createdAt < next);
       return {
-        name: d.toLocaleDateString("en", { month: "short", day: "numeric" }),
+        name: formatPlatformDate(d, { month: "short", day: "numeric" }),
         revenue: daySales.reduce((a, c) => a + (c.totalPaid || 0), 0),
       };
     });

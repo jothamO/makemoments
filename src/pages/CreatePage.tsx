@@ -21,7 +21,7 @@ import { EditorToolbar } from "@/components/editor/EditorToolbar";
 import { ImageTransformEditor } from "@/components/editor/ImageTransformEditor";
 import { useEventTheme } from "@/contexts/ThemeContext";
 import type { StoryPage, EventTheme, MusicTrack } from "@/data/types";
-import { cn, hexToRgba } from "@/lib/utils";
+import { cn, hexToRgba, getBrandRadialGradient } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentModal } from "@/components/PaymentModal";
 import { Tooltip, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -278,7 +278,7 @@ export default function CreatePage() {
     useEffect(() => {
         if (pages.length === 0) return;
         // Don't save if it's the pure initial empty slide
-        if (pages.length === 1 && pages[0].text === "" && !pages[0].photoUrl && (!pages[0].photos || pages[0].photos.length === 0)) return;
+        if (pages.length === 1 && pages[0].text === "" && (!pages[0].photos || pages[0].photos.length === 0)) return;
 
         const savePayload = {
             pages: pages.map(p => ({
@@ -376,11 +376,7 @@ export default function CreatePage() {
 
         const photos = page.photos && page.photos.length > 0
             ? [...page.photos]
-            : (page.photoUrl ? [{
-                id: "id-legacy",
-                url: page.photoUrl,
-                transform: page.imageTransform || { x: 0, y: 0, width: 128, rotation: 0 }
-            }] : []);
+            : [];
 
         if (index < 0 || index >= photos.length) return;
 
@@ -389,9 +385,6 @@ export default function CreatePage() {
 
         updateCurrentPage({
             photos,
-            // Clear legacy fields once we migrate to the new array
-            photoUrl: undefined,
-            imageTransform: undefined
         });
 
         // The photo is now at the last position
@@ -463,7 +456,7 @@ export default function CreatePage() {
         return <GlobalLoader />;
     }
 
-    const hasContent = pages.some(p => p.photoUrl || p.text.trim().length > 0);
+    const hasContent = pages.some(p => (p.photos && p.photos.length > 0) || p.text.trim().length > 0);
 
     // -----------------------------------------------------------------------
     // Render
@@ -503,7 +496,7 @@ export default function CreatePage() {
                 className="absolute inset-0 transition-colors duration-500"
                 style={{
                     backgroundColor: currentPage.baseColor,
-                    backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(currentPage.glowColor || currentPage.baseColor, currentPage.type === 'dark' ? 0.4 : 0.35)}, transparent 70%)`,
+                    backgroundImage: getBrandRadialGradient(currentPage.baseColor, currentPage.glowColor, currentPage.type === 'dark'),
                 }}
             >
                 {currentPage.backgroundPattern && (
@@ -645,7 +638,7 @@ export default function CreatePage() {
                             className="flex justify-center mb-4 min-h-[160px] w-full relative z-10"
                         >
                             {(() => {
-                                const photosCount = (currentPage.photos?.length || 0) + (currentPage.photoUrl ? 1 : 0);
+                                const photosCount = currentPage.photos?.length || 0;
                                 return (
                                     <>
                                         {/* Add/Unlock Button */}
@@ -677,13 +670,7 @@ export default function CreatePage() {
                         {/* Photos Layer - Now Absolute Inset to match StoryCanvas */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 overflow-hidden">
                             {(() => {
-                                const photos = currentPage.photos && currentPage.photos.length > 0
-                                    ? currentPage.photos
-                                    : (currentPage.photoUrl ? [{
-                                        id: "id-legacy",
-                                        url: currentPage.photoUrl,
-                                        transform: currentPage.imageTransform || { x: 0, y: 0, width: 128, rotation: 0 }
-                                    }] : []);
+                                const photos = currentPage.photos || [];
 
                                 return photos.map((photo, idx) => (
                                     <div
@@ -701,16 +688,12 @@ export default function CreatePage() {
                                                 updatedPhotos[idx] = { ...photo, transform: newTransform };
                                                 updateCurrentPage({
                                                     photos: updatedPhotos,
-                                                    photoUrl: undefined,
-                                                    imageTransform: undefined
                                                 });
                                             }}
                                             onRemove={() => {
                                                 const updatedPhotos = photos.filter((_, i) => i !== idx);
                                                 updateCurrentPage({
                                                     photos: updatedPhotos.length > 0 ? updatedPhotos : undefined,
-                                                    photoUrl: undefined,
-                                                    imageTransform: undefined
                                                 });
                                                 setSelectedPhotoIndex(null);
                                                 setSelectedElement(null);

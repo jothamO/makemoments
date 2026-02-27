@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, animate } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 import { StoryPage, MusicTrack } from "@/data/types";
-import { hexToRgba, cn } from "@/lib/utils";
+import { hexToRgba, cn, getBrandRadialGradient } from "@/lib/utils";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import {
     EXPRESSIVE_EASE,
@@ -209,7 +209,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                     className="fixed inset-0 z-[100] flex flex-col story-viewer"
                     style={{
                         backgroundColor: page.baseColor,
-                        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.baseColor, page.type === 'dark' ? 0.4 : 0.35)}, transparent 70%)`,
+                        backgroundImage: getBrandRadialGradient(page.baseColor, page.glowColor, page.type === 'dark'),
                         transition: "background-color 0.5s, background-image 0.5s",
                     }}
                 >

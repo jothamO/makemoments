@@ -11,6 +11,7 @@ import { CreditCard, History, RefreshCcw, DollarSign, Activity, AlertCircle, Cir
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { formatPlatformDate } from "@/lib/utils";
 
 // Currency definitions for exchange rate management
 const SUPPORTED_CURRENCIES = [
@@ -385,7 +386,7 @@ export default function PaymentsPage() {
                                             return (
                                                 <TableRow key={tx._id} className="border-zinc-100 hover:bg-zinc-50 transition-colors">
                                                     <TableCell className="text-xs text-zinc-500">
-                                                        {new Date(tx.createdAt).toLocaleDateString()}
+                                                        {formatPlatformDate(tx.createdAt)}
                                                     </TableCell>
                                                     <TableCell className="text-sm font-medium text-zinc-900">{eventName}</TableCell>
                                                     <TableCell className="text-sm text-zinc-500">{tx.email}</TableCell>
@@ -429,7 +430,7 @@ export default function PaymentsPage() {
                                             <div className="flex items-center justify-between">
                                                 <div className="space-y-0.5">
                                                     <p className="text-sm font-bold text-zinc-900 leading-tight">{eventName}</p>
-                                                    <p className="text-[10px] text-zinc-500">{new Date(tx.createdAt).toLocaleDateString()} • {tx.email}</p>
+                                                    <p className="text-[10px] text-zinc-500">{formatPlatformDate(tx.createdAt)} • {tx.email}</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-sm font-black text-zinc-900">

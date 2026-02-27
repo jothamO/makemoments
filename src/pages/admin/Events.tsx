@@ -24,27 +24,24 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { cn, formatPlatformDate } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { useSafeMutation } from "@/hooks/useSafeMutation";
 
 import { Drawer } from "vaul";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { MoreVertical, ExternalLink as ExternalLinkIcon } from "lucide-react";
 
 const AdminEvents = () => {
+  const { toast } = useToast();
+  const { safeMutation } = useSafeMutation();
   const events = useQuery(api.events.getAll);
   const celebrations = useQuery(api.celebrations.list);
   const removeEvent = useMutation(api.events.remove);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const handleDelete = async (id: any) => {
-    try {
-      await removeEvent({ id });
-      toast.success("Event deleted successfully");
-    } catch (error) {
-      toast.error("Failed to delete event");
-      console.error(error);
-    }
+    await safeMutation(removeEvent, { id }, "Event deleted");
   };
 
   // Show loading state while initial data is fetching
@@ -98,7 +95,7 @@ const AdminEvents = () => {
                           <TableCell><Badge variant="outline">T{evt.tier || 4}</Badge></TableCell>
                           <TableCell className="font-medium">{evt.name}</TableCell>
                           <TableCell className="capitalize">{evt.kind || "one-time"}</TableCell>
-                          <TableCell>{new Date(evt.date).toLocaleDateString()}</TableCell>
+                          <TableCell>{formatPlatformDate(evt.date)}</TableCell>
                           <TableCell>
                             <Badge variant={evt.status === "active" ? "default" : "secondary"}>
                               {evt.status}
@@ -157,7 +154,7 @@ const AdminEvents = () => {
                       </div>
                       <div className="flex gap-2 text-[11px] text-muted-foreground">
                         <Badge variant="outline" className="text-[9px] h-4 px-1 rounded-sm border-zinc-200">T{evt.tier || 4}</Badge>
-                        <span className="capitalize">{evt.kind}</span> • <span>{new Date(evt.date).toLocaleDateString()}</span>
+                        <span className="capitalize">{evt.kind}</span> • <span>{formatPlatformDate(evt.date)}</span>
                       </div>
                     </CardContent>
                   </Card>

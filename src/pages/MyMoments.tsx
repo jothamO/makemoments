@@ -8,6 +8,7 @@ import { ExternalLink, Calendar, Eye, Download, Repeat, Clock, AlertTriangle } f
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { formatPlatformDate } from "@/lib/utils";
 
 export default function MyMoments() {
     const { user, isLoading: authLoading } = useAuth();
@@ -117,7 +118,7 @@ function MomentCard({ celebration }: { celebration: any }) {
                         <div className="flex items-center text-zinc-500 text-xs mb-6 gap-3">
                             <span className="flex items-center">
                                 <Calendar className="w-3 h-3 mr-1" />
-                                {new Date(celebration.createdAt).toLocaleDateString()}
+                                {formatPlatformDate(celebration.createdAt)}
                             </span>
                             {daysLeft !== null && (
                                 <span className={`flex items-center ${isExpiringSoon ? "text-red-400 font-medium" : ""}`}>

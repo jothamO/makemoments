@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { DollarSign, Heart, Calendar, TrendingUp } from "lucide-react";
+import { formatPlatformDate } from "@/lib/utils";
 
 const AdminDashboard = () => {
   const celebrations = useQuery(api.celebrations.list) || [];
@@ -42,7 +43,7 @@ const AdminDashboard = () => {
         (c) => c.createdAt >= d.getTime() && c.createdAt < nextDay
       );
       return {
-        name: d.toLocaleDateString("en", { weekday: "short" }),
+        name: formatPlatformDate(d, { weekday: "short" }),
         revenue: dayCelebrations.reduce((a, c) => a + (c.totalPaid || 0), 0),
       };
     });

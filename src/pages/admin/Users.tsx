@@ -9,9 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search, UserPlus, MoreVertical, Trash2, Mail, Shield, User as UserIcon, Check, X } from "lucide-react";
+import { formatPlatformDate } from "@/lib/utils";
+import { useSafeMutation } from "@/hooks/useSafeMutation";
 
 export default function AdminUsers() {
     const { toast } = useToast();
+    const { safeMutation } = useSafeMutation();
     const users = useQuery(api.users.list) || [];
     const removeUser = useMutation(api.users.remove);
     const upsertUser = useMutation(api.users.upsert);
@@ -34,26 +37,20 @@ export default function AdminUsers() {
 
     const handleAddUser = async () => {
         if (!newEmail) return;
-        try {
-            await upsertUser({
-                email: newEmail,
-                name: newName || undefined,
-                role: newRole,
-                isSubscriber: isSub,
-            });
-            toast({ title: "User added" });
-            setIsAdding(false);
-            setNewEmail("");
-            setNewName("");
-        } catch (error) {
-            toast({ title: "Error adding user", variant: "destructive" });
-        }
+        await safeMutation(upsertUser, {
+            email: newEmail,
+            name: newName || undefined,
+            role: newRole,
+            isSubscriber: isSub,
+        }, "User added");
+        setIsAdding(false);
+        setNewEmail("");
+        setNewName("");
     };
 
     const handleDelete = async (id: any) => {
         if (confirm("Are you sure you want to delete this user?")) {
-            await removeUser({ id });
-            toast({ title: "User deleted" });
+            await safeMutation(removeUser, { id }, "User deleted");
         }
     };
 
@@ -166,7 +163,7 @@ export default function AdminUsers() {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-xs text-zinc-500 font-medium font-mono">
-                                            {new Date(user.createdAt).toLocaleDateString()}
+                                            {formatPlatformDate(user.createdAt)}
                                         </TableCell>
                                         <TableCell>
                                             <DropdownMenu>
@@ -246,7 +243,7 @@ export default function AdminUsers() {
                                             </div>
                                         )}
                                         <span className="text-zinc-300">|</span>
-                                        <span className="text-[9px] text-zinc-400 font-mono">{new Date(user.createdAt).toLocaleDateString()}</span>
+                                        <span className="text-[9px] text-zinc-400 font-mono">{formatPlatformDate(user.createdAt)}</span>
                                     </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>

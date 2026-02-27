@@ -59,7 +59,6 @@ export type FontSize = "small" | "medium" | "large";
 
 export interface StoryPage {
   id: string;
-  photoUrl?: string; // Legacy
   photos?: Photo[]; // New: support for up to 3 characters
   text: string;
   fontFamily: string;
@@ -72,7 +71,6 @@ export interface StoryPage {
   transition: SlideTransition;
   backgroundPattern?: string;
   stickers: { emoji: string; x: number; y: number }[];
-  imageTransform?: ImageTransform; // Legacy
   type?: "light" | "dark";
 }
 

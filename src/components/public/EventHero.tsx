@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
-import { hexToRgba, cn } from "@/lib/utils";
+import { hexToRgba, cn, getBrandRadialGradient } from "@/lib/utils";
 import type { EventTheme } from "@/data/types";
 import { EXPRESSIVE_EASE } from "@/lib/animation";
 
@@ -23,10 +23,9 @@ export const EventHero = ({ theme, children, className, isScaled = false }: Even
         textMode === "dark" ? "#18181B" :
             (isDark ? "#FFFFFF" : "#18181B");
 
-    // Opacity constants for visual consistency
-    const glowOpacity = isDark ? 0.4 : 0.35;
-    const glowColor = theme.glowColor || "#ffffff";
+    const glowColor = theme.glowColor;
     const baseColor = theme.baseColor || "#E2F0E9";
+
 
     return (
         <div
@@ -37,7 +36,7 @@ export const EventHero = ({ theme, children, className, isScaled = false }: Even
             )}
             style={{
                 backgroundColor: baseColor,
-                backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(glowColor, glowOpacity)}, transparent 70%)`,
+                backgroundImage: getBrandRadialGradient(baseColor, glowColor, isDark),
                 color: textColor
             }}
         >

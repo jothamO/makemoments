@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, animate } from "framer-motion";
 import type { StoryPage, SlideTransition, MusicTrack } from "@/data/types";
 import { Link } from "react-router-dom";
-import { hexToRgba, cn } from "@/lib/utils";
+import { hexToRgba, cn, getBrandRadialGradient } from "@/lib/utils";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { CONTENT_TRANSITION } from "@/lib/animation";
 
@@ -251,7 +251,7 @@ export function StoryViewer({
     <div className="fixed inset-0 z-50 flex flex-col"
       style={{
         backgroundColor: page.baseColor,
-        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.baseColor, isDark ? 0.4 : 0.35)}, transparent 70%)`,
+        backgroundImage: getBrandRadialGradient(page.baseColor, page.glowColor, isDark),
         transition: "background-color 0.5s, background-image 0.5s",
       }}
     >

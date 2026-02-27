@@ -11,15 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Edit, Music as MusicIcon, Sparkles, Type, Upload, Loader2, User, X, Image as ImageIcon, DollarSign, Play, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, hexToRgba, getBrandRadialGradient, getAudioDuration, uploadToConvexStorage } from "@/lib/utils";
+import { useSafeMutation } from "@/hooks/useSafeMutation";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 
-function hexToRgba(hex: string, alpha: number) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+
 
 const slugify = (text: string) => text
     .toLowerCase()
@@ -28,6 +25,8 @@ const slugify = (text: string) => text
 
 export default function FilesPage() {
     const { toast } = useToast();
+    const { safeMutation } = useSafeMutation();
+    const { playingId, togglePlay } = useAudioPlayer();
 
     // ── Queries ──
     const themes = useQuery(api.themes.list) || [];
@@ -87,93 +86,6 @@ export default function FilesPage() {
     const [newPattern, setNewPattern] = useState({ id: "", name: "", emojis: "", type: "fall" as any, isPremium: false, price: 0 });
     const [editingPatternId, setEditingPatternId] = useState<string | null>(null);
     const [newMusic, setNewMusic] = useState({ name: "", artist: "", duration: 0, url: "", isPremium: false, price: 0 });
-    const [playingId, setPlayingId] = useState<string | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-
-    const togglePlay = async (trackId: string, url?: string) => {
-        if (!url) return;
-
-        try {
-            if (playingId === trackId) {
-                audioRef.current?.pause();
-                setPlayingId(null);
-            } else {
-                if (!audioRef.current) {
-                    audioRef.current = new Audio();
-                    audioRef.current.onended = () => setPlayingId(null);
-                }
-
-                audioRef.current.src = url;
-                await audioRef.current.play();
-                setPlayingId(trackId);
-
-                // Add error listener for subsequent load issues
-                audioRef.current.onerror = () => {
-                    toast({
-                        title: "Playback failed",
-                        description: "Could not load the audio file. The link might be broken.",
-                        variant: "destructive"
-                    });
-                    setPlayingId(null);
-                };
-            }
-        } catch (error: any) {
-            console.error("Playback error:", error);
-            toast({
-                title: "Playback blocked",
-                description: "The browser blocked playback or the file is missing.",
-                variant: "destructive"
-            });
-            setPlayingId(null);
-        }
-    };
-
-
-    const getAudioDuration = (file: File): Promise<number> => {
-        return new Promise((resolve) => {
-            const audio = new Audio();
-            audio.src = URL.createObjectURL(file);
-            audio.onloadedmetadata = () => {
-                URL.revokeObjectURL(audio.src);
-                resolve(Math.round(audio.duration));
-            };
-            audio.onerror = () => resolve(0);
-        });
-    };
-
-    // ── Handlers ──
-
-    const safeMutation = async (mutation: any, args: any, successTitle: string) => {
-        try {
-            await mutation(args);
-            if (successTitle) toast({ title: successTitle });
-            return true;
-        } catch (error: any) {
-            console.error(error);
-            let msg = error.message || "An unexpected error occurred";
-
-            // Extract core error message from Convex noise
-            const serverErrorMatch = msg.match(/Server Error (?:Uncaught Error: )?(.*?)(?: at handler|$)/);
-            if (serverErrorMatch) {
-                msg = serverErrorMatch[1];
-            } else {
-                msg = msg.replace("ConvexError: ", "").replace("Uncaught Error: ", "");
-            }
-
-            // Cleanup trailing periods and whitespace
-            msg = msg.trim().replace(/\.$/, "");
-
-            // Sentence case
-            msg = msg.charAt(0).toUpperCase() + msg.slice(1);
-
-            toast({
-                title: "Action failed",
-                description: msg,
-                variant: "destructive"
-            });
-            return false;
-        }
-    };
 
     const handleAddTheme = async () => {
         if (!newTheme.name) return toast({ title: "Name required", variant: "destructive" });
@@ -222,13 +134,7 @@ export default function FilesPage() {
             if (fontFileRef.current?.files?.[0]) {
                 setIsUploading(true);
                 try {
-                    const postUrl = await generateFontUploadUrl();
-                    const result = await fetch(postUrl, {
-                        method: "POST",
-                        body: fontFileRef.current.files[0],
-                    });
-                    const { storageId: sId } = await result.json();
-                    storageId = sId;
+                    storageId = await uploadToConvexStorage(generateFontUploadUrl, fontFileRef.current.files[0]);
                 } catch {
                     toast({ title: "Upload failed", variant: "destructive" });
                     setIsUploading(false);
@@ -309,14 +215,7 @@ export default function FilesPage() {
                 }
 
                 try {
-                    const postUrl = await generateUploadUrl();
-                    const result = await fetch(postUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": file.type },
-                        body: file,
-                    });
-                    const { storageId: sId } = await result.json();
-                    storageId = sId;
+                    storageId = await uploadToConvexStorage(generateUploadUrl, file);
                 } catch {
                     toast({ title: "Upload failed", variant: "destructive" });
                     setIsUploading(false);
@@ -346,13 +245,7 @@ export default function FilesPage() {
         setIsUploading(true);
         try {
             for (const file of Array.from(charFilesRef.current.files)) {
-                const postUrl = await generateCharacterUploadUrl();
-                const result = await fetch(postUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": file.type },
-                    body: file,
-                });
-                const { storageId } = await result.json();
+                const storageId = await uploadToConvexStorage(generateCharacterUploadUrl, file);
                 await createCharacter({ name: file.name.split(".")[0], storageId });
             }
             toast({ title: "Characters uploaded" });
@@ -473,9 +366,8 @@ export default function FilesPage() {
                                                 <div className="absolute inset-0 z-0"
                                                     style={{
                                                         backgroundColor: newTheme.baseColor,
-                                                        backgroundImage: newTheme.glowColor
-                                                            ? `radial-gradient(circle at 50% 0%, ${newTheme.glowColor} 0%, transparent 60%)`
-                                                            : 'none'
+                                                        backgroundImage: getBrandRadialGradient(newTheme.baseColor, newTheme.glowColor, newTheme.type === 'dark')
+
                                                     }}
                                                 />
                                                 <div className="relative z-10 text-center">
@@ -522,9 +414,8 @@ export default function FilesPage() {
                                                         className="w-10 h-10 rounded-full border border-zinc-200 shadow-md"
                                                         style={{
                                                             backgroundColor: theme.baseColor,
-                                                            backgroundImage: theme.glowColor
-                                                                ? `radial-gradient(circle at 50% 0%, ${theme.glowColor} 0%, transparent 60%)`
-                                                                : 'none'
+                                                            backgroundImage: getBrandRadialGradient(theme.baseColor, theme.glowColor, theme.type === 'dark')
+
                                                         }}
                                                     />
                                                     <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
@@ -671,9 +562,8 @@ export default function FilesPage() {
                                                             className="flex flex-col items-center justify-center h-32 rounded-xl relative overflow-hidden transition-all duration-300 border border-zinc-100 shadow-inner"
                                                             style={{
                                                                 backgroundColor: newTheme.baseColor || theme.baseColor,
-                                                                backgroundImage: (newTheme.glowColor || theme.glowColor)
-                                                                    ? `radial-gradient(circle at 50% 0%, ${newTheme.glowColor || theme.glowColor} 0%, transparent 60%)`
-                                                                    : 'none'
+                                                                backgroundImage: getBrandRadialGradient(newTheme.baseColor || theme.baseColor, newTheme.glowColor || theme.glowColor, (newTheme.type || theme.type) === 'dark')
+
                                                             }}
                                                         >
                                                             <span

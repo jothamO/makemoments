@@ -17,7 +17,7 @@ import type { CelebrationEvent, EventTheme } from "@/data/types";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
-import { hexToRgba, getContrastColor } from "@/lib/utils";
+import { hexToRgba, getContrastColor, getBrandRadialGradient, formatPlatformDate } from "@/lib/utils";
 import { EXPRESSIVE_EASE, CONTENT_TRANSITION, TAP_SCALE } from "@/lib/animation";
 
 export default function Homepage() {
@@ -328,7 +328,7 @@ function generateOnboardingSlides(event: CelebrationEvent) {
   const { theme, name, date, endDate } = event;
 
   // Dynamic Badge Text
-  const defaultBadge = `✨ ${name} is ${new Date(date).toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
+  const defaultBadge = `✨ ${name} is ${formatPlatformDate(date, { month: "long", day: "numeric" })}`;
   const badgeText = theme.urgencyText
     ? `✨ ${replaceUrgencyVariables(theme.urgencyText, name, date, endDate)}`
     : defaultBadge;
@@ -428,7 +428,7 @@ function StepCard({ number, icon, title, description, accentColor }: {
 
 // LibraryEventCard Component
 function LibraryEventCard({ event, isUpcoming = false, isEvergreen = false, onNotify }: { event: any; isUpcoming?: boolean; isEvergreen?: boolean; onNotify?: () => void }) {
-  const dateStr = new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const dateStr = formatPlatformDate(event.date);
   const theme = event.theme || {};
 
   return (
@@ -437,7 +437,7 @@ function LibraryEventCard({ event, isUpcoming = false, isEvergreen = false, onNo
       <div className="absolute inset-0 z-0 transition-colors duration-500" style={{ backgroundColor: theme.baseColor || '#f4f4f5' }} />
 
       {/* Soft Radial Glow */}
-      <div className="absolute inset-0 z-0 opacity-60 transition-opacity duration-500 group-hover:opacity-80" style={{ background: `radial-gradient(circle at 50% 0%, ${theme.glowColor || 'rgba(0,0,0,0.1)'} 0%, transparent 70%)` }} />
+      <div className="absolute inset-0 z-0 opacity-60 transition-opacity duration-500 group-hover:opacity-80" style={{ background: getBrandRadialGradient(theme.baseColor, theme.glowColor, theme.type === 'dark') }} />
 
       {/* Darkening Gradient overlay on hover for text contrast */}
       <div className="absolute inset-0 z-[5] bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

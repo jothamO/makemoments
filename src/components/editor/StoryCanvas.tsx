@@ -2,7 +2,7 @@ import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { StoryPage } from "@/data/types";
-import { hexToRgba } from "@/lib/utils";
+import { hexToRgba, getBrandRadialGradient } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 interface StoryCanvasProps {
@@ -27,7 +27,7 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
       className="relative w-full h-full rounded-2xl overflow-hidden flex flex-col"
       style={{
         backgroundColor: page.baseColor,
-        backgroundImage: `radial-gradient(circle at 50% 0%, ${hexToRgba(page.glowColor || page.baseColor, page.type === 'dark' ? 0.4 : 0.35)}, transparent 70%)`
+        backgroundImage: getBrandRadialGradient(page.baseColor, page.glowColor, page.type === 'dark')
       }}
     >
       {/* Background Pattern */}

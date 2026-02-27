@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,8 +9,13 @@ import { Button } from "@/components/ui/button";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { Eye, ExternalLink, Search, Sparkles, CheckCircle2, XCircle, Clock, MoreHorizontal, Trash2, Download } from "lucide-react";
 import { Link } from "react-router-dom";
+import { formatPlatformDate, cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { useSafeMutation } from "@/hooks/useSafeMutation";
 
 const AdminCelebrations = () => {
+  const { toast } = useToast();
+  const { safeMutation } = useSafeMutation();
   const celebrations = useQuery(api.celebrations.list) || [];
   const events = useQuery(api.events.getAll) || [];
   const updateCelebrationStatus = useMutation(api.celebrations.updateStatus);
@@ -63,12 +68,7 @@ const AdminCelebrations = () => {
   }
 
   const handleStatusUpdate = async (id: any, status: "pending" | "paid" | "failed") => {
-    try {
-      await updateCelebrationStatus({ id, status });
-      toast.success(`Status updated to ${status}`);
-    } catch (error) {
-      toast.error("Failed to update status");
-    }
+    await safeMutation(updateCelebrationStatus, { id, status }, `Status updated to ${status}`);
   };
 
   return (
@@ -145,7 +145,7 @@ const AdminCelebrations = () => {
               {paginatedData.map((c) => (
                 <TableRow key={c._id} className="hover:bg-zinc-50/50 transition-colors">
                   <TableCell className="text-[11px] text-zinc-500 whitespace-nowrap">
-                    {new Date(c.createdAt).toLocaleDateString()}
+                    {formatPlatformDate(c.createdAt)}
                   </TableCell>
                   <TableCell className="text-sm font-medium">
                     {eventMap[c.eventId] || "—"}
@@ -210,7 +210,7 @@ const AdminCelebrations = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-black text-zinc-900">{c.currency === "USD" ? "$" : "₦"}{c.totalPaid?.toLocaleString() || 0}</div>
-                  <div className="text-[10px] text-zinc-400">{new Date(c.createdAt).toLocaleDateString()}</div>
+                  <div className="text-[10px] text-zinc-400">{formatPlatformDate(c.createdAt)}</div>
                 </div>
               </div>
 

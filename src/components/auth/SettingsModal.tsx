@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, BellOff, Loader2, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { formatPlatformDate } from "@/lib/utils";
 
 interface SettingsModalProps {
     open: boolean;
@@ -80,7 +81,7 @@ export function SettingsModal({ open, onOpenChange, user }: SettingsModalProps) 
                                                     {notif.status}
                                                 </Badge>
                                                 <span className="text-[10px] text-zinc-400">
-                                                    Added {new Date(notif.createdAt).toLocaleDateString()}
+                                                    Added {formatPlatformDate(notif.createdAt)}
                                                 </span>
                                             </div>
                                         </div>

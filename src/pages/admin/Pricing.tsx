@@ -8,11 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { useSafeMutation } from "@/hooks/useSafeMutation";
 import { Loader2, DollarSign, Type, Music as MusicIcon, Sparkles, User, Image as ImageIcon, Save, Download, Layers, ShieldOff } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function PricingPage() {
     const { toast } = useToast();
+    const { safeMutation } = useSafeMutation();
 
     // ── Queries ──
     const themes = useQuery(api.themes.list) || [];
@@ -74,37 +76,6 @@ export default function PricingPage() {
         });
     }, [globalPricing, themes, fonts, music, patterns, characters]);
 
-    const safeMutation = async (mutation: any, args: any, successTitle: string) => {
-        try {
-            await mutation(args);
-            if (successTitle) toast({ title: successTitle });
-            return true;
-        } catch (error: any) {
-            console.error(error);
-            let msg = error.message || "An unexpected error occurred";
-
-            // Extract core error message from Convex noise
-            const serverErrorMatch = msg.match(/Server Error (?:Uncaught Error: )?(.*?)(?: at handler|$)/);
-            if (serverErrorMatch) {
-                msg = serverErrorMatch[1];
-            } else {
-                msg = msg.replace("ConvexError: ", "").replace("Uncaught Error: ", "");
-            }
-
-            // Cleanup trailing periods and whitespace
-            msg = msg.trim().replace(/\.$/, "");
-
-            // Sentence case
-            msg = msg.charAt(0).toUpperCase() + msg.slice(1);
-
-            toast({
-                title: "Action failed",
-                description: msg,
-                variant: "destructive"
-            });
-            return false;
-        }
-    };
 
     const handleSave = async () => {
         setIsSaving(true);

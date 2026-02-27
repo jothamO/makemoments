@@ -3,7 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Paintbrush } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn, hexToRgba } from "@/lib/utils";
+import { cn, hexToRgba, getBrandRadialGradient } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { TAP_SCALE } from "@/lib/animation";
 import type { EventTheme } from "@/data/types";
@@ -64,9 +64,9 @@ export function BackdropPicker({ onSelect, currentThemeId, whitelist, availableT
                                 >
                                     {/* Premium Gradient Overlay matching admin look but slightly optimized for editor visibility */}
                                     <div
-                                        className="absolute inset-0 opacity-40"
+                                        className="absolute inset-0"
                                         style={{
-                                            backgroundImage: `radial-gradient(circle at 50% 0%, ${theme.glowColor || "#ffffff"}, transparent 70%)`
+                                            backgroundImage: getBrandRadialGradient(theme.baseColor || theme.primary, theme.glowColor || "#ffffff", theme.type === 'dark')
                                         }}
                                     />
                                 </div>
