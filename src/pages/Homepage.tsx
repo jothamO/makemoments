@@ -93,7 +93,7 @@ export default function Homepage() {
 
       <EventHero
         theme={theme as any}
-        className="h-[60vh] md:h-[calc(100vh-64px)]"
+        className="h-[60vh] md:h-screen w-full relative"
       >
         <div {...swipeHandlers} className="w-full relative h-full flex items-center justify-center">
           <AnimatePresence initial={false} mode="wait">
@@ -300,35 +300,29 @@ export default function Homepage() {
       </section>
 
       {/* SECTION 3: CELEBRATION LIBRARY */}
-      <section className="py-16 md:py-24 bg-gray-50 pb-32 md:pb-24">
+      <section className="py-24 md:py-32 bg-white pb-32 md:pb-40">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={CONTENT_TRANSITION}
-            className="text-center mb-12 md:mb-16"
+            className="mb-16 md:mb-24"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ fontFamily: "var(--font-headline)" }}>
-              Celebration Library
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-4" style={{ fontFamily: "var(--font-headline)" }}>
+              Discover
             </h2>
-            <p className="text-gray-600">Explore our curated collection of memories and magic</p>
+            <p className="text-zinc-500 text-lg md:text-xl max-w-xl">Curated collections designed to turn your moments into magic.</p>
           </motion.div>
 
-          <div className="space-y-12 md:space-y-20">
+          <div className="space-y-16 md:space-y-24">
             {/* 1. Popular Now */}
             {libraryData?.popularNow && libraryData.popularNow.length > 0 && (
-              <div className="space-y-6 md:space-y-8">
-                <div className="flex items-center gap-4">
-                  <div className="h-px bg-zinc-200 flex-1" />
-                  <h3 className="text-xs md:text-sm font-bold uppercase tracking-widest text-zinc-400">Popular Now</h3>
-                  <div className="h-px bg-zinc-200 flex-1" />
-                </div>
-
-                {/* Horizontal Scroll on Mobile, Grid on Desktop */}
-                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory">
+              <div className="space-y-6">
+                <h3 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-headline)" }}>Popular Now</h3>
+                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto pb-8 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory">
                   {libraryData.popularNow.slice(0, 3).map((libEvent: any) => (
-                    <div key={libEvent._id} className="min-w-[280px] md:min-w-0 snap-center">
+                    <div key={libEvent._id} className="min-w-[85vw] sm:min-w-[360px] md:min-w-0 snap-center">
                       <LibraryEventCard event={libEvent} />
                     </div>
                   ))}
@@ -338,16 +332,12 @@ export default function Homepage() {
 
             {/* 2. Evergreen */}
             {libraryData?.evergreen && libraryData.evergreen.length > 0 && (
-              <div className="space-y-6 md:space-y-8">
-                <div className="flex items-center gap-4">
-                  <div className="h-px bg-zinc-200 flex-1" />
-                  <h3 className="text-xs md:text-sm font-bold uppercase tracking-widest text-zinc-400">Evergreen Favorites</h3>
-                  <div className="h-px bg-zinc-200 flex-1" />
-                </div>
-                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory">
+              <div className="space-y-6">
+                <h3 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-headline)" }}>Evergreen Favorites</h3>
+                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto pb-8 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory">
                   {libraryData.evergreen.slice(0, 3).map((libEvent: any) => (
-                    <div key={libEvent._id} className="min-w-[280px] md:min-w-0 snap-center">
-                      <LibraryEventCard event={libEvent} onNotify={() => handleNotifyRequest(libEvent)} />
+                    <div key={libEvent._id} className="min-w-[85vw] sm:min-w-[360px] md:min-w-0 snap-center">
+                      <LibraryEventCard event={libEvent} isEvergreen onNotify={() => handleNotifyRequest(libEvent)} />
                     </div>
                   ))}
                 </div>
@@ -356,15 +346,11 @@ export default function Homepage() {
 
             {/* 3. Coming Soon */}
             {libraryData?.comingSoon && libraryData.comingSoon.length > 0 && (
-              <div className="space-y-6 md:space-y-8">
-                <div className="flex items-center gap-4">
-                  <div className="h-px bg-zinc-200 flex-1" />
-                  <h3 className="text-xs md:text-sm font-bold uppercase tracking-widest text-zinc-400">Coming Soon</h3>
-                  <div className="h-px bg-zinc-200 flex-1" />
-                </div>
-                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory opacity-90 md:opacity-70">
+              <div className="space-y-6">
+                <h3 className="text-2xl md:text-3xl font-bold tracking-tight text-zinc-400" style={{ fontFamily: "var(--font-headline)" }}>Coming Soon</h3>
+                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto pb-8 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-hide snap-x snap-mandatory opacity-90 md:opacity-80">
                   {libraryData.comingSoon.slice(0, 3).map((libEvent: any) => (
-                    <div key={libEvent._id} className="min-w-[240px] md:min-w-0 snap-center">
+                    <div key={libEvent._id} className="min-w-[85vw] sm:min-w-[360px] md:min-w-0 snap-center">
                       <LibraryEventCard event={libEvent} isUpcoming onNotify={() => handleNotifyRequest(libEvent)} />
                     </div>
                   ))}
@@ -495,80 +481,52 @@ function StepCard({ number, icon, title, description, accentColor }: {
 }
 
 // LibraryEventCard Component
-function LibraryEventCard({ event, isUpcoming = false, onNotify }: { event: any; isUpcoming?: boolean; onNotify?: () => void }) {
-  const dateStr = new Date(event.date).toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  const theme = event.theme;
+function LibraryEventCard({ event, isUpcoming = false, isEvergreen = false, onNotify }: { event: any; isUpcoming?: boolean; isEvergreen?: boolean; onNotify?: () => void }) {
+  const dateStr = new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const theme = event.theme || {};
 
   return (
-    <div
-      className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full border border-gray-100 group"
-    >
-      {/* Event Preview Area */}
-      <div
-        className="h-44 flex items-center justify-center p-6 relative overflow-hidden"
-        style={{ backgroundColor: theme.baseColor }}
-      >
-        {/* Soft Gradient Glow */}
-        <div
-          className="absolute inset-0 opacity-40"
-          style={{
-            background: `radial-gradient(circle at center, ${theme.glowColor} 0%, transparent 70%)`
-          }}
-        />
+    <div className="relative bg-white rounded-[32px] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col aspect-[4/5] group border border-zinc-100/50 cursor-pointer transform hover:-translate-y-1">
+      {/* Background Fill */}
+      <div className="absolute inset-0 z-0 transition-colors duration-500" style={{ backgroundColor: theme.baseColor || '#f4f4f5' }} />
 
-        <div className="relative z-10 text-center">
-          <h3
-            className="text-2xl font-bold px-4 drop-shadow-sm"
-            style={{
-              fontFamily: theme.headlineFont,
-              color: theme.textColor || (theme.type === 'dark' ? '#fff' : '#18181b')
-            }}
-          >
-            {event.name}
-          </h3>
-          {isUpcoming && (
-            <Badge
-              className="mt-2 text-white border-0"
-              style={{ backgroundColor: theme.glowColor }}
-            >
-              Coming Soon
-            </Badge>
-          )}
-        </div>
+      {/* Soft Radial Glow */}
+      <div className="absolute inset-0 z-0 opacity-60 transition-opacity duration-500 group-hover:opacity-80" style={{ background: `radial-gradient(circle at 50% 0%, ${theme.glowColor || 'rgba(0,0,0,0.1)'} 0%, transparent 70%)` }} />
+
+      {/* Darkening Gradient overlay on hover for text contrast */}
+      <div className="absolute inset-0 z-[5] bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+      {/* Core Center Content */}
+      <div className="relative z-10 flex-grow flex flex-col items-center justify-center p-8 text-center transition-transform duration-500 group-hover:-translate-y-12">
+        {isUpcoming && (
+          <Badge className="mb-4 text-white border-0 shadow-sm backdrop-blur-md" style={{ backgroundColor: theme.glowColor || '#000' }}>
+            Coming Soon
+          </Badge>
+        )}
+        <h3 className="text-4xl md:text-5xl font-bold tracking-tight drop-shadow-sm leading-tight max-w-[90%]" style={{ fontFamily: theme.headlineFont || "var(--font-headline)", color: theme.textColor || (theme.type === 'dark' ? '#fff' : '#18181b') }}>
+          {event.name}
+        </h3>
       </div>
 
-      <div className="p-6 flex flex-col flex-grow text-center">
-        <p className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 mb-2">{dateStr}</p>
-        <h4 className="text-lg font-bold mb-3 leading-tight" style={{ fontFamily: "var(--font-headline)" }}>
-          {theme.headline || `Celebrate ${event.name}`}
-        </h4>
-        <p className="text-zinc-500 text-xs mb-6 line-clamp-2 flex-grow">
+      {/* Hover Revealed Bottom Content */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 p-8 flex flex-col text-center items-center opacity-0 translate-y-8 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+        {!isEvergreen && (
+          <h4 className="text-xl font-bold mb-2 text-white line-clamp-1 drop-shadow-sm" style={{ fontFamily: "var(--font-headline)" }}>
+            {dateStr}
+          </h4>
+        )}
+        <p className="text-white/80 text-sm mb-6 line-clamp-2 max-w-[90%] drop-shadow-sm font-medium">
           {theme.subheadline || "Create a beautiful personalized card for this special moment."}
         </p>
 
         {isUpcoming ? (
-          <Button
-            variant="outline"
-            className="w-full rounded-full border-zinc-200 transition-all active:scale-[0.98]"
-            style={{
-              borderColor: `${theme.glowColor}40`,
-              color: theme.glowColor
-            }}
-            onClick={onNotify}
-          >
-            <Bell className="w-3 h-3 mr-2" /> Notify Me
+          <Button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNotify?.(); }} className="w-full rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md border border-white/30 transition-all font-semibold pointer-events-auto active:scale-95">
+            <Bell className="w-4 h-4 mr-2" /> Notify Me
           </Button>
         ) : (
-          <Button
-            asChild
-            className="w-full rounded-full shadow-lg hover:shadow-xl transform active:scale-95 transition-all duration-300 border-0"
-            style={{
-              backgroundColor: theme.glowColor || "#000",
-              color: getContrastColor(theme.glowColor || "#000")
-            }}
-          >
-            <Link to={`/${event.slug}/create`}>
-              <Sparkles className="w-3 h-3 mr-2" /> Create Now
+          <Button asChild className="w-full rounded-full shadow-xl hover:shadow-2xl transform active:scale-95 transition-all duration-300 border-0 pointer-events-auto bg-white text-black hover:bg-zinc-100 font-semibold h-12" style={{ backgroundColor: theme.glowColor || "#ffffff", color: getContrastColor(theme.glowColor || "#ffffff") }}>
+            <Link to={`/${event.slug}/create`} onClick={(e) => e.stopPropagation()}>
+              <Sparkles className="w-4 h-4 mr-2" /> Create Now
             </Link>
           </Button>
         )}

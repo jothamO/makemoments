@@ -32,15 +32,19 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
     return (
         <>
             <Drawer open={open} onOpenChange={onOpenChange}>
-                <DrawerContent className="px-4 pb-8">
-                    <DrawerHeader className="text-left px-0">
-                        <DrawerTitle className="text-xl font-bold flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                {isAdmin ? <ShieldAlert className="w-5 h-5 text-primary" /> : <User className="w-5 h-5 text-primary" />}
+                <DrawerContent className="px-6 pb-8 bg-white/90 backdrop-blur-xl border-t border-black/5 rounded-t-[32px] shadow-2xl">
+                    <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-zinc-300/50 my-4" />
+
+                    <DrawerHeader className="text-left px-0 pb-4">
+                        <DrawerTitle className="text-xl font-bold flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center border border-black/5 shadow-sm">
+                                {isAdmin ? <ShieldAlert className="w-5 h-5 text-zinc-700" strokeWidth={2} /> : <User className="w-5 h-5 text-zinc-700" strokeWidth={2} />}
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-lg">{user?.name || "Guest Account"}</span>
-                                {user?.email && <span className="text-xs text-muted-foreground font-normal">{user.email}</span>}
+                                <span className="text-xl font-black tracking-tight" style={{ fontFamily: "var(--font-headline)" }}>
+                                    {user?.name || "Guest Account"}
+                                </span>
+                                {user?.email && <span className="text-sm text-zinc-500 font-medium">{user.email}</span>}
                             </div>
                         </DrawerTitle>
                         <VisuallyHidden.Root>
@@ -48,19 +52,20 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
                         </VisuallyHidden.Root>
                     </DrawerHeader>
 
-                    <div className="space-y-6 py-4">
-                        <div className="grid gap-1">
+                    <div className="space-y-6 py-2">
+                        {/* Primary Actions Group */}
+                        <div className="flex flex-col gap-2 bg-white rounded-[24px] p-2 shadow-sm border border-black/5">
                             {isLoggedIn ? (
                                 <>
                                     {isAdmin ? (
                                         <Button
                                             variant="ghost"
-                                            className="w-full justify-start h-12 text-base px-3"
+                                            className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-zinc-50"
                                             asChild
                                             onClick={handleLinkClick}
                                         >
                                             <Link to="/admin">
-                                                <LayoutDashboard className="mr-3 h-5 w-5" />
+                                                <LayoutDashboard className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2.5} />
                                                 Admin Dashboard
                                             </Link>
                                         </Button>
@@ -68,24 +73,24 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
                                         <>
                                             <Button
                                                 variant="ghost"
-                                                className="w-full justify-start h-12 text-base px-3"
+                                                className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-zinc-50"
                                                 asChild
                                                 onClick={handleLinkClick}
                                             >
                                                 <Link to="/my-moments">
-                                                    <Heart className="mr-3 h-5 w-5" />
+                                                    <Heart className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2.5} />
                                                     My Moments
                                                 </Link>
                                             </Button>
                                             <Button
                                                 variant="ghost"
-                                                className="w-full justify-start h-12 text-base px-3"
+                                                className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-zinc-50"
                                                 onClick={() => {
                                                     setSettingsOpen(true);
                                                     onOpenChange(false);
                                                 }}
                                             >
-                                                <Settings className="mr-3 h-5 w-5" />
+                                                <Settings className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2.5} />
                                                 Settings
                                             </Button>
                                         </>
@@ -93,40 +98,50 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
                                 </>
                             ) : (
                                 <Button
-                                    variant="primary"
-                                    className="w-full h-12 text-base rounded-full"
+                                    className="w-full h-14 text-base rounded-[16px] font-bold bg-black text-white hover:bg-zinc-800"
                                     onClick={() => {
                                         navigate("/login");
                                         onOpenChange(false);
                                     }}
                                 >
-                                    <User className="mr-2 h-5 w-5" />
+                                    <User className="mr-2 h-5 w-5" strokeWidth={2.5} />
                                     Sign In
                                 </Button>
                             )}
                         </div>
 
-                        <div className="h-px bg-border/50" />
-
-                        <div className="grid gap-1">
-                            <Button variant="ghost" className="w-full justify-start h-12 text-base px-3" asChild onClick={handleLinkClick}>
+                        {/* Secondary Actions Group */}
+                        <div className="flex flex-col gap-1 bg-white rounded-[24px] p-2 shadow-sm border border-black/5">
+                            <Button variant="ghost" className="w-full justify-start h-12 text-[15px] px-4 rounded-[12px] font-medium text-zinc-600 hover:bg-zinc-50" asChild onClick={handleLinkClick}>
                                 <Link to="/help">
-                                    <HelpCircle className="mr-3 h-5 w-5 text-muted-foreground" />
+                                    <HelpCircle className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2} />
                                     Help Center
                                 </Link>
                             </Button>
-                            <Button variant="ghost" className="w-full justify-start h-12 text-base px-3" asChild onClick={handleLinkClick}>
+                            <Button variant="ghost" className="w-full justify-start h-12 text-[15px] px-4 rounded-[12px] font-medium text-zinc-600 hover:bg-zinc-50" asChild onClick={handleLinkClick}>
                                 <Link to="/terms">
-                                    <FileText className="mr-3 h-5 w-5 text-muted-foreground" />
+                                    <FileText className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2} />
                                     Terms of Service
                                 </Link>
                             </Button>
-                            <Button variant="ghost" className="w-full justify-start h-12 text-base px-3" asChild onClick={handleLinkClick}>
+                            <Button variant="ghost" className="w-full justify-start h-12 text-[15px] px-4 rounded-[12px] font-medium text-zinc-600 hover:bg-zinc-50" asChild onClick={handleLinkClick}>
                                 <Link to="/privacy">
-                                    <Lock className="mr-3 h-5 w-5 text-muted-foreground" />
+                                    <Lock className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2} />
                                     Privacy Policy
                                 </Link>
                             </Button>
+                            {isLoggedIn && (
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start h-12 text-[15px] px-4 rounded-[12px] font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 mt-2"
+                                    onClick={() => {
+                                        logout();
+                                        onOpenChange(false);
+                                    }}
+                                >
+                                    Sign Out
+                                </Button>
+                            )}
                         </div>
                     </div>
 

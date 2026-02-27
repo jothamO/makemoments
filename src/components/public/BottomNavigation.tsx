@@ -28,79 +28,50 @@ export function BottomNavigation() {
 
     return (
         <>
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-[60] pb-[env(safe-area-inset-bottom)] pointer-events-none">
-                <div className="relative h-20 w-full flex items-end justify-center pointer-events-auto">
-                    {/* Custom Notched Background SVG */}
-                    <div className="absolute inset-0 z-0">
-                        <svg
-                            viewBox="0 0 400 100"
-                            className="w-full h-full drop-shadow-[0_-5px_15px_rgba(0,0,0,0.08)]"
-                            preserveAspectRatio="none"
-                            style={{ filter: "drop-shadow(0 -1px 2px rgba(0,0,0,0.05))" }}
-                        >
-                            <path
-                                d="M0,40 Q0,40 20,40 L140,40 C160,40 165,100 200,100 C235,100 240,40 260,40 L380,40 Q400,40 400,40 V100 H0 Z"
-                                fill="white"
-                                className="transition-colors duration-500"
-                            />
-                        </svg>
-                    </div>
+            {/* iOS Floating Dock for Mobile */}
+            <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto">
+                <div className="relative flex items-center gap-6 px-8 py-4 rounded-full backdrop-blur-3xl bg-white/80 border border-black/5 shadow-2xl">
 
-                    {/* Navigation Links (Wings) */}
-                    <div className="relative z-10 w-full flex justify-between px-8 pb-3">
-                        {/* Home Link */}
-                        <Link
-                            to="/"
-                            className={cn(
-                                "flex flex-col items-center gap-1 transition-all duration-300",
-                                isHomeActive ? "opacity-100 scale-110" : "opacity-50"
-                            )}
-                            style={{ color: isHomeActive ? primaryColor : "zinc-500" }}
-                        >
-                            <Home className="h-6 w-6" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Home</span>
-                        </Link>
-
-                        {/* Empty space for the center FAB */}
-                        <div className="w-16" />
-
-                        {/* Account Link */}
-                        <button
-                            onClick={() => setDrawerOpen(true)}
-                            className={cn(
-                                "flex flex-col items-center gap-1 transition-all duration-300",
-                                isAccountActive ? "opacity-100 scale-110" : "opacity-50"
-                            )}
-                            style={{
-                                color: (isLoggedIn && !isAdmin) ? (isAccountActive ? primaryColor : primaryColor) : (isAccountActive ? primaryColor : "zinc-500")
-                            }}
-                        >
-                            <AccountIcon className={cn("h-6 w-6", isLoggedIn && !isAdmin && "stroke-[2.5px]")} />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">
-                                {isLoggedIn ? (isAdmin ? "Admin" : (user?.name?.split(' ')[0] || "Account")) : "Login"}
-                            </span>
-                        </button>
-                    </div>
+                    {/* Home Link */}
+                    <Link
+                        to="/"
+                        className={cn(
+                            "flex flex-col items-center gap-1 transition-all duration-300",
+                            isHomeActive ? "opacity-100 scale-110" : "opacity-60 hover:opacity-100"
+                        )}
+                        style={{ color: isHomeActive ? primaryColor : "var(--zinc-500)" }}
+                    >
+                        <Home className="h-6 w-6" strokeWidth={isHomeActive ? 2.5 : 2} />
+                    </Link>
 
                     {/* Elevated FAB (Center Action) */}
-                    <div className="absolute left-1/2 -translate-x-1/2 top-0 -translate-y-2 z-20">
-                        <Link to={activeEvent ? `/${activeEvent.slug}/create` : "/"}>
-                            <motion.div
-                                whileTap={{ scale: 0.9 }}
-                                className="flex flex-col items-center gap-2"
+                    <Link to={activeEvent ? `/${activeEvent.slug}/create` : "/"}>
+                        <motion.div
+                            whileTap={{ scale: 0.9 }}
+                            className="relative -mt-8 flex flex-col items-center"
+                        >
+                            <div
+                                className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white border-4 border-white transform transition-transform duration-300 hover:scale-105"
+                                style={{ backgroundColor: primaryColor }}
                             >
-                                <div
-                                    className="w-16 h-16 rounded-full shadow-xl flex items-center justify-center text-white"
-                                    style={{ backgroundColor: primaryColor }}
-                                >
-                                    <Plus className="h-8 w-8" />
-                                </div>
-                                <span className="text-[11px] font-black uppercase tracking-[0.1em] text-zinc-800">
-                                    Create
-                                </span>
-                            </motion.div>
-                        </Link>
-                    </div>
+                                <Plus className="h-6 w-6" strokeWidth={3} />
+                            </div>
+                        </motion.div>
+                    </Link>
+
+                    {/* Account/Drawer Link */}
+                    <button
+                        onClick={() => setDrawerOpen((prev) => !prev)}
+                        className={cn(
+                            "flex flex-col items-center gap-1 transition-all duration-300",
+                            isAccountActive ? "opacity-100 scale-110" : "opacity-60 hover:opacity-100"
+                        )}
+                        style={{
+                            color: isAccountActive ? primaryColor : "var(--zinc-500)"
+                        }}
+                    >
+                        <AccountIcon className="h-6 w-6" strokeWidth={isAccountActive ? 2.5 : 2} />
+                    </button>
                 </div>
             </div>
 
