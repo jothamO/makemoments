@@ -2,6 +2,7 @@ import { query, mutation, internalMutation, internalQuery } from "./_generated/s
 import { v } from "convex/values";
 
 import { createPasswordHash, checkAdmin } from "./auth";
+import { checkRateLimit } from "./rateLimit";
 
 // Initialize a payment — creates celebration with "pending" status
 export const initializePayment = mutation({
@@ -27,6 +28,14 @@ export const initializePayment = mutation({
         token: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        // Apply Rate Limit: 5 attempts per minute per email
+        await checkRateLimit(ctx, {
+            identifier: args.email,
+            action: "payment_init",
+            limit: 5,
+            windowMs: 60 * 1000,
+        });
+
         const { createAccount, username, password, token, ...celebrationData } = args;
 
         let userId: string | undefined;

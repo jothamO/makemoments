@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { checkAdmin } from "./auth";
 
 export const list = query({
     handler: async (ctx) => {
@@ -17,17 +18,25 @@ export const list = query({
 });
 
 export const generateUploadUrl = mutation({
-    handler: async (ctx) => {
+    args: { token: v.optional(v.string()) },
+    handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         return await ctx.storage.generateUploadUrl();
     },
 });
 
 export const updateStorageId = mutation({
     args: {
+        token: v.optional(v.string()),
         id: v.id("musicTracks"),
         storageId: v.id("_storage"),
     },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         await ctx.db.patch(args.id, { storageId: args.storageId });
     },
 });
@@ -70,6 +79,7 @@ export const getById = query({
 
 export const update = mutation({
     args: {
+        token: v.optional(v.string()),
         id: v.id("musicTracks"),
         name: v.optional(v.string()),
         artist: v.optional(v.string()),
@@ -78,7 +88,10 @@ export const update = mutation({
         price: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const { id, ...data } = args;
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
+        const { id, token, ...data } = args;
         const updates = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined));
         if (Object.keys(updates).length > 0) {
             await ctx.db.patch(id, updates);
@@ -88,16 +101,21 @@ export const update = mutation({
 
 export const rename = mutation({
     args: {
+        token: v.optional(v.string()),
         id: v.id("musicTracks"),
         name: v.string(),
     },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         await ctx.db.patch(args.id, { name: args.name });
     },
 });
 
 export const create = mutation({
     args: {
+        token: v.optional(v.string()),
         name: v.string(),
         artist: v.string(),
         duration: v.number(),
@@ -107,13 +125,20 @@ export const create = mutation({
         price: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.insert("musicTracks", args);
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
+        const { token, ...data } = args;
+        return await ctx.db.insert("musicTracks", data);
     },
 });
 
 export const remove = mutation({
-    args: { id: v.id("musicTracks") },
+    args: { id: v.id("musicTracks"), token: v.optional(v.string()) },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         // Safe Delete: Check if used in any events
         const events = await ctx.db.query("events").collect();
         const isUsedInEvent = events.some(e => e.theme.musicTrackIds?.includes(args.id));

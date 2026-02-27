@@ -11,18 +11,21 @@ import { useToast } from "@/hooks/use-toast";
 import { useSafeMutation } from "@/hooks/useSafeMutation";
 import { Loader2, DollarSign, Type, Music as MusicIcon, Sparkles, User, Image as ImageIcon, Save, Download, Layers, ShieldOff } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
 
 export default function PricingPage() {
     const { toast } = useToast();
+    const { token } = useAuth();
     const { safeMutation } = useSafeMutation();
 
     // ── Queries ──
-    const themes = useQuery(api.themes.list) || [];
-    const fonts = useQuery(api.fonts.list) || [];
-    const music = useQuery(api.music.list) || [];
-    const patterns = useQuery(api.patterns.list) || [];
-    const characters = useQuery(api.characters.list) || [];
-    const globalPricing = useQuery(api.pricing.list) || [];
+    const themes = useQuery(api.themes.list, { token: token || undefined }) || [];
+    const fonts = useQuery(api.fonts.list, { token: token || undefined }) || [];
+    const music = useQuery(api.music.list, { token: token || undefined }) || [];
+    const patterns = useQuery(api.patterns.list, { token: token || undefined }) || [];
+    const characters = useQuery(api.characters.list, { token: token || undefined }) || [];
+    const globalPricing = useQuery(api.pricing.list, { token: token || undefined }) || [];
 
     // ── Mutations ──
     const setGlobalPrice = useMutation(api.pricing.set);
@@ -82,17 +85,17 @@ export default function PricingPage() {
         try {
             // 1. Save Category Prices
             for (const [cat, matrix] of Object.entries(prices)) {
-                await safeMutation(setGlobalPrice, { category: cat, prices: matrix }, "");
+                await safeMutation(setGlobalPrice, { category: cat, prices: matrix, token: token || undefined }, "");
             }
 
             // 2. Save Individual Premium Status
             for (const [key, isPremium] of Object.entries(premiumStatus)) {
                 const [type, id] = key.split('-');
-                if (type === 'theme') await updateTheme({ id: id as any, isPremium });
-                if (type === 'font') await updateFont({ id: id as any, isPremium });
-                if (type === 'music') await updateMusic({ id: id as any, isPremium });
-                if (type === 'pattern') await updatePattern({ id: id as any, isPremium });
-                if (type === 'char') await updateCharacter({ id: id as any, isPremium });
+                if (type === 'theme') await updateTheme({ id: id as any, isPremium, token: token || undefined });
+                if (type === 'font') await updateFont({ id: id as any, isPremium, token: token || undefined });
+                if (type === 'music') await updateMusic({ id: id as any, isPremium, token: token || undefined });
+                if (type === 'pattern') await updatePattern({ id: id as any, isPremium, token: token || undefined });
+                if (type === 'char') await updateCharacter({ id: id as any, isPremium, token: token || undefined });
             }
 
             toast({ title: "Pricing and asset configuration saved" });

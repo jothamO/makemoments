@@ -4,21 +4,25 @@ import { api } from "../../../convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Send, Mail, Settings, Layout, Key, AtSign, Bell } from "lucide-react";
+import { Save, Send, Mail, Settings, Layout, Key, AtSign, Bell, Shield } from "lucide-react";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
 export default function AdminMail() {
     const { toast } = useToast();
-    const config = useQuery(api.mail.getConfig);
-    const templates = useQuery(api.mail.getTemplates) || [];
+    const { token } = useAuth();
+    const config = useQuery(api.mail.getConfig, { token: token || undefined });
+    const templates = useQuery(api.mail.getTemplates, { token: token || undefined }) || [];
 
     const upsertConfig = useMutation(api.mail.upsertConfig);
     const upsertTemplate = useMutation(api.mail.upsertTemplate);
     const sendTest = useAction(api.mail.sendTestEmail);
-    const stats = useQuery(api.notifications.getStats) || [];
+    const stats = useQuery(api.notifications.getStats, { token: token || undefined }) || [];
 
     const [apiKey, setApiKey] = useState("");
     const [fromEmail, setFromEmail] = useState("");
@@ -41,6 +45,7 @@ export default function AdminMail() {
         setIsSavingConfig(true);
         try {
             await upsertConfig({
+                token: token || undefined,
                 zeptomailApiKey: apiKey,
                 fromEmail,
                 fromName,
@@ -61,7 +66,7 @@ export default function AdminMail() {
         }
         setIsSendingTest(true);
         try {
-            await sendTest({ to: testEmail, category });
+            await sendTest({ to: testEmail, category, token: token || undefined });
             toast({ title: "Test email sent!" });
         } catch (error: any) {
             toast({ title: "Failed to send test", description: error.message, variant: "destructive" });
@@ -101,6 +106,14 @@ export default function AdminMail() {
                     <TabsTrigger value="notifications" className="gap-2"><Bell className="h-4 w-4" /> Notifications</TabsTrigger>
                 </TabsList>
 
+                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex gap-3 text-amber-800">
+                    <Shield className="h-5 w-5 text-amber-600 shrink-0" />
+                    <div className="text-xs">
+                        <p className="font-bold">Security Recommendation</p>
+                        <p className="mt-0.5">Sensitive keys should ideally be stored as <b>Convex Environment Variables</b>. Keys defined in transition variables or system secrets will override any values entered here in the database.</p>
+                    </div>
+                </div>
+
                 <TabsContent value="settings" className="mt-6">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                         <Card className="lg:col-span-2 border-zinc-200">
@@ -113,8 +126,7 @@ export default function AdminMail() {
                                     <Label className="flex items-center gap-2">
                                         <Key className="h-3.5 w-3.5 text-zinc-400" /> API Key
                                     </Label>
-                                    <Input
-                                        type="password"
+                                    <PasswordInput
                                         placeholder="SendMail p-..."
                                         value={apiKey}
                                         onChange={(e) => setApiKey(e.target.value)}
@@ -215,7 +227,7 @@ export default function AdminMail() {
                                 category={cat}
                                 existing={templates.find(t => t.category === cat.id)}
                                 onSave={async (data) => {
-                                    await upsertTemplate({ category: cat.id as any, ...data });
+                                    await upsertTemplate({ category: cat.id as any, ...data, token: token || undefined });
                                     toast({ title: `${cat.label} template updated` });
                                 }}
                                 testEmail={testEmail}

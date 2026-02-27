@@ -11,11 +11,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search, UserPlus, MoreVertical, Trash2, Mail, Shield, User as UserIcon, Check, X } from "lucide-react";
 import { formatPlatformDate } from "@/lib/utils";
 import { useSafeMutation } from "@/hooks/useSafeMutation";
+import { useAuth } from "@/hooks/useAuth";
+import { Label } from "@/components/ui/label";
 
 export default function AdminUsers() {
     const { toast } = useToast();
+    const { token } = useAuth();
     const { safeMutation } = useSafeMutation();
-    const users = useQuery(api.users.list) || [];
+    const users = useQuery(api.users.list, { token: token || undefined }) || [];
     const removeUser = useMutation(api.users.remove);
     const upsertUser = useMutation(api.users.upsert);
 
@@ -38,6 +41,7 @@ export default function AdminUsers() {
     const handleAddUser = async () => {
         if (!newEmail) return;
         await safeMutation(upsertUser, {
+            token: token || undefined,
             email: newEmail,
             name: newName || undefined,
             role: newRole,
@@ -50,7 +54,7 @@ export default function AdminUsers() {
 
     const handleDelete = async (id: any) => {
         if (confirm("Are you sure you want to delete this user?")) {
-            await safeMutation(removeUser, { id }, "User deleted");
+            await safeMutation(removeUser, { id, token: token || undefined }, "User deleted");
         }
     };
 
@@ -175,6 +179,7 @@ export default function AdminUsers() {
                                                 <DropdownMenuContent align="end" className="w-48 shadow-xl border-zinc-200">
                                                     <DropdownMenuItem
                                                         onClick={() => upsertUser({
+                                                            token: token || undefined,
                                                             id: user._id,
                                                             email: user.email,
                                                             role: user.role === "admin" ? "user" : "admin",
@@ -187,6 +192,7 @@ export default function AdminUsers() {
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         onClick={() => upsertUser({
+                                                            token: token || undefined,
                                                             id: user._id,
                                                             email: user.email,
                                                             role: user.role,
@@ -254,6 +260,7 @@ export default function AdminUsers() {
                                         <DropdownMenuContent align="end" className="w-48 shadow-xl border-zinc-200">
                                             <DropdownMenuItem
                                                 onClick={() => upsertUser({
+                                                    token: token || undefined,
                                                     id: user._id,
                                                     email: user.email,
                                                     role: user.role === "admin" ? "user" : "admin",
@@ -266,6 +273,7 @@ export default function AdminUsers() {
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 onClick={() => upsertUser({
+                                                    token: token || undefined,
                                                     id: user._id,
                                                     email: user.email,
                                                     role: user.role,

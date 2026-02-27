@@ -11,7 +11,48 @@ http.route({
     method: "POST",
     handler: httpAction(async (ctx, request) => {
         try {
-            const body = await request.json();
+            const bodyText = await request.text();
+            const signature = request.headers.get("x-paystack-signature");
+
+            // 1. Get Secret Key (Priority: Env Var > DB)
+            const config = await ctx.runQuery(internal.gatewayConfig.getInternal);
+            const secretKey = process.env.PAYSTACK_SECRET_KEY || config?.paystackSecretKey;
+
+            if (!secretKey) {
+                console.error("Paystack secret key missing");
+                return new Response("Unauthorized", { status: 401 });
+            }
+
+            // 2. Verify Signature
+            const encoder = new TextEncoder();
+            const keyData = encoder.encode(secretKey);
+            const bodyData = encoder.encode(bodyText);
+
+            const cryptoKey = await crypto.subtle.importKey(
+                "raw",
+                keyData,
+                { name: "HMAC", hash: "SHA-512" },
+                false,
+                ["verify", "sign"]
+            );
+
+            const signatureBytes = new Uint8Array(
+                signature?.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+            );
+
+            const isValid = await crypto.subtle.verify(
+                "HMAC",
+                cryptoKey,
+                signatureBytes,
+                bodyData
+            );
+
+            if (!isValid) {
+                console.error("Invalid Paystack signature");
+                return new Response("Invalid signature", { status: 401 });
+            }
+
+            const body = JSON.parse(bodyText);
             const event = body.event;
 
             if (event !== "charge.success") {
@@ -48,7 +89,64 @@ http.route({
     method: "POST",
     handler: httpAction(async (ctx, request) => {
         try {
-            const body = await request.json();
+            const bodyText = await request.text();
+            const sigHeader = request.headers.get("stripe-signature");
+
+            // 1. Get Secret Key (Priority: Env Var > DB)
+            const config = await ctx.runQuery(internal.gatewayConfig.getInternal);
+            const secretKey = process.env.STRIPE_WEBHOOK_SECRET || config?.stripeSecretKey;
+
+            if (!secretKey || !sigHeader) {
+                console.error("Stripe secret key or signature missing");
+                return new Response("Unauthorized", { status: 401 });
+            }
+
+            // 2. Verify Signature (t=...,v1=...)
+            const parts = sigHeader.split(",");
+            const timestamp = parts.find(p => p.startsWith("t="))?.split("=")[1];
+            const signature = parts.find(p => p.startsWith("v1="))?.split("=")[1];
+
+            if (!timestamp || !signature) {
+                return new Response("Invalid signature format", { status: 400 });
+            }
+
+            // Prevent replay attacks (5 minute window)
+            const tolerance = 300;
+            if (Math.abs(Date.now() / 1000 - parseInt(timestamp)) > tolerance) {
+                return new Response("Timestamp out of range", { status: 400 });
+            }
+
+            const signedPayload = `${timestamp}.${bodyText}`;
+            const encoder = new TextEncoder();
+            const keyData = encoder.encode(secretKey);
+            const payloadData = encoder.encode(signedPayload);
+
+            const cryptoKey = await crypto.subtle.importKey(
+                "raw",
+                keyData,
+                { name: "HMAC", hash: "SHA-256" },
+                false,
+                ["verify", "sign"]
+            );
+
+            // Convert hex signature to bytes
+            const signatureBytes = new Uint8Array(
+                signature.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+            );
+
+            const isValid = await crypto.subtle.verify(
+                "HMAC",
+                cryptoKey,
+                signatureBytes,
+                payloadData
+            );
+
+            if (!isValid) {
+                console.error("Invalid Stripe signature");
+                return new Response("Invalid signature", { status: 401 });
+            }
+
+            const body = JSON.parse(bodyText);
 
             if (body.type !== "checkout.session.completed" && body.type !== "payment_intent.succeeded") {
                 return new Response("Ignored", { status: 200 });

@@ -17,4 +17,11 @@ crons.cron(
     internal.celebrationExpiry.processExpirations
 );
 
+// Daily database backup to Backblaze B2 at 03:00 UTC
+crons.cron(
+    "daily backup",
+    "0 3 * * *",
+    internal.backup.runBackupAction
+);
+
 export default crons;

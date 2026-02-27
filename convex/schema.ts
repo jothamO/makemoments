@@ -1,6 +1,78 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-// Schema Version: 1.1 - Added updatedAt
+
+// --- Strict Validators (2026 Security Best Practices) ---
+
+const ImageTransformValidator = v.object({
+    x: v.number(),
+    y: v.number(),
+    xp: v.optional(v.number()),
+    yp: v.optional(v.number()),
+    width: v.number(),
+    rotation: v.number(),
+});
+
+const PhotoValidator = v.object({
+    id: v.string(),
+    url: v.string(),
+    transform: ImageTransformValidator,
+});
+
+const StoryPageValidator = v.object({
+    id: v.string(),
+    photos: v.optional(v.array(PhotoValidator)),
+    text: v.string(),
+    fontFamily: v.string(),
+    fontSize: v.union(v.literal("small"), v.literal("medium"), v.literal("large")),
+    textAlign: v.union(v.literal("left"), v.literal("center"), v.literal("right")),
+    textColor: v.string(),
+    themeId: v.optional(v.string()), // Can be globalTheme ID or custom
+    baseColor: v.optional(v.string()), // Legacy: bgGradientStart/End
+    bgGradientStart: v.optional(v.string()),
+    bgGradientEnd: v.optional(v.string()),
+    glowColor: v.optional(v.string()),
+    transition: v.union(v.literal("fade"), v.literal("slide"), v.literal("zoom"), v.literal("flip")),
+    backgroundPattern: v.optional(v.string()),
+    stickers: v.array(v.object({
+        emoji: v.string(),
+        x: v.number(),
+        y: v.number(),
+    })),
+    type: v.optional(v.union(v.literal("light"), v.literal("dark"))),
+});
+
+const MediaSlotValidator = v.object({
+    id: v.string(),
+    label: v.string(),
+    type: v.string(),
+    position: v.object({
+        x: v.number(),
+        y: v.number(),
+        width: v.number(),
+        height: v.number(),
+    }),
+    required: v.boolean(),
+});
+
+const TextSlotValidator = v.object({
+    id: v.string(),
+    label: v.string(),
+    placeholder: v.string(),
+    maxLength: v.number(),
+    position: v.object({
+        x: v.number(),
+        y: v.number(),
+        width: v.number(),
+        height: v.number(),
+    }),
+    style: v.object({
+        fontSize: v.number(),
+        fontFamily: v.string(),
+        color: v.string(),
+    }),
+});
+
+// Schema Version: 1.2 - Strict Object Validation
 export default defineSchema({
     events: defineTable({
         name: v.string(),
@@ -69,7 +141,7 @@ export default defineSchema({
         eventId: v.id("events"),
         slug: v.string(),
         email: v.string(),
-        pages: v.array(v.any()), // StoryPage[] (including imageTransform)
+        pages: v.array(StoryPageValidator),
         musicTrackId: v.optional(v.id("musicTracks")),
         removeWatermark: v.boolean(),
         hasMusic: v.boolean(),
@@ -151,9 +223,9 @@ export default defineSchema({
         name: v.string(),
         thumbnail: v.string(),
         outputType: v.string(),
-        mediaSlots: v.array(v.any()),
-        textSlots: v.array(v.any()),
-        layers: v.array(v.any()),
+        mediaSlots: v.array(MediaSlotValidator),
+        textSlots: v.array(TextSlotValidator),
+        layers: v.array(v.any()), // Layers are still highly dynamic, keeping any for now but wrapped in array
         popularity: v.number(),
         createdAt: v.number(),
     }).index("by_event", ["eventId"]),
@@ -226,5 +298,12 @@ export default defineSchema({
         createdAt: v.number(),
     }).index("by_event", ["eventId"])
         .index("by_email_event", ["email", "eventId"])
-        .index("by_user", ["userId"])
+        .index("by_user", ["userId"]),
+
+    rateLimits: defineTable({
+        identifier: v.string(), // IP address, email, or session token
+        action: v.string(),     // "login", "payment_init", etc.
+        count: v.number(),
+        resetAt: v.number(),    // Timestamp when the window resets
+    }).index("by_identifier_action", ["identifier", "action"]),
 });

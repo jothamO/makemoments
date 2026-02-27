@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { formatPlatformDate } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 // Currency definitions for exchange rate management
 const SUPPORTED_CURRENCIES = [
@@ -26,13 +28,13 @@ const SUPPORTED_CURRENCIES = [
 ];
 
 export default function PaymentsPage() {
-    const { toast } = useToast();
+    const { token } = useAuth();
 
     // ── Queries ──
-    const exchangeRates = useQuery(api.exchangeRates.list) || [];
-    const gatewayConfig = useQuery(api.gatewayConfig.get);
-    const celebrations = useQuery(api.celebrations.list) || [];
-    const events = useQuery(api.events.getAll) || [];
+    const exchangeRates = useQuery(api.exchangeRates.list, { token: token || undefined }) || [];
+    const gatewayConfig = useQuery(api.gatewayConfig.get, { token: token || undefined });
+    const celebrations = useQuery(api.celebrations.list, { token: token || undefined }) || [];
+    const events = useQuery(api.events.getAll, { token: token || undefined }) || [];
 
     // ── Mutations ──
     const upsertRate = useMutation(api.exchangeRates.upsert);
@@ -121,12 +123,13 @@ export default function PaymentsPage() {
             // Save exchange rates
             for (const [currency, rate] of Object.entries(rates)) {
                 if (rate > 0) {
-                    await upsertRate({ fromCurrency: "USD", toCurrency: currency, rate });
+                    await upsertRate({ fromCurrency: "USD", toCurrency: currency, rate, token: token || undefined });
                 }
             }
 
             // Save gateway config
             await upsertGateway({
+                token: token || undefined,
                 paystackEnabled,
                 stripeEnabled,
                 paystackTestMode,
@@ -208,6 +211,14 @@ export default function PaymentsPage() {
                     <TabsTrigger value="transactions" className="gap-2"><RefreshCw className="h-4 w-4" /> Transactions</TabsTrigger>
                 </TabsList>
 
+                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex gap-3 text-amber-800">
+                    <Shield className="h-5 w-5 text-amber-600 shrink-0" />
+                    <div className="text-xs">
+                        <p className="font-bold text-amber-900">Security Recommendation</p>
+                        <p className="mt-0.5 opacity-90">Sensitive API Secret Keys should ideally be stored as <b>Convex Environment Variables</b> (`PAYSTACK_SECRET_KEY`, `STRIPE_SECRET_KEY`). Environment variables provide superior security and will automatically override any values stored in the database.</p>
+                    </div>
+                </div>
+
                 {/* Exchange Rates */}
                 <TabsContent value="rates" className="mt-4">
                     <Card className="border-zinc-200">
@@ -286,7 +297,7 @@ export default function PaymentsPage() {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-xs text-zinc-500">Secret Key</Label>
-                                        <Input type="password" placeholder="sk_test_..." className="h-8 text-xs font-mono" value={paystackSecretKey} onChange={(e) => setPaystackSecretKey(e.target.value)} />
+                                        <PasswordInput placeholder="sk_test_..." className="h-8 text-xs font-mono" value={paystackSecretKey} onChange={(e) => setPaystackSecretKey(e.target.value)} />
                                     </div>
                                 </div>
                             </CardContent>
@@ -332,7 +343,7 @@ export default function PaymentsPage() {
                                     </div>
                                     <div className="space-y-1.5">
                                         <Label className="text-xs text-zinc-500">Secret Key</Label>
-                                        <Input type="password" placeholder="sk_test_..." className="h-8 text-xs font-mono" value={stripeSecretKey} onChange={(e) => setStripeSecretKey(e.target.value)} />
+                                        <PasswordInput placeholder="sk_test_..." className="h-8 text-xs font-mono" value={stripeSecretKey} onChange={(e) => setStripeSecretKey(e.target.value)} />
                                     </div>
                                 </div>
                             </CardContent>

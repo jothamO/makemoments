@@ -1,6 +1,40 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import { checkAdmin } from "./auth";
+
+// --- Strict Validators (Shared with Schema) ---
+
+const EventThemeValidator = v.object({
+    baseColor: v.optional(v.string()),
+    glowColor: v.optional(v.string()),
+    bgGradientStart: v.optional(v.string()), // Legacy
+    bgGradientEnd: v.optional(v.string()),   // Legacy
+    type: v.union(v.literal("light"), v.literal("dark")),
+    headline: v.string(),
+    subheadline: v.string(),
+    headline_2: v.optional(v.string()),
+    subheadline_2: v.optional(v.string()),
+    headline_3: v.optional(v.string()),
+    subheadline_3: v.optional(v.string()),
+    ctaText: v.string(),
+    urgencyText: v.string(),
+    textLight: v.optional(v.string()),
+    headlineFont: v.optional(v.string()),
+    bodyFont: v.optional(v.string()),
+    characterIds: v.optional(v.array(v.id("globalCharacters"))),
+    musicTrackIds: v.optional(v.array(v.id("musicTracks"))),
+    allowedThemeIds: v.optional(v.array(v.id("globalThemes"))),
+    allowedFontIds: v.optional(v.array(v.id("globalFonts"))),
+    textMode: v.optional(v.union(v.literal("auto"), v.literal("light"), v.literal("dark"))),
+    textColor: v.optional(v.string()),
+    upcomingHeadline: v.optional(v.string()),
+    upcomingSubheadline: v.optional(v.string()),
+    expiredHeadline: v.optional(v.string()),
+    expiredSubheadline: v.optional(v.string()),
+    backgroundPattern: v.optional(v.string()),
+    patternIds: v.optional(v.array(v.string())),
+});
 
 async function resolveEventAssets(ctx: any, event: any) {
     const theme = event.theme || {};
@@ -221,7 +255,11 @@ export const getLibrary = query({
 });
 
 export const handleRecurringEvents = mutation({
-    handler: async (ctx) => {
+    args: { token: v.optional(v.string()) },
+    handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         const now = Date.now();
         const expiredRecurring = await ctx.db
             .query("events")
@@ -248,7 +286,11 @@ export const handleRecurringEvents = mutation({
 
 
 export const getAll = query({
-    handler: async (ctx) => {
+    args: { token: v.optional(v.string()) },
+    handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         return await ctx.db.query("events").collect();
     },
 });
@@ -262,6 +304,7 @@ export const getById = query({
 
 export const create = mutation({
     args: {
+        token: v.optional(v.string()),
         name: v.string(),
         slug: v.string(),
         date: v.number(),
@@ -270,12 +313,16 @@ export const create = mutation({
         status: v.union(v.literal("upcoming"), v.literal("active"), v.literal("ended")),
         tier: v.optional(v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4))),
         kind: v.optional(v.union(v.literal("recurring"), v.literal("one-time"), v.literal("evergreen"))),
-        theme: v.any(),
+        theme: EventThemeValidator,
         updatedAt: v.optional(v.float64()),
     },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
+        const { token, ...data } = args;
         const eventId = await ctx.db.insert("events", {
-            ...args,
+            ...data,
             createdAt: Date.now(),
             updatedAt: Date.now(),
         });
@@ -303,6 +350,7 @@ export const create = mutation({
 
 export const update = mutation({
     args: {
+        token: v.optional(v.string()),
         id: v.id("events"),
         name: v.optional(v.string()),
         slug: v.optional(v.string()),
@@ -312,10 +360,13 @@ export const update = mutation({
         status: v.optional(v.union(v.literal("upcoming"), v.literal("active"), v.literal("ended"))),
         tier: v.optional(v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4))),
         kind: v.optional(v.union(v.literal("recurring"), v.literal("one-time"), v.literal("evergreen"))),
-        theme: v.optional(v.any()),
+        theme: v.optional(EventThemeValidator),
     },
     handler: async (ctx, args) => {
-        const { id, ...rest } = args;
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
+        const { id, token, ...rest } = args;
 
         const existing = await ctx.db.get(id);
         if (!existing) throw new Error("Event not found");
@@ -336,8 +387,11 @@ export const update = mutation({
 });
 
 export const remove = mutation({
-    args: { id: v.id("events") },
+    args: { id: v.id("events"), token: v.optional(v.string()) },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         // Also remove templates associated with this event
         const templates = await ctx.db.query("templates")
             .withIndex("by_event", q => q.eq("eventId", args.id))

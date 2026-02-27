@@ -12,12 +12,14 @@ import { Link } from "react-router-dom";
 import { formatPlatformDate, cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useSafeMutation } from "@/hooks/useSafeMutation";
+import { useAuth } from "@/hooks/useAuth";
 
 const AdminCelebrations = () => {
   const { toast } = useToast();
+  const { token } = useAuth();
   const { safeMutation } = useSafeMutation();
-  const celebrations = useQuery(api.celebrations.list) || [];
-  const events = useQuery(api.events.getAll) || [];
+  const celebrations = useQuery(api.celebrations.list, { token: token || undefined }) || [];
+  const events = useQuery(api.events.getAll, { token: token || undefined }) || [];
   const updateCelebrationStatus = useMutation(api.celebrations.updateStatus);
   const [search, setSearch] = useState("");
   const [eventFilter, setEventFilter] = useState("all");
@@ -68,7 +70,7 @@ const AdminCelebrations = () => {
   }
 
   const handleStatusUpdate = async (id: any, status: "pending" | "paid" | "failed") => {
-    await safeMutation(updateCelebrationStatus, { id, status }, `Status updated to ${status}`);
+    await safeMutation(updateCelebrationStatus, { id, status, token: token || undefined }, `Status updated to ${status}`);
   };
 
   return (

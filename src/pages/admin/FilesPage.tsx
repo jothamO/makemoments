@@ -15,6 +15,7 @@ import { cn, hexToRgba, getBrandRadialGradient, getAudioDuration, uploadToConvex
 import { useSafeMutation } from "@/hooks/useSafeMutation";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { useAuth } from "@/hooks/useAuth";
 
 
 
@@ -25,6 +26,7 @@ const slugify = (text: string) => text
 
 export default function FilesPage() {
     const { toast } = useToast();
+    const { token } = useAuth();
     const { safeMutation } = useSafeMutation();
     const { playingId, togglePlay } = useAudioPlayer();
 
@@ -100,8 +102,8 @@ export default function FilesPage() {
         };
 
         const success = editingThemeId
-            ? await safeMutation(updateTheme, { id: editingThemeId as any, ...payload }, "Theme updated")
-            : await safeMutation(createTheme, payload, "Theme added");
+            ? await safeMutation(updateTheme, { id: editingThemeId as any, token: token || undefined, ...payload }, "Theme updated")
+            : await safeMutation(createTheme, { ...payload, token: token || undefined }, "Theme added");
 
         if (success) {
             setIsThemeOpen(false);
@@ -118,6 +120,7 @@ export default function FilesPage() {
 
         if (editingFontId) {
             const success = await safeMutation(updateFont, {
+                token: token || undefined,
                 id: editingFontId as any,
                 name: newFont.name,
                 fontFamily: newFont.fontFamily,
@@ -134,14 +137,14 @@ export default function FilesPage() {
             if (fontFileRef.current?.files?.[0]) {
                 setIsUploading(true);
                 try {
-                    storageId = await uploadToConvexStorage(generateFontUploadUrl, fontFileRef.current.files[0]);
+                    storageId = await uploadToConvexStorage((file: File) => generateFontUploadUrl({ token: token || undefined }), fontFileRef.current.files[0]);
                 } catch {
                     toast({ title: "Upload failed", variant: "destructive" });
                     setIsUploading(false);
                     return;
                 }
             }
-            const success = await safeMutation(createFontMutation, { ...newFont, storageId }, "Font added");
+            const success = await safeMutation(createFontMutation, { ...newFont, storageId, token: token || undefined }, "Font added");
             if (success) {
                 setIsFontOpen(false);
                 setIsUploading(false);
@@ -175,8 +178,8 @@ export default function FilesPage() {
         };
 
         const success = editingPatternId
-            ? await safeMutation(updatePattern, payload, "Pattern updated")
-            : await safeMutation(createPattern, { ...payload, id: newPattern.id } as any, "Pattern added");
+            ? await safeMutation(updatePattern, { ...payload, token: token || undefined }, "Pattern updated")
+            : await safeMutation(createPattern, { ...payload, id: newPattern.id, token: token || undefined } as any, "Pattern added");
 
         if (success) {
             setIsPatternOpen(false);
@@ -190,6 +193,7 @@ export default function FilesPage() {
 
         if (editingMusicId) {
             const success = await safeMutation(updateMusic, {
+                token: token || undefined,
                 id: editingMusicId as any,
                 name: newMusic.name,
                 artist: newMusic.artist,
@@ -215,7 +219,7 @@ export default function FilesPage() {
                 }
 
                 try {
-                    storageId = await uploadToConvexStorage(generateUploadUrl, file);
+                    storageId = await uploadToConvexStorage((file: File) => generateUploadUrl({ token: token || undefined }), file);
                 } catch {
                     toast({ title: "Upload failed", variant: "destructive" });
                     setIsUploading(false);
@@ -224,6 +228,7 @@ export default function FilesPage() {
             }
 
             const success = await safeMutation(createMusic, {
+                token: token || undefined,
                 name: newMusic.name,
                 artist: newMusic.artist,
                 duration: duration || 180,
@@ -245,8 +250,8 @@ export default function FilesPage() {
         setIsUploading(true);
         try {
             for (const file of Array.from(charFilesRef.current.files)) {
-                const storageId = await uploadToConvexStorage(generateCharacterUploadUrl, file);
-                await createCharacter({ name: file.name.split(".")[0], storageId });
+                const storageId = await uploadToConvexStorage((file: File) => generateCharacterUploadUrl({ token: token || undefined }), file);
+                await createCharacter({ name: file.name.split(".")[0], storageId, token: token || undefined });
             }
             toast({ title: "Characters uploaded" });
         } catch (error: any) {
@@ -257,7 +262,7 @@ export default function FilesPage() {
 
     const handleUpdateCharacter = async () => {
         if (!editingCharacterId || !editingName) return;
-        const success = await safeMutation(updateCharacter, { id: editingCharacterId as any, name: editingName }, "Character renamed");
+        const success = await safeMutation(updateCharacter, { id: editingCharacterId as any, name: editingName, token: token || undefined }, "Character renamed");
         if (success) {
             setEditingCharacterId(null);
             setEditingName("");
@@ -425,7 +430,7 @@ export default function FilesPage() {
                                                             className={cn("h-8 w-8 rounded-full border transition-colors", theme.isDefault ? "bg-amber-50 border-amber-200 hover:bg-amber-100" : "bg-white hover:bg-zinc-100 border-zinc-200")}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                safeMutation(setDefaultAsset, { id: theme._id, table: "globalThemes" }, "Default updated");
+                                                                safeMutation(setDefaultAsset, { id: theme._id, table: "globalThemes", token: token || undefined }, "Default updated");
                                                             }}
                                                         >
                                                             <Star className={cn("h-4 w-4", theme.isDefault ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
@@ -436,7 +441,7 @@ export default function FilesPage() {
                                                             className="h-8 w-8 rounded-full bg-red-50 hover:bg-red-100 border border-red-100"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                safeMutation(removeTheme, { id: theme._id }, "Theme removed");
+                                                                safeMutation(removeTheme, { id: theme._id, token: token || undefined }, "Theme removed");
                                                             }}
                                                         >
                                                             <Trash2 className="h-4 w-4 text-red-500" />
@@ -586,6 +591,7 @@ export default function FilesPage() {
                                                             // If editingThemeId is not set, it means no changes were made
                                                             const success = await safeMutation(updateTheme, {
                                                                 id: theme._id,
+                                                                token: token || undefined,
                                                                 name: newTheme.name || theme.name,
                                                                 baseColor: newTheme.baseColor || theme.baseColor,
                                                                 glowColor: newTheme.glowColor || theme.glowColor,
@@ -722,12 +728,12 @@ export default function FilesPage() {
                                                         size="icon"
                                                         className={cn("h-8 w-8 border transition-colors", font.isDefault ? "bg-amber-50 border-amber-200 hover:bg-amber-100" : "bg-white hover:bg-zinc-100 border-zinc-200")}
                                                         onClick={() => {
-                                                            safeMutation(setDefaultAsset, { id: font._id, table: "globalFonts" }, "Default updated");
+                                                            safeMutation(setDefaultAsset, { id: font._id, table: "globalFonts", token: token || undefined }, "Default updated");
                                                         }}
                                                     >
                                                         <Star className={cn("h-4 w-4", font.isDefault ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => safeMutation(removeFont, { id: font._id }, "Font removed")}>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => safeMutation(removeFont, { id: font._id, token: token || undefined }, "Font removed")}>
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </TableCell>
@@ -760,7 +766,7 @@ export default function FilesPage() {
                                                             className={cn("h-8 w-8 border transition-colors", font.isDefault ? "bg-amber-50 border-amber-200 hover:bg-amber-100" : "bg-white hover:bg-zinc-100 border-zinc-200")}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                safeMutation(setDefaultAsset, { id: font._id, table: "globalFonts" }, "Default updated");
+                                                                safeMutation(setDefaultAsset, { id: font._id, table: "globalFonts", token: token || undefined }, "Default updated");
                                                             }}
                                                         >
                                                             <Star className={cn("h-4 w-4", font.isDefault ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
@@ -771,7 +777,7 @@ export default function FilesPage() {
                                                             className="h-8 w-8 text-red-500"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                safeMutation(removeFont, { id: font._id }, "Font removed");
+                                                                safeMutation(removeFont, { id: font._id, token: token || undefined }, "Font removed");
                                                             }}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
@@ -851,6 +857,7 @@ export default function FilesPage() {
                                                         onClick={async () => {
                                                             const success = await safeMutation(updateFont, {
                                                                 id: font._id,
+                                                                token: token || undefined,
                                                                 name: newFont.name || font.name,
                                                                 fontFamily: newFont.fontFamily || font.fontFamily,
                                                                 isPremium: newFont.isPremium !== undefined ? newFont.isPremium : (font.isPremium || false),
@@ -912,7 +919,7 @@ export default function FilesPage() {
                                                                 className={cn("h-5 w-5 border transition-colors", char.isDefault ? "bg-amber-50 border-amber-200" : "bg-transparent border-transparent")}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    safeMutation(setDefaultAsset, { id: char._id, table: "globalCharacters" }, "Default updated");
+                                                                    safeMutation(setDefaultAsset, { id: char._id, table: "globalCharacters", token: token || undefined }, "Default updated");
                                                                 }}
                                                             >
                                                                 <Star className={cn("h-3 w-3", char.isDefault ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
@@ -935,7 +942,7 @@ export default function FilesPage() {
                                                                 className="h-5 w-5 text-red-400 hover:text-red-500"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    safeMutation(removeCharacter, { id: char._id }, "Character removed");
+                                                                    safeMutation(removeCharacter, { id: char._id, token: token || undefined }, "Character removed");
                                                                 }}
                                                             >
                                                                 <Trash2 className="h-3 w-3" />
@@ -1009,7 +1016,7 @@ export default function FilesPage() {
                                                                                 variant="destructive"
                                                                                 className="w-full h-12 text-lg font-bold"
                                                                                 onClick={async () => {
-                                                                                    await safeMutation(removeCharacter, { id: char._id }, "Character removed");
+                                                                                    await safeMutation(removeCharacter, { id: char._id, token: token || undefined }, "Character removed");
                                                                                 }}
                                                                             >
                                                                                 Delete Permenantly
@@ -1159,12 +1166,12 @@ export default function FilesPage() {
                                                         size="icon"
                                                         className={cn("h-8 w-8 border transition-colors", track.isDefault ? "bg-amber-50 border-amber-200 hover:bg-amber-100" : "bg-transparent hover:bg-zinc-100 border-transparent")}
                                                         onClick={() => {
-                                                            safeMutation(setDefaultAsset, { id: track._id, table: "musicTracks" }, "Default updated");
+                                                            safeMutation(setDefaultAsset, { id: track._id, table: "musicTracks", token: token || undefined }, "Default updated");
                                                         }}
                                                     >
                                                         <Star className={cn("h-4 w-4", track.isDefault ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => safeMutation(removeMusic, { id: track._id }, "Music removed")}>
+                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => safeMutation(removeMusic, { id: track._id, token: token || undefined }, "Music removed")}>
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </TableCell>
@@ -1221,7 +1228,7 @@ export default function FilesPage() {
                                                         className={cn("h-8 w-8 border transition-colors", track.isDefault ? "bg-amber-50 border-amber-200 hover:bg-amber-100" : "bg-transparent hover:bg-zinc-100 border-transparent")}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            safeMutation(setDefaultAsset, { id: track._id, table: "musicTracks" }, "Default updated");
+                                                            safeMutation(setDefaultAsset, { id: track._id, table: "musicTracks", token: token || undefined }, "Default updated");
                                                         }}
                                                     >
                                                         <Star className={cn("h-4 w-4", track.isDefault ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
@@ -1232,7 +1239,7 @@ export default function FilesPage() {
                                                         className="h-8 w-8 text-red-500"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            safeMutation(removeMusic, { id: track._id }, "Music removed");
+                                                            safeMutation(removeMusic, { id: track._id, token: token || undefined }, "Music removed");
                                                         }}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -1307,6 +1314,7 @@ export default function FilesPage() {
                                                         onClick={async () => {
                                                             const success = await safeMutation(updateMusic, {
                                                                 id: track._id,
+                                                                token: token || undefined,
                                                                 name: newMusic.name || track.name,
                                                                 artist: newMusic.artist || track.artist,
                                                                 duration: newMusic.duration !== undefined ? newMusic.duration : track.duration,
@@ -1449,12 +1457,12 @@ export default function FilesPage() {
                                                         className={cn("h-8 w-8 border transition-colors", pattern.isDefault ? "bg-amber-50 border-amber-200 hover:bg-amber-100" : "bg-transparent hover:bg-zinc-100 border-transparent")}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            safeMutation(setDefaultAsset, { id: pattern._id, table: "globalPatterns" }, "Default updated");
+                                                            safeMutation(setDefaultAsset, { id: pattern._id, table: "globalPatterns", token: token || undefined }, "Default updated");
                                                         }}
                                                     >
                                                         <Star className={cn("h-4 w-4", pattern.isDefault ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => safeMutation(removePattern, { id: pattern._id }, "Pattern removed")}><Trash2 className="h-4 w-4" /></Button>
+                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => safeMutation(removePattern, { id: pattern._id, token: token || undefined }, "Pattern removed")}><Trash2 className="h-4 w-4" /></Button>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -1477,7 +1485,7 @@ export default function FilesPage() {
                                                             className={cn("h-8 w-8 border transition-colors", pattern.isDefault ? "bg-amber-50 border-amber-200 hover:bg-amber-100" : "bg-transparent hover:bg-zinc-100 border-transparent")}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                safeMutation(setDefaultAsset, { id: pattern._id, table: "globalPatterns" }, "Default updated");
+                                                                safeMutation(setDefaultAsset, { id: pattern._id, table: "globalPatterns", token: token || undefined }, "Default updated");
                                                             }}
                                                         >
                                                             <Star className={cn("h-4 w-4", pattern.isDefault ? "text-amber-500 fill-amber-500" : "text-zinc-400")} />
@@ -1488,7 +1496,7 @@ export default function FilesPage() {
                                                             className="h-8 w-8 text-red-500"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                safeMutation(removePattern, { id: pattern._id }, "Pattern removed");
+                                                                safeMutation(removePattern, { id: pattern._id, token: token || undefined }, "Pattern removed");
                                                             }}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
@@ -1581,6 +1589,7 @@ export default function FilesPage() {
                                                         onClick={async () => {
                                                             const success = await safeMutation(updatePattern, {
                                                                 id: pattern._id,
+                                                                token: token || undefined,
                                                                 name: newPattern.name || pattern.name,
                                                                 emojis: newPattern.emojis || pattern.emojis?.join(", "),
                                                                 type: (newPattern.type || pattern.type) as any,

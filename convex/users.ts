@@ -1,14 +1,20 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { checkAdmin } from "./auth";
 
 export const list = query({
-    handler: async (ctx) => {
+    args: { token: v.optional(v.string()) },
+    handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         return await ctx.db.query("users").order("desc").collect();
     },
 });
 
 export const upsert = mutation({
     args: {
+        token: v.optional(v.string()),
         id: v.optional(v.id("users")),
         email: v.string(),
         name: v.optional(v.string()),
@@ -16,7 +22,10 @@ export const upsert = mutation({
         isSubscriber: v.boolean(),
     },
     handler: async (ctx, args) => {
-        const { id, ...data } = args;
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
+        const { id, token, ...data } = args;
         if (id) {
             await ctx.db.patch(id, {
                 ...data,
@@ -43,8 +52,11 @@ export const upsert = mutation({
 });
 
 export const remove = mutation({
-    args: { id: v.id("users") },
+    args: { id: v.id("users"), token: v.optional(v.string()) },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         await ctx.db.delete(args.id);
     },
 });

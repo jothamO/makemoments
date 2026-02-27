@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { checkAdmin } from "./auth";
 
 export const list = query({
     handler: async (ctx) => {
@@ -9,6 +10,7 @@ export const list = query({
 
 export const create = mutation({
     args: {
+        token: v.optional(v.string()),
         id: v.string(),
         name: v.string(),
         emojis: v.array(v.string()),
@@ -23,6 +25,9 @@ export const create = mutation({
         price: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         const existing = await ctx.db
             .query("globalPatterns")
             .filter((q) => q.eq(q.field("id"), args.id))
@@ -43,6 +48,7 @@ export const create = mutation({
 
 export const update = mutation({
     args: {
+        token: v.optional(v.string()),
         id: v.id("globalPatterns"),
         patternId: v.optional(v.string()),
         name: v.optional(v.string()),
@@ -58,7 +64,10 @@ export const update = mutation({
         price: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const { id, patternId, ...rest } = args;
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
+        const { id, token, patternId, ...rest } = args;
         const updates: Record<string, any> = {};
         if (patternId !== undefined) updates.id = patternId;
         Object.entries(rest).forEach(([k, v]) => { if (v !== undefined) updates[k] = v; });
@@ -69,8 +78,11 @@ export const update = mutation({
 });
 
 export const remove = mutation({
-    args: { id: v.id("globalPatterns") },
+    args: { id: v.id("globalPatterns"), token: v.optional(v.string()) },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         // Safe Delete: Check if used in any events
         const events = await ctx.db.query("events").collect();
         const pattern = await ctx.db.get(args.id);

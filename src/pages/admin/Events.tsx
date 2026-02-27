@@ -27,6 +27,7 @@ import {
 import { cn, formatPlatformDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useSafeMutation } from "@/hooks/useSafeMutation";
+import { useAuth } from "@/hooks/useAuth";
 
 import { Drawer } from "vaul";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
@@ -34,14 +35,15 @@ import { MoreVertical, ExternalLink as ExternalLinkIcon } from "lucide-react";
 
 const AdminEvents = () => {
   const { toast } = useToast();
+  const { token } = useAuth();
   const { safeMutation } = useSafeMutation();
-  const events = useQuery(api.events.getAll);
-  const celebrations = useQuery(api.celebrations.list);
+  const events = useQuery(api.events.getAll, { token: token || undefined });
+  const celebrations = useQuery(api.celebrations.list, { token: token || undefined });
   const removeEvent = useMutation(api.events.remove);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const handleDelete = async (id: any) => {
-    await safeMutation(removeEvent, { id }, "Event deleted");
+    await safeMutation(removeEvent, { id, token: token || undefined }, "Event deleted");
   };
 
   // Show loading state while initial data is fetching

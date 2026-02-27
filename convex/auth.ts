@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
 import { GenericActionCtx, GenericMutationCtx, GenericQueryCtx } from "convex/server";
+import { checkRateLimit } from "./rateLimit";
 
 // --- Helpers ---
 
@@ -78,13 +79,21 @@ export const getViewer = query({
 export const loginAdmin = mutation({
     args: { password: v.string() },
     handler: async (ctx, args) => {
+        // Apply Rate Limit: 5 attempts per 15 minutes
+        await checkRateLimit(ctx, {
+            identifier: "admin_login", // Global limit for admin login attempts
+            action: "admin_login",
+            limit: 5,
+            windowMs: 15 * 60 * 1000,
+        });
+
         const adminPassword = process.env.ADMIN_PASSWORD;
         if (!adminPassword) {
-            throw new Error("Admin password not configured in environment");
+            throw new Error("Authentication failed");
         }
 
         if (args.password !== adminPassword) {
-            throw new Error("Invalid admin password");
+            throw new Error("Authentication failed");
         }
 
         const token = generateToken();
@@ -105,6 +114,14 @@ export const loginAdmin = mutation({
 export const loginUser = mutation({
     args: { email: v.string(), password: v.string() },
     handler: async (ctx, args) => {
+        // Apply Rate Limit: 10 attempts per 15 minutes per email
+        await checkRateLimit(ctx, {
+            identifier: args.email,
+            action: "user_login",
+            limit: 10,
+            windowMs: 15 * 60 * 1000,
+        });
+
         const user = await ctx.db
             .query("users")
             .withIndex("by_email", q => q.eq("email", args.email))

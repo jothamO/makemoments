@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { checkAdmin } from "./auth";
 
 export const list = query({
     handler: async (ctx) => {
@@ -8,6 +9,7 @@ export const list = query({
 });
 export const set = mutation({
     args: {
+        token: v.optional(v.string()),
         category: v.string(), // "fonts", "music", "patterns", "characters", "themes", "base"
         prices: v.object({
             ngn: v.number(),
@@ -15,6 +17,9 @@ export const set = mutation({
         }),
     },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         const existing = await ctx.db
             .query("globalPricing")
             .withIndex("by_category", (q) => q.eq("category", args.category))

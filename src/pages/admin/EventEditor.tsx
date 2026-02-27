@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { useAuth } from "@/hooks/useAuth";
 import { CharacterPicker, MusicPicker, ThemePresetPicker, FontPicker, PatternPicker } from "@/components/admin/GlobalAssetPickers";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { EventHero } from "@/components/public/EventHero";
@@ -54,6 +55,7 @@ const EventEditor = () => {
   const { toast } = useToast();
 
   // Convex hooks
+  const { token } = useAuth();
   const event = useQuery(api.events.getById, id ? { id: id as any } : "skip");
   const updateEvent = useMutation(api.events.update);
   const createEvent = useMutation(api.events.create);
@@ -118,9 +120,9 @@ const EventEditor = () => {
       };
 
       if (id) {
-        await updateEvent({ id: id as any, ...payload });
+        await updateEvent({ id: id as any, token: token || undefined, ...payload });
       } else {
-        await createEvent(payload);
+        await createEvent({ ...payload, token: token || undefined });
       }
       toast({ title: isPublish ? "Event Published!" : "Event Saved" });
       if (!id || isPublish) navigate("/admin/events");

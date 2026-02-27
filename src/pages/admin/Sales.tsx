@@ -7,13 +7,15 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { DollarSign, ShoppingCart, TrendingUp, Percent } from "lucide-react";
 import { formatPlatformDate } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 type Range = "today" | "7d" | "30d" | "all";
 
 const AdminSales = () => {
+  const { token } = useAuth();
   const [range, setRange] = useState<Range>("7d");
-  const celebrations = useQuery(api.celebrations.list);
-  const events = useQuery(api.events.getAll);
+  const celebrations = useQuery(api.celebrations.list, { token: token || undefined });
+  const events = useQuery(api.events.getAll, { token: token || undefined });
 
   const now = Date.now();
   const rangeStart: Record<Range, number> = {

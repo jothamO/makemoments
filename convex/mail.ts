@@ -1,27 +1,53 @@
-import { query, mutation, action } from "./_generated/server";
+import { query, mutation, action, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import { checkAdmin } from "./auth";
 
-// ── Configuration ──
-
-export const getConfig = query({
+// Internal version that returns the actual API key for use in actions
+export const getConfigInternal = internalQuery({
     handler: async (ctx) => {
         return await ctx.db.query("mailConfig").first();
     },
 });
 
+// ── Configuration ──
+
+export const getConfig = query({
+    handler: async (ctx) => {
+        const config = await ctx.db.query("mailConfig").first();
+        if (!config) return null;
+
+        // Mask the API key if it exists
+        return {
+            ...config,
+            zeptomailApiKey: config.zeptomailApiKey ? "••••••••" : "",
+        };
+    },
+});
+
 export const upsertConfig = mutation({
     args: {
+        token: v.optional(v.string()),
         zeptomailApiKey: v.string(),
         fromEmail: v.string(),
         fromName: v.string(),
         bounceAddress: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
+
+        const { token, ...dataArgs } = args;
         const existing = await ctx.db.query("mailConfig").first();
-        const data = { ...args, updatedAt: Date.now() };
+
+        const data = { ...dataArgs, updatedAt: Date.now() };
 
         if (existing) {
+            // If the incoming key is the masked value, don't overwrite the existing real key
+            if (data.zeptomailApiKey === "••••••••") {
+                data.zeptomailApiKey = existing.zeptomailApiKey;
+            }
             await ctx.db.patch(existing._id, data);
             return existing._id;
         }
@@ -69,16 +95,18 @@ export const sendTestEmail = action({
         category: v.union(v.literal("welcome"), v.literal("reminder"), v.literal("newsletter"), v.literal("new_event"), v.literal("forgot_password"), v.literal("post_payment"), v.literal("expiry_warning"), v.literal("event_launch")),
     },
     handler: async (ctx, args) => {
-        const config = await ctx.runQuery("api.mail.getConfig" as any);
-        const templates = await ctx.runQuery("api.mail.getTemplates" as any);
+        const config = await ctx.runQuery(api.mail.getConfigInternal);
+        const templates = await ctx.runQuery(api.mail.getTemplates);
         const template = templates.find((t: any) => t.category === args.category);
 
-        if (!config || !config.zeptomailApiKey) {
-            throw new Error("ZeptoMail configuration missing");
+        const apiKey = process.env.ZEPTOMAIL_API_KEY || config?.zeptomailApiKey;
+
+        if (!apiKey) {
+            throw new Error("Mail service configuration missing");
         }
 
         if (!template || !template.templateId) {
-            throw new Error(`Template ID missing for category: ${args.category}`);
+            throw new Error("Mail template error");
         }
 
         const res = await fetch(ZEPTOMAIL_API, {
@@ -102,7 +130,7 @@ export const sendTestEmail = action({
         if (!res.ok) {
             const error = await res.text();
             console.error("ZeptoMail Test Error:", error);
-            throw new Error(`ZeptoMail Error: ${error}`);
+            throw new Error("Email delivery failed");
         }
 
         return { success: true };
@@ -116,11 +144,13 @@ export const sendExpiryWarning = action({
         slug: v.string(),
     },
     handler: async (ctx, args) => {
-        const config = await ctx.runQuery("api.mail.getConfig" as any);
-        const templates = await ctx.runQuery("api.mail.getTemplates" as any);
+        const config = await ctx.runQuery(api.mail.getConfigInternal);
+        const templates = await ctx.runQuery(api.mail.getTemplates);
         const template = templates.find((t: any) => t.category === "expiry_warning");
 
-        if (!config || !config.zeptomailApiKey || !template || !template.templateId) {
+        const apiKey = process.env.ZEPTOMAIL_API_KEY || config?.zeptomailApiKey;
+
+        if (!apiKey || !template || !template.templateId) {
             console.warn("Skipping expiry warning: ZeptoMail config or template missing");
             return;
         }
@@ -128,7 +158,7 @@ export const sendExpiryWarning = action({
         await fetch(ZEPTOMAIL_API, {
             method: "POST",
             headers: {
-                "Authorization": config.zeptomailApiKey,
+                "Authorization": apiKey,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -167,10 +197,11 @@ export const sendEventLaunchNotification = action({
 
         for (const sub of pendingSubs) {
             try {
+                const apiKey = process.env.ZEPTOMAIL_API_KEY || config?.zeptomailApiKey;
                 const res = await fetch(ZEPTOMAIL_API, {
                     method: "POST",
                     headers: {
-                        "Authorization": config.zeptomailApiKey,
+                        "Authorization": apiKey as string,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({

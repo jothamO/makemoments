@@ -30,6 +30,7 @@ import type * as notifications from "../notifications.js";
 import type * as patterns from "../patterns.js";
 import type * as payments from "../payments.js";
 import type * as pricing from "../pricing.js";
+import type * as rateLimit from "../rateLimit.js";
 import type * as seedPatterns from "../seedPatterns.js";
 import type * as seedPatternsV4 from "../seedPatternsV4.js";
 import type * as seed_assets from "../seed_assets.js";
@@ -68,6 +69,7 @@ declare const fullApi: ApiFromModules<{
   patterns: typeof patterns;
   payments: typeof payments;
   pricing: typeof pricing;
+  rateLimit: typeof rateLimit;
   seedPatterns: typeof seedPatterns;
   seedPatternsV4: typeof seedPatternsV4;
   seed_assets: typeof seed_assets;

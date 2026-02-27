@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { checkAdmin } from "./auth";
 
 // Supported tables for default assets
 const VALID_TABLES = [
@@ -12,10 +13,14 @@ const VALID_TABLES = [
 
 export const setDefaultAsset = mutation({
     args: {
+        token: v.optional(v.string()),
         id: v.string(),
         table: v.string(),
     },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
         if (!VALID_TABLES.includes(args.table as any)) {
             throw new Error(`Invalid table name: ${args.table}`);
         }

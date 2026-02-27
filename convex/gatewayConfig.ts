@@ -1,11 +1,12 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
+import { checkAdmin } from "./auth";
 
 // Get global gateway configuration (returns first record or defaults)
 export const get = query({
     handler: async (ctx) => {
         const config = await ctx.db.query("gatewayConfig").first();
-        return config ?? {
+        const base = config ?? {
             paystackEnabled: true,
             stripeEnabled: true,
             paystackTestMode: false,
@@ -13,12 +14,27 @@ export const get = query({
             eventOverrides: [],
             updatedAt: Date.now(),
         };
+
+        // Mask secret keys
+        return {
+            ...base,
+            paystackSecretKey: (base as any).paystackSecretKey ? "••••••••" : "",
+            stripeSecretKey: (base as any).stripeSecretKey ? "••••••••" : "",
+        };
+    },
+});
+
+// Internal version that returns actual keys for backend use
+export const getInternal = internalQuery({
+    handler: async (ctx) => {
+        return await ctx.db.query("gatewayConfig").first();
     },
 });
 
 // Update global gateway configuration (upserts the single config record)
 export const upsert = mutation({
     args: {
+        token: v.optional(v.string()),
         paystackEnabled: v.boolean(),
         stripeEnabled: v.boolean(),
         paystackTestMode: v.optional(v.boolean()),
@@ -33,14 +49,25 @@ export const upsert = mutation({
         }))),
     },
     handler: async (ctx, args) => {
+        if (!(await checkAdmin(ctx, args.token))) {
+            throw new Error("Unauthorized");
+        }
+        const { token, ...dataArgs } = args;
         const existing = await ctx.db.query("gatewayConfig").first();
 
         const data = {
-            ...args,
+            ...dataArgs,
             updatedAt: Date.now(),
         };
 
         if (existing) {
+            // If incoming keys are masked, don't overwrite the real ones
+            if (data.paystackSecretKey === "••••••••") {
+                data.paystackSecretKey = existing.paystackSecretKey;
+            }
+            if (data.stripeSecretKey === "••••••••") {
+                data.stripeSecretKey = existing.stripeSecretKey;
+            }
             await ctx.db.patch(existing._id, data);
             return existing._id;
         }

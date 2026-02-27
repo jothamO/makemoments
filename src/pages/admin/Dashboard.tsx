@@ -7,10 +7,12 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { DollarSign, Heart, Calendar, TrendingUp } from "lucide-react";
 import { formatPlatformDate } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const AdminDashboard = () => {
-  const celebrations = useQuery(api.celebrations.list) || [];
-  const events = useQuery(api.events.getAll) || [];
+  const { token } = useAuth();
+  const celebrations = useQuery(api.celebrations.list, { token: token || undefined }) || [];
+  const events = useQuery(api.events.getAll, { token: token || undefined }) || [];
 
   const stats = useMemo(() => {
     const now = Date.now();
