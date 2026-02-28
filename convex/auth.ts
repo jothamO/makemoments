@@ -166,7 +166,7 @@ export const logout = mutation({
 });
 
 // Helper for other mutations to check admin status
-export async function checkAdmin(ctx: GenericMutationCtx<any> | GenericQueryCtx<any>, token?: string) {
+export async function checkAdmin(ctx: GenericMutationCtx<any> | GenericQueryCtx<any>, token?: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
     if (!token) return false;
     const session = await ctx.db
         .query("sessions")

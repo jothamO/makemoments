@@ -30,9 +30,9 @@ export const exportAll = query({
         if (!(await checkAdmin(ctx, args.token))) {
             throw new Error("Unauthorized");
         }
-        const data: Record<string, any[]> = {};
+        const data: Record<string, any[]> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
         for (const table of BACKUP_TABLES) {
-            data[table] = await ctx.db.query(table as any).collect();
+            data[table] = await ctx.db.query(table as any).collect(); // eslint-disable-line @typescript-eslint/no-explicit-any
         }
         return data;
     },
@@ -42,7 +42,7 @@ export const exportAll = query({
 export const exportAllInternal = internalQuery({
     args: {},
     handler: async (ctx) => {
-        const data: Record<string, any[]> = {};
+        const data: Record<string, any[]> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
         for (const table of BACKUP_TABLES) {
             data[table] = await ctx.db.query(table).collect();
         }
@@ -84,7 +84,7 @@ export const runBackupAction = action({
             });
 
             if (!authResponse.ok) throw new Error("B2 Authorization failed");
-            const authData = await authResponse.json() as any;
+            const authData = (await authResponse.json()) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
             const getUploadUrlResponse = await fetch(`${authData.apiUrl}/b2api/v3/b2_get_upload_url`, {
                 method: "POST",
@@ -93,7 +93,7 @@ export const runBackupAction = action({
             });
 
             if (!getUploadUrlResponse.ok) throw new Error("B2 Get Upload URL failed");
-            const uploadUrlData = await getUploadUrlResponse.json() as any;
+            const uploadUrlData = (await getUploadUrlResponse.json()) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
             const uploadResponse = await fetch(uploadUrlData.uploadUrl, {
                 method: "POST",
@@ -129,14 +129,14 @@ export const restoreFromBackup = internalMutation({
             if (!items || !Array.isArray(items)) continue;
 
             for (const item of items) {
-                const { _id, _creationTime, ...fields } = item;
+                const { _id, _creationTime, ...fields } = item as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
                 // Optimized restoration: upsert based on original ID
                 const existing = await ctx.db.get(_id);
                 if (existing) {
                     await ctx.db.patch(_id, fields);
                 } else {
-                    await ctx.db.insert(table, { ...fields, _id } as any);
+                    await ctx.db.insert(table, { ...fields, _id } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
                 }
             }
         }

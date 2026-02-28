@@ -4,8 +4,7 @@ import { Input } from "./input";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 
-export interface PasswordInputProps
-    extends React.InputHTMLAttributes<HTMLInputElement> { }
+export type PasswordInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
     ({ className, ...props }, ref) => {

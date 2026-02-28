@@ -8,7 +8,7 @@ import { GenericMutationCtx } from "convex/server";
  * @throws Error if the rate limit is exceeded
  */
 export async function checkRateLimit(
-    ctx: GenericMutationCtx<any>,
+    ctx: GenericMutationCtx<any>, // eslint-disable-line @typescript-eslint/no-explicit-any
     options: {
         identifier: string;
         action: string;
