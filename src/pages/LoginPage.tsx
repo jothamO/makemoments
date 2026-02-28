@@ -10,8 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Lock, Mail, ChevronLeft, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function LoginPage() {
+    useDocumentMeta({ title: "Login — MakeMoments", noindex: true });
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);

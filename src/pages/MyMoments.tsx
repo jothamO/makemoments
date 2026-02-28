@@ -16,8 +16,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function MyMoments() {
+    useDocumentMeta({ title: "My Moments — MakeMoments", noindex: true });
     const { user, isLoading: authLoading } = useAuth();
     const navigate = useNavigate();
 

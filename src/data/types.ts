@@ -75,7 +75,7 @@ export interface StoryPage {
 }
 
 export interface MusicTrack {
-  id: string;
+  id?: string;
   name: string;
   artist: string;
   duration: number; // seconds

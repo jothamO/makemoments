@@ -1,14 +1,22 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /settings
+Disallow: /my-moments
 
 User-agent: Bingbot
 Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /settings
+Disallow: /my-moments
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /settings
+Disallow: /my-moments
+
+Sitemap: https://makemoments.xyz/sitemap.xml

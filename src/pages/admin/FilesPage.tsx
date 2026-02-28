@@ -257,11 +257,26 @@ export default function FilesPage() {
         if (!charFilesRef.current?.files?.length) return;
         setIsUploading(true);
         try {
-            for (const file of Array.from(charFilesRef.current.files)) {
+            const files = Array.from(charFilesRef.current.files);
+
+            // Convert all images to WebP in the background
+            const { batchConvertToWebP } = await import("@/lib/webpConverter");
+            const converted = await batchConvertToWebP(files);
+            const totalSaved = converted.reduce((acc, r) => acc + r.savedBytes, 0);
+
+            // Upload the converted files
+            for (const { file } of converted) {
                 const storageId = await uploadToConvexStorage((file: File) => generateCharacterUploadUrl({ token: token || undefined }), file);
                 await createCharacter({ name: file.name.split(".")[0], storageId, token: token || undefined });
             }
-            toast({ title: "Uploaded" });
+
+            const savedKB = Math.round(totalSaved / 1024);
+            toast({
+                title: `${converted.length} character${converted.length > 1 ? "s" : ""} uploaded`,
+                description: savedKB > 0
+                    ? `Converted to WebP • Saved ${savedKB}KB`
+                    : "Uploaded as WebP",
+            });
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
@@ -917,8 +932,11 @@ export default function FilesPage() {
                                         <Dialog key={char._id}>
                                             <DialogTrigger asChild>
                                                 <div className="relative group rounded-xl border border-zinc-100 bg-zinc-50 p-2 flex flex-col items-center gap-2 hover:border-zinc-300 transition-all shadow-sm cursor-pointer active:scale-95">
-                                                    <div className="aspect-square w-full flex items-center justify-center">
+                                                    <div className="aspect-square w-full flex items-center justify-center relative">
                                                         <img src={char.url} alt={char.name} className="max-w-full max-h-full object-contain drop-shadow-md" />
+                                                        {char.isPremium && (
+                                                            <span className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold rounded-full h-4 w-4 flex items-center justify-center shadow-sm">$</span>
+                                                        )}
                                                     </div>
                                                     <p className="text-[10px] font-bold text-zinc-600 truncate w-full text-center px-1 sm:hidden">{char.name}</p>
 
@@ -991,58 +1009,103 @@ export default function FilesPage() {
                                                                     }}
                                                                 />
                                                             </div>
-                                                            <Button
-                                                                className="h-10 bg-zinc-900 text-white px-6"
-                                                                onClick={async () => {
-                                                                    const success = await safeMutation(updateCharacter, {
+                                                        </div>
+
+                                                        {/* Premium Toggle */}
+                                                        <div className="flex items-center gap-3 py-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                id={`char-premium-${char._id}`}
+                                                                defaultChecked={char.isPremium || false}
+                                                                className="h-4 w-4 rounded border-zinc-300 accent-zinc-900"
+                                                                onChange={(e) => {
+                                                                    safeMutation(updateCharacter, {
                                                                         id: char._id,
-                                                                        name: editingName || char.name
-                                                                    }, "Character renamed");
-                                                                    if (success) {
-                                                                        setEditingCharacterId(null);
-                                                                        setEditingName("");
-                                                                    }
+                                                                        isPremium: e.target.checked,
+                                                                        ...(!e.target.checked ? { price: 0 } : {}),
+                                                                        token: token || undefined,
+                                                                    }, e.target.checked ? "Marked as Premium" : "Set to Free");
                                                                 }}
-                                                            >
-                                                                Save
-                                                            </Button>
+                                                            />
+                                                            <Label htmlFor={`char-premium-${char._id}`} className="flex items-center gap-2 cursor-pointer">
+                                                                <DollarSign className="h-3.5 w-3.5 text-amber-500" />
+                                                                Premium Character
+                                                            </Label>
                                                         </div>
 
-                                                        <div className="pt-6 border-t border-zinc-100">
-                                                            <Dialog>
-                                                                <DialogTrigger asChild>
-                                                                    <Button variant="ghost" className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 gap-2">
-                                                                        <Trash2 className="h-4 w-4" /> Delete Character
-                                                                    </Button>
-                                                                </DialogTrigger>
+                                                        {char.isPremium && (
+                                                            <div className="space-y-2">
+                                                                <Label>Price (USD)</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    min="0"
+                                                                    defaultValue={char.price || 0}
+                                                                    className="h-10"
+                                                                    onBlur={(e) => {
+                                                                        const price = parseFloat(e.target.value) || 0;
+                                                                        safeMutation(updateCharacter, {
+                                                                            id: char._id,
+                                                                            price,
+                                                                            token: token || undefined,
+                                                                        }, "Price updated");
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        )}
+
+                                                        <Button
+                                                            className="h-10 w-full bg-zinc-900 text-white px-6"
+                                                            onClick={async () => {
+                                                                const success = await safeMutation(updateCharacter, {
+                                                                    id: char._id,
+                                                                    name: editingName || char.name,
+                                                                    token: token || undefined,
+                                                                }, "Character renamed");
+                                                                if (success) {
+                                                                    setEditingCharacterId(null);
+                                                                    setEditingName("");
+                                                                }
+                                                            }}
+                                                        >
+                                                            Save
+                                                        </Button>
+                                                    </div>
+
+                                                    <div className="pt-6 border-t border-zinc-100">
+                                                        <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <Button variant="ghost" className="w-full text-red-500 hover:text-red-600 hover:bg-red-50 gap-2">
+                                                                    <Trash2 className="h-4 w-4" /> Delete Character
+                                                                </Button>
+                                                            </DialogTrigger>
 
 
-                                                                <DialogContent className="sm:max-w-sm p-6">
+                                                            <DialogContent className="sm:max-w-sm p-6">
 
-                                                                    <div className="space-y-6 text-center">
-                                                                        <DialogHeader>
-                                                                            <DialogTitle>Delete Character?</DialogTitle>
-                                                                            <DialogDescription>This action cannot be undone. This character will be removed from all events.</DialogDescription>
-                                                                        </DialogHeader>
-                                                                        <div className="flex flex-col gap-2">
-                                                                            <Button
-                                                                                variant="destructive"
-                                                                                className="w-full h-12 text-lg font-bold"
-                                                                                onClick={async () => {
-                                                                                    await safeMutation(removeCharacter, { id: char._id, token: token || undefined }, "Character removed");
-                                                                                }}
-                                                                            >
-                                                                                Delete Permenantly
-                                                                            </Button>
-                                                                            <DialogClose asChild>
-                                                                                <Button variant="ghost" className="w-full h-12">Cancel</Button>
-                                                                            </DialogClose>
-                                                                        </div>
+                                                                <div className="space-y-6 text-center">
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>Delete Character?</DialogTitle>
+                                                                        <DialogDescription>This action cannot be undone. This character will be removed from all events.</DialogDescription>
+                                                                    </DialogHeader>
+                                                                    <div className="flex flex-col gap-2">
+                                                                        <Button
+                                                                            variant="destructive"
+                                                                            className="w-full h-12 text-lg font-bold"
+                                                                            onClick={async () => {
+                                                                                await safeMutation(removeCharacter, { id: char._id, token: token || undefined }, "Character removed");
+                                                                            }}
+                                                                        >
+                                                                            Delete Permenantly
+                                                                        </Button>
+                                                                        <DialogClose asChild>
+                                                                            <Button variant="ghost" className="w-full h-12">Cancel</Button>
+                                                                        </DialogClose>
                                                                     </div>
-                                                                </DialogContent>
+                                                                </div>
+                                                            </DialogContent>
 
-                                                            </Dialog>
-                                                        </div>
+                                                        </Dialog>
                                                     </div>
                                                 </div>
                                             </DialogContent>

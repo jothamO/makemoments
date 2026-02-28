@@ -312,4 +312,13 @@ export default defineSchema({
         metadata: v.optional(v.any()), // Extra context (user agent, hostname, etc.)
         timestamp: v.number(),
     }).index("by_event", ["event"]),
+
+    sitePages: defineTable({
+        slug: v.string(),           // "about", "help-center", "privacy", "terms"
+        title: v.string(),          // "About MakeMoments"
+        content: v.string(),        // Markdown content
+        isPublished: v.boolean(),
+        updatedAt: v.number(),
+        createdAt: v.number(),
+    }).index("by_slug", ["slug"]),
 });

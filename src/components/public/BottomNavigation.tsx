@@ -40,7 +40,7 @@ export function BottomNavigation() {
     }, []);
 
     // Only show dock on primary application pages
-    const isRootPage = ["/", "/my-moments", "/login"].includes(location.pathname);
+    const isRootPage = ["/", "/my-moments", "/login", "/settings"].includes(location.pathname);
     if (!isRootPage) return null;
 
     const theme = activeEvent?.theme;

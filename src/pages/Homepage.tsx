@@ -19,6 +19,8 @@ import { api } from "../../convex/_generated/api";
 import { BackgroundPattern } from "@/components/BackgroundPattern";
 import { hexToRgba, getContrastColor, getBrandRadialGradient, formatPlatformDate } from "@/lib/utils";
 import { EXPRESSIVE_EASE, CONTENT_TRANSITION, TAP_SCALE } from "@/lib/animation";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { useJsonLd } from "@/hooks/useJsonLd";
 
 export default function Homepage() {
   const allPatterns = useQuery(api.patterns.list);
@@ -26,6 +28,34 @@ export default function Homepage() {
   const libraryData = useQuery(api.events.getLibrary);
   const { event: legacyEvent, theme: legacyTheme } = useEventTheme();
 
+  useDocumentMeta({
+    title: "MakeMoments — Create beautiful digital celebrations",
+    description: "Craft stunning digital celebrations, stories, and gifts for your loved ones. Share moments that matter.",
+    ogTitle: "MakeMoments — Create beautiful digital celebrations",
+    ogDescription: "Craft stunning digital celebrations, stories, and gifts for your loved ones. Share moments that matter.",
+  });
+
+  useJsonLd({
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "MakeMoments",
+    "url": "https://makemoments.xyz",
+    "description": "Create beautiful digital celebrations, stories, and gifts for your loved ones.",
+    "applicationCategory": "LifestyleApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+    },
+    "areaServed": [
+      { "@type": "Country", "name": "Nigeria" },
+      { "@type": "Country", "name": "Ghana" },
+      { "@type": "Country", "name": "Kenya" },
+      { "@type": "Country", "name": "United Kingdom" },
+      { "@type": "Country", "name": "United States" },
+    ],
+  });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedNotifyEvent, setSelectedNotifyEvent] = useState<any>(null);
   const [isNotifyDialogOpen, setIsNotifyDialogOpen] = useState(false);

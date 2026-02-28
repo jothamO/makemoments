@@ -21,8 +21,10 @@ import {
 } from "lucide-react";
 import { formatPlatformDate } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function Settings() {
+    useDocumentMeta({ title: "Settings — MakeMoments", noindex: true });
     const { user, token } = useAuth();
     const { toast } = useToast();
 

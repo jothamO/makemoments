@@ -12,8 +12,9 @@ import {
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Calendar, Layout, DollarSign, Heart, Settings, Wallet, FolderOpen, Mail as MailIcon, Users as UsersIcon, Home, Bug } from "lucide-react";
+import { LayoutDashboard, Calendar, Layout, DollarSign, Heart, Settings, Wallet, FolderOpen, Mail as MailIcon, Users as UsersIcon, Home, Bug, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -21,6 +22,7 @@ const navItems = [
   { title: "Events", url: "/admin/events", icon: Calendar },
   { title: "Files", url: "/admin/files", icon: FolderOpen },
   { title: "Mail", url: "/admin/mail", icon: MailIcon },
+  { title: "Pages", url: "/admin/pages", icon: FileText },
   { title: "Payments", url: "/admin/payments", icon: Wallet },
   { title: "Pricing", url: "/admin/pricing", icon: DollarSign },
   { title: "Sales", url: "/admin/sales", icon: DollarSign },
@@ -70,6 +72,7 @@ function AdminSidebar() {
 }
 
 export default function AdminLayout() {
+  useDocumentMeta({ title: "Admin — MakeMoments", noindex: true });
   const [isDebugMode, setIsDebugMode] = useState(() => {
     return localStorage.getItem('mm_debug_mode') === 'true';
   });

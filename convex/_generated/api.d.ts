@@ -38,6 +38,7 @@ import type * as seed_assets from "../seed_assets.js";
 import type * as seed_fonts from "../seed_fonts.js";
 import type * as seed_patterns from "../seed_patterns.js";
 import type * as seed_themes from "../seed_themes.js";
+import type * as sitePages from "../sitePages.js";
 import type * as themes from "../themes.js";
 import type * as users from "../users.js";
 
@@ -78,6 +79,7 @@ declare const fullApi: ApiFromModules<{
   seed_fonts: typeof seed_fonts;
   seed_patterns: typeof seed_patterns;
   seed_themes: typeof seed_themes;
+  sitePages: typeof sitePages;
   themes: typeof themes;
   users: typeof users;
 }>;

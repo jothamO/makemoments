@@ -34,6 +34,8 @@ import { api } from "../../convex/_generated/api";
 import { getWiseAssMessage } from "@/lib/statusUtils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useJsonLd } from "@/hooks/useJsonLd";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 // ---------------------------------------------------------------------------
 
@@ -63,6 +65,24 @@ export default function CreatePage() {
     // Normalize activeEvent for legacy components
     const activeEvent = eventResponse?.event;
     const resolvedAssets = activeEvent?.resolvedAssets;
+
+    useDocumentMeta({
+        title: activeEvent ? `Create a Moment — ${activeEvent.name} — MakeMoments` : "Create a Moment — MakeMoments",
+        description: "Design your digital celebration with photos, text, music, and more.",
+        noindex: true,
+    });
+
+    useJsonLd(activeEvent ? {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": `${activeEvent.name} — MakeMoments`,
+        "eventAttendanceMode": "https://schema.org/OnlineEventAttendanceMode",
+        "organizer": {
+            "@type": "Organization",
+            "name": "MakeMoments",
+            "url": "https://makemoments.xyz",
+        },
+    } : null);
 
     // Computed Assets from Resolved Data
     // eslint-disable-next-line react-hooks/exhaustive-deps

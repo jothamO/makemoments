@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 const CelebrationView = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -19,6 +20,15 @@ const CelebrationView = () => {
   const fonts = useQuery(api.fonts.list);
   const incrementViews = useMutation(api.celebrations.incrementViews);
   const [started, setStarted] = useState(false);
+
+  // Privacy-safe meta tags — never expose user content
+  useDocumentMeta({
+    title: "Someone made a Moment for you ❤️ — MakeMoments",
+    description: "Open to see your special Moment",
+    ogTitle: "Someone made a Moment for you ❤️ — MakeMoments",
+    ogDescription: "Open to see your special Moment",
+    noindex: true,
+  });
 
   useEffect(() => {
     if (slug) {
