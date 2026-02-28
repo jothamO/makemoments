@@ -11,7 +11,7 @@
             "headers": [
                 {
                     "key": "Content-Security-Policy",
-                    "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.paystack.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://*.convex.cloud https://*.zeptomail.com https://*.paystack.com https://*.stripe.com https://*.r2.dev; font-src 'self' https://fonts.gstatic.com; connect-src 'self' *.convex.cloud wss://*.convex.cloud *.eu-west-1.convex.cloud wss://*.eu-west-1.convex.cloud *.convex.site https://api.zeptomail.com https://ipapi.co; frame-src https://js.stripe.com https://checkout.paystack.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content;"
+                    "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.paystack.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://*.convex.cloud https://*.zeptomail.com https://*.paystack.com https://*.stripe.com https://*.r2.dev; font-src 'self' https://fonts.gstatic.com; connect-src 'self' *.convex.cloud wss://*.convex.cloud *.eu-west-1.convex.cloud wss://*.eu-west-1.convex.cloud *.convex.site https://api.zeptomail.com https://ipapi.co; media-src 'self' https://*.convex.cloud; frame-src https://js.stripe.com https://checkout.paystack.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content;"
                 },
                 {
                     "key": "Strict-Transport-Security",
