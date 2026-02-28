@@ -31,9 +31,12 @@ export default function PaymentsPage() {
     const { token } = useAuth();
 
     // ── Queries ──
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const exchangeRates = useQuery(api.exchangeRates.list, { token: token || undefined }) || [];
     const gatewayConfig = useQuery(api.gatewayConfig.get, { token: token || undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const celebrations = useQuery(api.celebrations.list, { token: token || undefined }) || [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const events = useQuery(api.events.getAll, { token: token || undefined }) || [];
 
     // ── Mutations ──
@@ -65,6 +68,7 @@ export default function PaymentsPage() {
                 const next = { ...prev };
                 let changed = false;
                 Object.entries(rateMap).forEach(([k, v]) => {
+                    // eslint-disable-next-line security/detect-object-injection
                     if (next[k] === undefined) { next[k] = v; changed = true; }
                 });
                 return changed ? next : prev;

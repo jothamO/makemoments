@@ -37,6 +37,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
         const nextIndex = (fromIndex + 1) % pages.length;
 
         // Mark the completed bar at 100%
+        // eslint-disable-next-line security/detect-object-injection
         const completedBar = progressBarRefs.current[fromIndex];
         if (completedBar) completedBar.style.width = "100%";
 
@@ -66,6 +67,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
             clearTimeout(slideTimerRef.current);
         }
 
+        // eslint-disable-next-line security/detect-object-injection
         const bar = progressBarRefs.current[index];
         if (!bar) return;
 
@@ -167,6 +169,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
             if (currentIndex > 0) {
                 if (activeAnimRef.current) activeAnimRef.current.stop();
                 if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+                // eslint-disable-next-line security/detect-object-injection
                 const bar = progressBarRefs.current[currentIndex];
                 if (bar) bar.style.width = "0%";
                 remainingRef.current = SLIDE_DURATION_MS;
@@ -176,6 +179,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
             if (currentIndex < pages.length - 1) {
                 if (activeAnimRef.current) activeAnimRef.current.stop();
                 if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
+                // eslint-disable-next-line security/detect-object-injection
                 const bar = progressBarRefs.current[currentIndex];
                 if (bar) bar.style.width = "100%";
                 remainingRef.current = SLIDE_DURATION_MS;
@@ -188,6 +192,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
 
     if (!open || pages.length === 0) return null;
 
+    // eslint-disable-next-line security/detect-object-injection
     const page = pages[currentIndex];
 
     // Helper for dynamic font size
@@ -228,7 +233,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                                 )}
                             >
                                 <div
-                                    ref={(el) => { progressBarRefs.current[i] = el; }}
+                                    ref={(el) => { progressBarRefs.current[i] = el; }} // eslint-disable-line security/detect-object-injection
                                     className={cn(
                                         "h-full rounded-full",
                                         page.type === 'dark' ? "bg-white" : "bg-black"

@@ -45,7 +45,7 @@ async function resolveEventAssets(ctx: any, event: Record<string, unknown>) {
         return await ctx.db
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .query(tableName as any)
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type, @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
             .filter((q: Record<string, Function>) => q.eq(q.field("isDefault"), true))
             .collect();
     };

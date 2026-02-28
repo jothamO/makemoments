@@ -24,6 +24,7 @@ const CelebrationView = () => {
     if (slug) {
       incrementViews({ slug }).catch(() => { });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   if (celebration === undefined || event === undefined) {

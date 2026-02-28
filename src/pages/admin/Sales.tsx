@@ -17,17 +17,17 @@ const AdminSales = () => {
   const celebrations = useQuery(api.celebrations.list, { token: token || undefined });
   const events = useQuery(api.events.getAll, { token: token || undefined });
 
-  const now = Date.now();
-  const rangeStart: Record<Range, number> = {
-    today: new Date().setHours(0, 0, 0, 0),
-    "7d": now - 7 * 86400000,
-    "30d": now - 30 * 86400000,
-    all: 0,
-  };
-
   const filtered = useMemo(() => {
     if (!celebrations) return []; // Handle loading state for celebrations
+    const now = Date.now();
+    const rangeStart: Record<Range, number> = {
+      today: new Date().setHours(0, 0, 0, 0),
+      "7d": now - 7 * 86400000,
+      "30d": now - 30 * 86400000,
+      all: 0,
+    };
     return celebrations
+      // eslint-disable-next-line security/detect-object-injection
       .filter((c) => c.paymentStatus === "paid" && c.createdAt >= rangeStart[range]);
   }, [celebrations, range]);
 

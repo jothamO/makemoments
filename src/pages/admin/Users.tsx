@@ -18,6 +18,7 @@ export default function AdminUsers() {
     const { toast } = useToast();
     const { token } = useAuth();
     const { safeMutation } = useSafeMutation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const users = useQuery(api.users.list, { token: token || undefined }) || [];
     const removeUser = useMutation(api.users.remove);
     const upsertUser = useMutation(api.users.upsert);

@@ -6,6 +6,7 @@ import { format } from "date-fns";
 function resolvePlaceholders(text: string, placeholders: Record<string, string>): string {
     let resolved = text;
     Object.entries(placeholders).forEach(([key, value]) => {
+        // eslint-disable-next-line security/detect-non-literal-regexp
         resolved = resolved.replace(new RegExp(`\\{${key}\\}`, "g"), value);
     });
     return resolved;

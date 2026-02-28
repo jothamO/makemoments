@@ -85,6 +85,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             setCountry(code);
 
             // Determine currency + symbol
+            // eslint-disable-next-line security/detect-object-injection
             const match = COUNTRY_CURRENCY_MAP[code];
             if (match) {
                 setCurrency(match.code);
@@ -107,6 +108,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
 };
 
+{/* eslint-disable-next-line react-refresh/only-export-components */}
 export const useCurrency = () => {
     const context = useContext(CurrencyContext);
     if (context === undefined) {

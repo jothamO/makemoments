@@ -11,7 +11,9 @@ import { useAuth } from "@/hooks/useAuth";
 
 const AdminDashboard = () => {
   const { token } = useAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const celebrations = useQuery(api.celebrations.list, { token: token || undefined }) || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const events = useQuery(api.events.getAll, { token: token || undefined }) || [];
 
   const stats = useMemo(() => {

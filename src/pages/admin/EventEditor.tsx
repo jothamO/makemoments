@@ -170,6 +170,7 @@ const EventEditor = () => {
   const nextPreviewSlide = () => setCurrentPreviewSlide((prev) => (prev + 1) % previewSlides.length);
   const prevPreviewSlide = () => setCurrentPreviewSlide((prev) => (prev - 1 + previewSlides.length) % previewSlides.length);
 
+  // eslint-disable-next-line security/detect-object-injection
   const activeSlide = previewSlides[currentPreviewSlide];
 
   return (

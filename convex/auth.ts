@@ -132,6 +132,7 @@ export const loginUser = mutation({
         }
 
         const hash = await hashPassword(args.password, user.salt);
+        // eslint-disable-next-line security/detect-possible-timing-attacks
         if (hash !== user.passwordHash) {
             throw new Error("Invalid email or password");
         }

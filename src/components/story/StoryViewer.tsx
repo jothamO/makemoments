@@ -83,19 +83,20 @@ export function StoryViewer({
     const nextIndex = fromIndex + 1;
 
     // Mark the completed bar at 100%
+    // eslint-disable-next-line security/detect-object-injection
     const completedBar = progressBarRefs.current[fromIndex];
     if (completedBar) completedBar.style.width = "100%";
 
     if (nextIndex < pages.length) {
       setCurrent(nextIndex);
       // Determine duration for the next slide immediately
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, security/detect-object-injection
       remainingRef.current = (pages[nextIndex] as any).duration
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, security/detect-object-injection
         ? (pages[nextIndex] as any).duration * 1000
         : autoPlayInterval;
     }
-  }, [pages.length, pages, autoPlayInterval]);
+  }, [pages, autoPlayInterval]);
 
   // ── Start a progress bar fill for the given slide ────────
   const startProgressBar = useCallback((index: number, durationMs: number) => {
@@ -103,6 +104,7 @@ export function StoryViewer({
     if (controlsRef.current) controlsRef.current.stop();
     if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
 
+    // eslint-disable-next-line security/detect-object-injection
     const bar = progressBarRefs.current[index];
     if (!bar) return;
 
@@ -133,6 +135,7 @@ export function StoryViewer({
     if (isPaused) return;
 
     // Reset current bar to 0 ONLY if we haven't started playing it yet
+    // eslint-disable-next-line security/detect-object-injection
     const bar = progressBarRefs.current[current];
     if (bar && !bar.style.width) bar.style.width = "0%";
 
@@ -190,13 +193,14 @@ export function StoryViewer({
       if (controlsRef.current) controlsRef.current.stop();
       if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
 
+      // eslint-disable-next-line security/detect-object-injection
       const bar = progressBarRefs.current[current];
       if (bar) bar.style.width = "0%";
 
       const prevIndex = current - 1;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, security/detect-object-injection
       remainingRef.current = (pages[prevIndex] as any).duration
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, security/detect-object-injection
         ? (pages[prevIndex] as any).duration * 1000
         : autoPlayInterval;
 
@@ -216,21 +220,23 @@ export function StoryViewer({
       if (controlsRef.current) controlsRef.current.stop();
       if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
 
+      // eslint-disable-next-line security/detect-object-injection
       const bar = progressBarRefs.current[current];
       if (bar) bar.style.width = "100%";
 
       const nextIndex = current + 1;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, security/detect-object-injection
       remainingRef.current = (pages[nextIndex] as any).duration
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, security/detect-object-injection
         ? (pages[nextIndex] as any).duration * 1000
         : autoPlayInterval;
 
       setCurrent(nextIndex);
       setIsPaused(false);
     }
-  }, [current, pages.length, pages, autoPlayInterval]);
+  }, [current, pages, autoPlayInterval]);
 
+  // eslint-disable-next-line security/detect-object-injection
   const page = pages[current];
   if (!page) return null;
 
@@ -272,7 +278,7 @@ export function StoryViewer({
         {pages.map((_, i) => (
           <div key={i} className={`flex-1 h-[3px] rounded-full overflow-hidden ${trackColor}`}>
             <div
-              ref={(el) => { progressBarRefs.current[i] = el; }}
+              ref={(el) => { progressBarRefs.current[i] = el; }} // eslint-disable-line security/detect-object-injection
               className={`h-full rounded-full ${fillColor}`}
               style={{ width: i < current ? "100%" : "0%" }}
             />

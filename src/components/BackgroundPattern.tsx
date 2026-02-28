@@ -236,7 +236,7 @@ export function BackgroundPattern({
                         const mul = 0.7 + Math.random() * 0.6;
                         p.speedX = (Math.random() - 0.5) * 2.4 * mul;
                         p.speedY = (Math.random() - 0.5) * 2.4 * mul;
-                        rerollVisuals(p, pattern?.emojis!);
+                        rerollVisuals(p, pattern!.emojis);
                         p.layer = Math.random() < 0.7 ? 'back' : 'front';
                     }
                 } else if (pattern?.physics === 'drift') {
@@ -256,7 +256,7 @@ export function BackgroundPattern({
                         p.age = 0;
                         p.x = 10 + Math.random() * 80;
                         p.y = 20 + Math.random() * 50;
-                        rerollVisuals(p, pattern?.emojis!);
+                        rerollVisuals(p, pattern!.emojis);
                         p.layer = Math.random() < 0.7 ? 'back' : 'front';
                     }
                 } else if (pattern?.physics !== 'static') {
@@ -270,13 +270,13 @@ export function BackgroundPattern({
                     if (p.y > 110) {
                         p.y = -10;
                         p.x = Math.random() * 100;
-                        rerollVisuals(p, pattern?.emojis!);
+                        rerollVisuals(p, pattern!.emojis);
                         p.layer = Math.random() < 0.7 ? 'back' : 'front';
                     }
                     if (p.y < -10) {
                         p.y = 105;
                         p.x = Math.random() * 100;
-                        rerollVisuals(p, pattern?.emojis!);
+                        rerollVisuals(p, pattern!.emojis);
                         p.layer = Math.random() < 0.7 ? 'back' : 'front';
                     }
                 } else {

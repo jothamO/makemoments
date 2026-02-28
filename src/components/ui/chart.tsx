@@ -297,6 +297,7 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
     configLabelKey = payloadPayload[key as keyof typeof payloadPayload] as string;
   }
 
+  // eslint-disable-next-line security/detect-object-injection
   return configLabelKey in config ? config[configLabelKey] : config[key as keyof typeof config];
 }
 

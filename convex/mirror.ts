@@ -22,7 +22,7 @@ export const exportAll = query({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data: Record<string, any[]> = {};
         for (const table of TABLES) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, security/detect-object-injection
             data[table] = await ctx.db.query(table as any).collect();
         }
         return data;
@@ -45,6 +45,7 @@ export const importAll = mutation({
             }
 
             // 2. Insert new data
+            // eslint-disable-next-line security/detect-object-injection
             const records = data[table] || [];
             for (const record of records) {
                 const { _id, _creationTime, ...fields } = record;

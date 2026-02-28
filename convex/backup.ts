@@ -32,6 +32,7 @@ export const exportAll = query({
         }
         const data: Record<string, any[]> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
         for (const table of BACKUP_TABLES) {
+            // eslint-disable-next-line security/detect-object-injection
             data[table] = await ctx.db.query(table as any).collect(); // eslint-disable-line @typescript-eslint/no-explicit-any
         }
         return data;
@@ -44,6 +45,7 @@ export const exportAllInternal = internalQuery({
     handler: async (ctx) => {
         const data: Record<string, any[]> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
         for (const table of BACKUP_TABLES) {
+            // eslint-disable-next-line security/detect-object-injection
             data[table] = await ctx.db.query(table).collect();
         }
         return data;
@@ -125,6 +127,7 @@ export const restoreFromBackup = internalMutation({
     handler: async (ctx, args) => {
         const data = args.data;
         for (const table of BACKUP_TABLES) {
+            // eslint-disable-next-line security/detect-object-injection
             const items = data[table];
             if (!items || !Array.isArray(items)) continue;
 

@@ -70,6 +70,7 @@ export const update = mutation({
         const { id, token, patternId, ...rest } = args;
         const updates: Record<string, unknown> = {};
         if (patternId !== undefined) updates.id = patternId;
+        // eslint-disable-next-line security/detect-object-injection
         Object.entries(rest).forEach(([k, v]) => { if (v !== undefined) updates[k] = v; });
         if (Object.keys(updates).length > 0) {
             await ctx.db.patch(id, updates);

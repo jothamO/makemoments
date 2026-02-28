@@ -18,7 +18,9 @@ const AdminCelebrations = () => {
   const { toast } = useToast();
   const { token } = useAuth();
   const { safeMutation } = useSafeMutation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const celebrations = useQuery(api.celebrations.list, { token: token || undefined }) || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const events = useQuery(api.events.getAll, { token: token || undefined }) || [];
   const updateCelebrationStatus = useMutation(api.celebrations.updateStatus);
   const [search, setSearch] = useState("");
@@ -49,7 +51,7 @@ const AdminCelebrations = () => {
         return true;
       })
       .sort((a, b) => b.createdAt - a.createdAt);
-  }, [celebrations, events, search, eventFilter, statusFilter, eventMap]);
+  }, [celebrations, search, eventFilter, statusFilter, eventMap]);
 
   const stats = useMemo(() => {
     const paid = celebrations.filter((c) => c.paymentStatus === "paid").length;

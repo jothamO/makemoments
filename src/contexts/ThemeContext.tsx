@@ -10,6 +10,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue>({ event: null, theme: null });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useEventTheme = () => useContext(ThemeContext);
 
 function hexToHsl(hex: string): string {

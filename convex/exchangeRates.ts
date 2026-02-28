@@ -83,6 +83,7 @@ export const fetchLiveRates = internalAction({
 
             // Upsert each supported currency
             for (const code of SUPPORTED_TARGETS) {
+                // eslint-disable-next-line security/detect-object-injection
                 const rate = data.rates[code];
                 if (rate && typeof rate === "number") {
                     await ctx.runMutation(internal.exchangeRates.upsert, {

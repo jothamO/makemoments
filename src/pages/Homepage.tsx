@@ -108,6 +108,7 @@ export default function Homepage() {
               style={{ zIndex: 30 }}
             >
               <div className="space-y-8 md:space-y-12 w-full max-w-7xl mx-auto text-center flex flex-col items-center">
+                {/* eslint-disable-next-line security/detect-object-injection */}
                 {slides[currentSlide]?.badge && (
                   <motion.div
                     className="inline-block"
@@ -124,6 +125,7 @@ export default function Homepage() {
                         fontFamily: (theme as any).bodyFont
                       }}
                     >
+                      {/* eslint-disable-next-line security/detect-object-injection */}
                       {slides[currentSlide].badge}
                     </Badge>
                   </motion.div>
@@ -138,6 +140,7 @@ export default function Homepage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...CONTENT_TRANSITION, delay: 0.4 }}
                   >
+                    {/* eslint-disable-next-line security/detect-object-injection */}
                     {slides[currentSlide]?.headline}
                   </motion.h1>
 
@@ -149,6 +152,7 @@ export default function Homepage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...CONTENT_TRANSITION, delay: 0.5 }}
                   >
+                    {/* eslint-disable-next-line security/detect-object-injection */}
                     {slides[currentSlide]?.subheadline}
                   </motion.p>
                 </div>
