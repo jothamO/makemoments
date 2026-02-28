@@ -13,6 +13,31 @@ export function BottomNavigation() {
     const { isLoggedIn, isAdmin, user } = useAuth();
     const activeEvent = useQuery(api.events.getActive);
     const [drawerOpen, setDrawerOpen] = React.useState(false);
+    const [isVisible, setIsVisible] = React.useState(true);
+    const lastScrollY = React.useRef(0);
+
+    // Scroll-to-hide logic
+    React.useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // Show dock if at the very top or scrolling up
+            if (currentScrollY < 10) {
+                setIsVisible(true);
+            } else if (currentScrollY > lastScrollY.current) {
+                // Scrolling down - hide
+                setIsVisible(false);
+            } else {
+                // Scrolling up - show
+                setIsVisible(true);
+            }
+
+            lastScrollY.current = currentScrollY;
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     // Only show dock on primary application pages
     const isRootPage = ["/", "/my-moments", "/login"].includes(location.pathname);
@@ -20,6 +45,9 @@ export function BottomNavigation() {
 
     const theme = activeEvent?.theme;
     const primaryColor = theme?.primary || "hsl(var(--primary))";
+
+    // Show/Hide logic based on BOTH drawer state and scroll visibility
+    const isHidden = drawerOpen || !isVisible;
 
     // Auth state icon logic
     const AccountIcon = isAdmin ? Shield : User;
@@ -32,9 +60,9 @@ export function BottomNavigation() {
             <div
                 className={cn(
                     "md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] transition-all duration-500 ease-in-out",
-                    drawerOpen ? "opacity-0 translate-y-20 scale-90 pointer-events-none" : "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+                    isHidden ? "opacity-0 translate-y-32 scale-90 pointer-events-none" : "opacity-100 translate-y-0 scale-100 pointer-events-auto"
                 )}
-                {...(drawerOpen ? { inert: "" } : {})}
+                {...(isHidden ? { inert: "" } : {})}
             >
                 <div className="relative flex items-center gap-6 px-8 py-4 rounded-full backdrop-blur-3xl bg-white/80 border border-black/5 shadow-2xl">
 

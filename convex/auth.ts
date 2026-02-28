@@ -14,7 +14,7 @@ function generateToken() {
 }
 
 // Password hashing using Web Crypto (PBKDF2)
-async function hashPassword(password: string, salt: string) {
+export async function hashPassword(password: string, salt: string) {
     const encoder = new TextEncoder();
     const passwordKey = await crypto.subtle.importKey(
         "raw",
@@ -70,7 +70,8 @@ export const getViewer = query({
         return {
             _id: userData._id,
             email: userData.email,
-            name: userData.username || userData.name || "User",
+            username: userData.username,
+            name: userData.name || userData.username || "User",
             role: userData.role,
         };
     },
@@ -122,9 +123,10 @@ export const loginUser = mutation({
             windowMs: 15 * 60 * 1000,
         });
 
+        const normalizedEmail = args.email.toLowerCase().trim();
         const user = await ctx.db
             .query("users")
-            .withIndex("by_email", q => q.eq("email", args.email))
+            .withIndex("by_email", q => q.eq("email", normalizedEmail))
             .first();
 
         if (!user || !user.passwordHash || !user.salt) {
@@ -174,6 +176,17 @@ export async function checkAdmin(ctx: GenericMutationCtx<any> | GenericQueryCtx<
         .withIndex("by_token", q => q.eq("token", token))
         .first();
     return session?.role === "admin" && session.expiresAt > Date.now();
+}
+
+// Helper to get current userId from token
+export async function getUserIdByToken(ctx: GenericMutationCtx<any> | GenericQueryCtx<any>, token?: string) { // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (!token) return null;
+    const session = await ctx.db
+        .query("sessions")
+        .withIndex("by_token", q => q.eq("token", token))
+        .first();
+    if (!session || session.expiresAt < Date.now()) return null;
+    return session.userId;
 }
 
 // Export for use in other mutations e.g. register during payment

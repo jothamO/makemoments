@@ -25,56 +25,65 @@ import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import MyMoments from "./pages/MyMoments";
+import Settings from "./pages/Settings";
 import { useAuth } from "./hooks/useAuth";
+import { AuthProvider } from "./contexts/AuthContext";
 import { BottomNavigation } from "./components/public/BottomNavigation";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ThemeProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <Routes>
-            <Route path="/" element={<Homepage />} />
-            <Route path="/create" element={<CreateRedirect />} />
-            <Route path="/:eventSlug/create" element={<CreatePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/my-moments" element={
-              <ProtectedRoute>
-                <MyMoments />
-              </ProtectedRoute>
-            } />
+    <AuthProvider>
+      <TooltipProvider>
+        <ThemeProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Routes>
+              <Route path="/" element={<Homepage />} />
+              <Route path="/create" element={<CreateRedirect />} />
+              <Route path="/:eventSlug/create" element={<CreatePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/my-moments" element={
+                <ProtectedRoute>
+                  <MyMoments />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } />
 
-            {/* Admin */}
-            <Route path="/admin" element={
-              <ProtectedRoute requireAdmin>
-                <AdminLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<AdminDashboard />} />
-              <Route path="events" element={<AdminEvents />} />
-              <Route path="events/new" element={<AdminEventEditor />} />
-              <Route path="events/:id/edit" element={<AdminEventEditor />} />
-              <Route path="sales" element={<AdminSales />} />
-              <Route path="celebrations" element={<AdminCelebrations />} />
-              <Route path="files" element={<AdminFiles />} />
-              <Route path="pricing" element={<AdminPricing />} />
-              <Route path="payments" element={<AdminPayments />} />
-              <Route path="mail" element={<AdminMail />} />
-              <Route path="users" element={<AdminUsers />} />
-            </Route>
+              {/* Admin */}
+              <Route path="/admin" element={
+                <ProtectedRoute requireAdmin>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<AdminDashboard />} />
+                <Route path="events" element={<AdminEvents />} />
+                <Route path="events/new" element={<AdminEventEditor />} />
+                <Route path="events/:id/edit" element={<AdminEventEditor />} />
+                <Route path="sales" element={<AdminSales />} />
+                <Route path="celebrations" element={<AdminCelebrations />} />
+                <Route path="files" element={<AdminFiles />} />
+                <Route path="pricing" element={<AdminPricing />} />
+                <Route path="payments" element={<AdminPayments />} />
+                <Route path="mail" element={<AdminMail />} />
+                <Route path="users" element={<AdminUsers />} />
+              </Route>
 
-            {/* Celebration view - must be after admin routes */}
-            <Route path="/:slug" element={<CelebrationView />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <BottomNavigation />
-        </BrowserRouter>
-      </ThemeProvider>
-    </TooltipProvider>
+              {/* Celebration view - must be after admin routes */}
+              <Route path="/:slug" element={<CelebrationView />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <BottomNavigation />
+          </BrowserRouter>
+        </ThemeProvider>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

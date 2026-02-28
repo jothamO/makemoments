@@ -10,13 +10,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { User, LogOut, LayoutDashboard, Heart, Shield, Settings } from "lucide-react";
-import { SettingsModal } from "./SettingsModal";
-import { useState } from "react";
 
 export function UserMenu() {
     const { user, isLoggedIn, isAdmin, logout } = useAuth();
     const navigate = useNavigate();
-    const [settingsOpen, setSettingsOpen] = useState(false);
 
     if (!isLoggedIn) {
         return (
@@ -67,12 +64,11 @@ export function UserMenu() {
                                     <span>My Moments</span>
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => setSettingsOpen(true)}
-                                className="flex items-center cursor-pointer"
-                            >
-                                <Settings className="mr-2 h-4 w-4" />
-                                <span>Settings</span>
+                            <DropdownMenuItem asChild>
+                                <Link to="/settings" className="flex items-center cursor-pointer">
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    <span>Settings</span>
+                                </Link>
                             </DropdownMenuItem>
                         </>
                     )}
@@ -87,14 +83,6 @@ export function UserMenu() {
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-
-            {user && (
-                <SettingsModal
-                    open={settingsOpen}
-                    onOpenChange={setSettingsOpen}
-                    user={user}
-                />
-            )}
         </>
     );
 }

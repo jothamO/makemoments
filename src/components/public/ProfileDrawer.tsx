@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Heart, Settings, LayoutDashboard, HelpCircle, ShieldAlert, FileText, Lock, User, X, LogOut } from "lucide-react";
-import { SettingsModal } from "../auth/SettingsModal";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 interface ProfileDrawerProps {
@@ -23,7 +22,6 @@ interface ProfileDrawerProps {
 export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
     const { user, isLoggedIn, isAdmin, logout } = useAuth();
     const navigate = useNavigate();
-    const [settingsOpen, setSettingsOpen] = React.useState(false);
 
     const handleLinkClick = () => {
         onOpenChange(false);
@@ -85,13 +83,13 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
                                             <Button
                                                 variant="ghost"
                                                 className="w-full justify-start h-14 text-base px-4 rounded-[16px] font-semibold text-zinc-700 hover:bg-white hover:shadow-sm transition-all"
-                                                onClick={() => {
-                                                    setSettingsOpen(true);
-                                                    onOpenChange(false);
-                                                }}
+                                                asChild
+                                                onClick={handleLinkClick}
                                             >
-                                                <Settings className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2.5} />
-                                                Settings
+                                                <Link to="/settings">
+                                                    <Settings className="mr-3 h-5 w-5 text-zinc-400" strokeWidth={2.5} />
+                                                    Settings
+                                                </Link>
                                             </Button>
                                         </>
                                     )}
@@ -124,14 +122,6 @@ export function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
                     </div>
                 </DrawerContent>
             </Drawer>
-
-            {user && (
-                <SettingsModal
-                    open={settingsOpen}
-                    onOpenChange={setSettingsOpen}
-                    user={user}
-                />
-            )}
         </>
     );
 }

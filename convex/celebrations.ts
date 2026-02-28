@@ -118,7 +118,12 @@ export const listByUser = query({
     handler: async (ctx, args) => {
         const celebrations = await ctx.db
             .query("celebrations")
-            .filter((q) => q.eq(q.field("userId"), args.userId))
+            .filter((q) =>
+                q.and(
+                    q.eq(q.field("userId"), args.userId),
+                    q.eq(q.field("deletedAt"), undefined)
+                )
+            )
             .order("desc")
             .collect();
 
@@ -132,6 +137,18 @@ export const listByUser = query({
             });
         }
         return results;
+    },
+});
+
+export const remove = mutation({
+    args: { id: v.id("celebrations") },
+    handler: async (ctx, args) => {
+        const celebration = await ctx.db.get(args.id);
+        if (!celebration) throw new Error("Celebration not found");
+
+        await ctx.db.patch(args.id, {
+            deletedAt: Date.now(),
+        });
     },
 });
 

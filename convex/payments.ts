@@ -43,10 +43,10 @@ export const initializePayment = mutation({
         const isAdmin = await checkAdmin(ctx, token);
 
         if (createAccount && password) {
-            // Check if user already exists
+            const normalizedEmail = args.email.toLowerCase().trim();
             const existing = await ctx.db
                 .query("users")
-                .withIndex("by_email", q => q.eq("email", args.email))
+                .withIndex("by_email", q => q.eq("email", normalizedEmail))
                 .first();
 
             if (existing) {
@@ -56,7 +56,7 @@ export const initializePayment = mutation({
             } else {
                 const { hash, salt } = await createPasswordHash(password);
                 userId = await ctx.db.insert("users", {
-                    email: args.email,
+                    email: args.email.toLowerCase().trim(),
                     username: username,
                     passwordHash: hash,
                     salt: salt,
@@ -66,11 +66,10 @@ export const initializePayment = mutation({
                 });
             }
         } else {
-            // Try to link to existing user if logged in (token check would be better but token is on client)
-            // For now we check if a user with this email exists regardless of login
+            const normalizedEmail = args.email.toLowerCase().trim();
             const existing = await ctx.db
                 .query("users")
-                .withIndex("by_email", q => q.eq("email", args.email))
+                .withIndex("by_email", q => q.eq("email", normalizedEmail))
                 .first();
             if (existing) userId = existing._id;
         }
