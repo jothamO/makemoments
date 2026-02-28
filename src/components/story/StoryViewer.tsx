@@ -299,7 +299,7 @@ export function StoryViewer({
       >
         <AnimatePresence mode="wait">
           <motion.div
-            key={current}
+            key={`${current}-${page.id}`}
             initial={variant.initial}
             animate={variant.animate}
             exit={variant.exit}
@@ -362,7 +362,7 @@ export function StoryViewer({
                         }}
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
+                        transition={{ ...CONTENT_TRANSITION, delay: current === 0 ? 0 : 0.1 }}
                         ref={(el) => {
                           if (el) {
                             el.style.height = 'auto';

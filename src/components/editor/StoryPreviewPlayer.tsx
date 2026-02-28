@@ -267,7 +267,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                     >
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={currentIndex}
+                                key={`${currentIndex}-${page.id}`}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 1.05 }}
@@ -299,7 +299,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                                                 }}
                                                 initial={{ opacity: 0, y: 16 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                transition={{ ...CONTENT_TRANSITION, delay: 0.1 }}
+                                                transition={{ ...CONTENT_TRANSITION, delay: currentIndex === 0 ? 0 : 0.1 }}
                                                 ref={(el) => {
                                                     if (el) {
                                                         el.style.height = 'auto';

@@ -29,6 +29,7 @@ import Settings from "./pages/Settings";
 import { useAuth } from "./hooks/useAuth";
 import { AuthProvider } from "./contexts/AuthContext";
 import { BottomNavigation } from "./components/public/BottomNavigation";
+import { ReloadPrompt } from "./components/ReloadPrompt";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
         <ThemeProvider>
           <Toaster />
           <Sonner />
+          <ReloadPrompt />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               <Route path="/" element={<Homepage />} />
