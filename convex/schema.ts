@@ -133,10 +133,7 @@ export default defineSchema({
         url: v.optional(v.string()),
         storageId: v.optional(v.id("_storage")),
         isPremium: v.optional(v.boolean()),
-        price: v.optional(v.object({
-            ngn: v.number(),
-            usd: v.number(),
-        })),
+        price: v.optional(v.any()),
         isDefault: v.optional(v.boolean()),
     }),
 
@@ -170,10 +167,7 @@ export default defineSchema({
         glowColor: v.string(),
         type: v.union(v.literal("light"), v.literal("dark")),
         isPremium: v.optional(v.boolean()),
-        price: v.optional(v.object({
-            ngn: v.number(),
-            usd: v.number(),
-        })),
+        price: v.optional(v.any()),
         isDefault: v.optional(v.boolean()),
         createdAt: v.number(),
     }),
@@ -184,10 +178,7 @@ export default defineSchema({
         isCustom: v.boolean(),
         storageId: v.optional(v.id("_storage")), // If uploaded
         isPremium: v.optional(v.boolean()),
-        price: v.optional(v.object({
-            ngn: v.number(),
-            usd: v.number(),
-        })),
+        price: v.optional(v.any()),
         isDefault: v.optional(v.boolean()),
         createdAt: v.number(),
     }),
@@ -204,10 +195,7 @@ export default defineSchema({
             v.literal("drift")
         ),
         isPremium: v.optional(v.boolean()),
-        price: v.optional(v.object({
-            ngn: v.number(),
-            usd: v.number(),
-        })),
+        price: v.optional(v.any()),
         isDefault: v.optional(v.boolean()),
         createdAt: v.number(),
     }),
@@ -217,10 +205,7 @@ export default defineSchema({
         storageId: v.optional(v.id("_storage")),
         url: v.optional(v.string()),
         isPremium: v.optional(v.boolean()),
-        price: v.optional(v.object({
-            ngn: v.number(),
-            usd: v.number(),
-        })),
+        price: v.optional(v.any()),
         isDefault: v.optional(v.boolean()),
         createdAt: v.number(),
     }).index("by_url", ["url"]),

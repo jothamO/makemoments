@@ -407,7 +407,6 @@ export default function FilesPage() {
                                                 baseColor: theme.baseColor || "#ffffff",
                                                 glowColor: theme.glowColor || "#ffffff",
                                                 type: theme.type || "light",
-                                                type: theme.type || "light",
                                             });
                                         } else {
                                             setEditingThemeId(null);
@@ -1281,7 +1280,6 @@ export default function FilesPage() {
                                                                 token: token || undefined,
                                                                 name: newMusic.name || track.name,
                                                                 artist: newMusic.artist || track.artist,
-                                                                duration: newMusic.duration !== undefined ? newMusic.duration : track.duration,
                                                                 duration: newMusic.duration !== undefined ? newMusic.duration : track.duration,
                                                             }, "Music updated");
                                                             if (success) {
