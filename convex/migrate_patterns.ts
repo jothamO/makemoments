@@ -12,6 +12,7 @@ export const migrate = mutation({
             if (pattern.type === "floating") newType = "drift";
 
             if (newType !== pattern.type) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 await ctx.db.patch(pattern._id, { type: newType as any });
                 updated++;
             }

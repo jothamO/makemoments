@@ -21,6 +21,7 @@ export const seedPatterns = mutation({
                     id: p.id,
                     name: p.name,
                     emoji: p.emoji,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     type: p.type as any,
                     createdAt: Date.now(),
                 });

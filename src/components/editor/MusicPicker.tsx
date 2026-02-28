@@ -14,6 +14,7 @@ interface MusicPickerProps {
   onTogglePlay: () => void;
   activeColor?: string;
   whitelist?: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   availableMusic?: any[];
   onSelect: (trackId: string | undefined) => void;
 }
@@ -93,6 +94,7 @@ export function MusicPicker({
             </motion.div>
 
             {tracks?.map((track) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const trackId = (track as any)._id || (track as any).id;
               const isSelected = selectedId === trackId;
 

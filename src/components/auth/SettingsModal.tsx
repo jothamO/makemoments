@@ -18,6 +18,7 @@ import { formatPlatformDate } from "@/lib/utils";
 interface SettingsModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user: any;
 }
 
@@ -30,6 +31,7 @@ export function SettingsModal({ open, onOpenChange, user }: SettingsModalProps) 
     const unsubscribe = useMutation(api.notifications.unsubscribe);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleUnsubscribe = async (eventId: any, email: string) => {
         setProcessingId(eventId);
         try {

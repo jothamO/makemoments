@@ -111,9 +111,9 @@ export const seed = mutation({
             for (const theme of globalThemes) {
                 await ctx.db.insert("globalThemes", {
                     name: theme.name,
-                    type: (theme as any).type || "light",
-                    baseColor: (theme as any).baseColor || theme.primary,
-                    glowColor: (theme as any).glowColor || theme.secondary,
+                    type: (theme as Record<string, unknown>).type as string || "light",
+                    baseColor: (theme as Record<string, unknown>).baseColor as string || theme.primary,
+                    glowColor: (theme as Record<string, unknown>).glowColor as string || theme.secondary,
                     createdAt: now
                 });
             }

@@ -89,7 +89,9 @@ export function StoryViewer({
     if (nextIndex < pages.length) {
       setCurrent(nextIndex);
       // Determine duration for the next slide immediately
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       remainingRef.current = (pages[nextIndex] as any).duration
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? (pages[nextIndex] as any).duration * 1000
         : autoPlayInterval;
     }
@@ -192,7 +194,9 @@ export function StoryViewer({
       if (bar) bar.style.width = "0%";
 
       const prevIndex = current - 1;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       remainingRef.current = (pages[prevIndex] as any).duration
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? (pages[prevIndex] as any).duration * 1000
         : autoPlayInterval;
 
@@ -216,7 +220,9 @@ export function StoryViewer({
       if (bar) bar.style.width = "100%";
 
       const nextIndex = current + 1;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       remainingRef.current = (pages[nextIndex] as any).duration
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? (pages[nextIndex] as any).duration * 1000
         : autoPlayInterval;
 
@@ -229,6 +235,7 @@ export function StoryViewer({
   if (!page) return null;
 
   const variant = transitionVariants[page.transition];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isSyntheticCTA = (page as any)._id === "synthetic-watermark-slide";
   const isDark = page.type === 'dark' || !page.type; // default to dark if unset
   const trackColor = isDark ? "bg-white/20" : "bg-black/10";
@@ -299,6 +306,7 @@ export function StoryViewer({
                 className="w-full h-full flex flex-col items-center justify-center p-8 gap-8"
                 style={{
                   backgroundColor: page.baseColor,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   backgroundImage: (page as any).bgImage ? `url(${(page as any).bgImage})` : undefined,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',

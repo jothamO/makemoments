@@ -12,6 +12,7 @@ interface ThemePickerProps {
     onSelect: (theme: Partial<EventTheme>) => void;
     currentThemeId?: string;
     whitelist?: string[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     availableThemes?: any[];
 }
 

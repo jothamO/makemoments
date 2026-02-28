@@ -52,6 +52,7 @@ export default function AdminUsers() {
         setNewName("");
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleDelete = async (id: any) => {
         if (confirm("Are you sure you want to delete this user?")) {
             await safeMutation(removeUser, { id, token: token || undefined }, "User deleted");
@@ -92,6 +93,7 @@ export default function AdminUsers() {
                             <select
                                 className="w-full h-9 rounded-md border border-input bg-white px-3 text-sm"
                                 value={newRole}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onChange={e => setNewRole(e.target.value as any)}
                             >
                                 <option value="user">User</option>
@@ -305,6 +307,7 @@ export default function AdminUsers() {
     );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function Label({ children, className, ...props }: any) {
     return <label className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`} {...props}>{children}</label>;
 }

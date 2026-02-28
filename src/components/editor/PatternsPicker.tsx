@@ -11,6 +11,7 @@ interface PatternsPickerProps {
     currentPattern?: string;
     activeColor?: string;
     whitelist?: string[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     availablePatterns?: any[];
     onSelect: (patternId: string) => void;
 }

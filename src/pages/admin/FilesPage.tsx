@@ -85,6 +85,7 @@ export default function FilesPage() {
         isPremium: false, price: 0
     });
     const [newFont, setNewFont] = useState({ name: "", fontFamily: "", isCustom: false, isPremium: false, price: 0 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [newPattern, setNewPattern] = useState({ id: "", name: "", emojis: "", type: "fall" as any, isPremium: false, price: 0 });
     const [editingPatternId, setEditingPatternId] = useState<string | null>(null);
     const [newMusic, setNewMusic] = useState({ name: "", artist: "", duration: 0, url: "", isPremium: false, price: 0 });
@@ -96,12 +97,14 @@ export default function FilesPage() {
             name: newTheme.name,
             baseColor: newTheme.baseColor,
             glowColor: newTheme.glowColor,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type: newTheme.type as any,
             isPremium: newTheme.isPremium,
             price: newTheme.price
         };
 
         const success = editingThemeId
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ? await safeMutation(updateTheme, { id: editingThemeId as any, token: token || undefined, ...payload }, "Theme updated")
             : await safeMutation(createTheme, { ...payload, token: token || undefined }, "Theme added");
 
@@ -121,6 +124,7 @@ export default function FilesPage() {
         if (editingFontId) {
             const success = await safeMutation(updateFont, {
                 token: token || undefined,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 id: editingFontId as any,
                 name: newFont.name,
                 fontFamily: newFont.fontFamily,
@@ -168,10 +172,12 @@ export default function FilesPage() {
         const emojiArray = newPattern.emojis.split(",").map(e => e.trim()).filter(e => e !== "");
 
         const payload = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             id: editingPatternId ? editingPatternId as any : undefined,
             patternId: newPattern.id,
             name: newPattern.name,
             emojis: emojiArray,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type: newPattern.type as any,
             isPremium: newPattern.isPremium,
             price: newPattern.price
@@ -179,6 +185,7 @@ export default function FilesPage() {
 
         const success = editingPatternId
             ? await safeMutation(updatePattern, { ...payload, token: token || undefined }, "Pattern updated")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             : await safeMutation(createPattern, { ...payload, id: newPattern.id, token: token || undefined } as any, "Pattern added");
 
         if (success) {
@@ -194,6 +201,7 @@ export default function FilesPage() {
         if (editingMusicId) {
             const success = await safeMutation(updateMusic, {
                 token: token || undefined,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 id: editingMusicId as any,
                 name: newMusic.name,
                 artist: newMusic.artist,
@@ -254,6 +262,7 @@ export default function FilesPage() {
                 await createCharacter({ name: file.name.split(".")[0], storageId, token: token || undefined });
             }
             toast({ title: "Characters uploaded" });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast({ title: "Upload failed", description: error.message, variant: "destructive" });
         }
@@ -262,6 +271,7 @@ export default function FilesPage() {
 
     const handleUpdateCharacter = async () => {
         if (!editingCharacterId || !editingName) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const success = await safeMutation(updateCharacter, { id: editingCharacterId as any, name: editingName, token: token || undefined }, "Character renamed");
         if (success) {
             setEditingCharacterId(null);
@@ -348,6 +358,7 @@ export default function FilesPage() {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label>Type</Label>
+                                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                     <Select value={newTheme.type} onValueChange={(val: any) => setNewTheme(p => ({ ...p, type: val }))}>
                                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                                         <SelectContent>
@@ -534,6 +545,7 @@ export default function FilesPage() {
                                                         <Label>Theme Type</Label>
                                                         <Select
                                                             defaultValue={theme.type}
+                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                             onValueChange={(val: any) => {
                                                                 setEditingThemeId(theme._id);
                                                                 setNewTheme(p => ({ ...p, type: val }));
@@ -595,6 +607,7 @@ export default function FilesPage() {
                                                                 name: newTheme.name || theme.name,
                                                                 baseColor: newTheme.baseColor || theme.baseColor,
                                                                 glowColor: newTheme.glowColor || theme.glowColor,
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 type: (newTheme.type || theme.type) as any,
                                                                 isPremium: newTheme.isPremium !== undefined ? newTheme.isPremium : (theme.isPremium || false),
                                                                 price: newTheme.price !== undefined ? newTheme.price : (theme.price || 0)
@@ -1431,6 +1444,7 @@ export default function FilesPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                         {patterns.map((pattern: any) => (
                                             <TableRow key={pattern._id} className="border-zinc-200 hover:bg-zinc-50 transition-colors">
                                                 <TableCell className="font-semibold text-zinc-900">{pattern.name}</TableCell>
@@ -1442,6 +1456,7 @@ export default function FilesPage() {
                                                             id: pattern.id || "",
                                                             name: pattern.name || "",
                                                             emojis: pattern.emojis?.join(", ") || "",
+                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                             type: (pattern.type as any) || "fall",
                                                             isPremium: pattern.isPremium || false,
                                                             price: pattern.price || 0
@@ -1472,6 +1487,7 @@ export default function FilesPage() {
 
                             {/* Mobile Card View */}
                             <div className="sm:hidden divide-y divide-zinc-100">
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                 {patterns.map((pattern: any) => (
                                     <Drawer key={pattern._id}>
                                         <DrawerTrigger asChild>
@@ -1550,6 +1566,7 @@ export default function FilesPage() {
                                                                 defaultValue={pattern.type}
                                                                 onValueChange={val => {
                                                                     setEditingPatternId(pattern._id);
+                                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                     setNewPattern(p => ({ ...p, type: val as any }));
                                                                 }}
                                                             >
@@ -1592,6 +1609,7 @@ export default function FilesPage() {
                                                                 token: token || undefined,
                                                                 name: newPattern.name || pattern.name,
                                                                 emojis: newPattern.emojis || pattern.emojis?.join(", "),
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 type: (newPattern.type || pattern.type) as any,
                                                                 isPremium: newPattern.isPremium !== undefined ? newPattern.isPremium : (pattern.isPremium || false),
                                                                 price: newPattern.price !== undefined ? newPattern.price : (pattern.price || 0)

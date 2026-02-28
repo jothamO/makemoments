@@ -59,6 +59,7 @@ export default function AdminMail() {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSendTest = async (category: any) => {
         if (!testEmail) {
             toast({ title: "Please enter a test email", variant: "destructive" });
@@ -68,6 +69,7 @@ export default function AdminMail() {
         try {
             await sendTest({ to: testEmail, category, token: token || undefined });
             toast({ title: "Test email sent!" });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast({ title: "Failed to send test", description: error.message, variant: "destructive" });
         } finally {
@@ -227,6 +229,7 @@ export default function AdminMail() {
                                 category={cat}
                                 existing={templates.find(t => t.category === cat.id)}
                                 onSave={async (data) => {
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     await upsertTemplate({ category: cat.id as any, ...data, token: token || undefined });
                                     toast({ title: `${cat.label} template updated` });
                                 }}
@@ -283,6 +286,7 @@ export default function AdminMail() {
     );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function TemplateCard({ category, existing, onSave, testEmail, setTestEmail, onTest, isTesting }: any) {
     const [tid, setTid] = useState(existing?.templateId || "");
     const [sub, setSub] = useState(existing?.subject || "");

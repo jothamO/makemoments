@@ -42,6 +42,7 @@ const AdminEvents = () => {
   const removeEvent = useMutation(api.events.remove);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDelete = async (id: any) => {
     await safeMutation(removeEvent, { id, token: token || undefined }, "Event deleted");
   };

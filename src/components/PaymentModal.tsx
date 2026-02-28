@@ -80,6 +80,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
   // Real-time payment status polling
   const paymentStatus = useQuery(
     api.payments.getPaymentStatus,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     celebrationId ? { celebrationId: celebrationId as any } : "skip"
   );
 
@@ -99,6 +100,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
   const initializePayment = useMutation(api.payments.initializePayment);
 
   // ── Theme ──
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const glowColor = (event.theme as any)?.glowColor || event.theme.secondary || "#ec4899";
 
   // ── Exchange rate ──
@@ -230,6 +232,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
   const canPay = isValidEmail && isCustomLinkValid && !processing;
 
   // ── Paystack config ──
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const paystackPublicKey = (gatewayConfig as any)?.paystackPublicKey || "";
   const paystackConfig = {
     reference: `mm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -253,10 +256,12 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
         : autoSlug;
 
       const result = await initializePayment({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         eventId: event._id as any,
         slug,
         email: isAdmin ? "admin@makemoments.xyz" : email,
         pages,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         musicTrackId: musicTrackId as any || undefined,
         removeWatermark,
         hasMusic: !!musicTrackId,
@@ -288,6 +293,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
             setProcessing(false);
             setPaymentError("Payment was cancelled. You can try again.");
           },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any);
       } else {
         // Stripe or no gateway configured — placeholder

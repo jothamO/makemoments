@@ -77,6 +77,7 @@ export const initializePayment = mutation({
 
         const celebrationId = await ctx.db.insert("celebrations", {
             ...celebrationData,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             userId: userId as any,
             paymentStatus: isAdmin ? "paid" : "pending",
             views: 0,

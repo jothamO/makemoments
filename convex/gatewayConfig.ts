@@ -18,8 +18,8 @@ export const get = query({
         // Mask secret keys
         return {
             ...base,
-            paystackSecretKey: (base as any).paystackSecretKey ? "••••••••" : "",
-            stripeSecretKey: (base as any).stripeSecretKey ? "••••••••" : "",
+            paystackSecretKey: (base as Record<string, unknown>).paystackSecretKey ? "••••••••" : "",
+            stripeSecretKey: (base as Record<string, unknown>).stripeSecretKey ? "••••••••" : "",
         };
     },
 });

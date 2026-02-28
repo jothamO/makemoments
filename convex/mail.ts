@@ -97,7 +97,7 @@ export const sendTestEmail = action({
     handler: async (ctx, args) => {
         const config = await ctx.runQuery(api.mail.getConfigInternal);
         const templates = await ctx.runQuery(api.mail.getTemplates);
-        const template = templates.find((t: any) => t.category === args.category);
+        const template = templates.find((t: Record<string, unknown>) => t.category === args.category);
 
         const apiKey = process.env.ZEPTOMAIL_API_KEY || config?.zeptomailApiKey;
 
@@ -146,7 +146,7 @@ export const sendExpiryWarning = action({
     handler: async (ctx, args) => {
         const config = await ctx.runQuery(api.mail.getConfigInternal);
         const templates = await ctx.runQuery(api.mail.getTemplates);
-        const template = templates.find((t: any) => t.category === "expiry_warning");
+        const template = templates.find((t: Record<string, unknown>) => t.category === "expiry_warning");
 
         const apiKey = process.env.ZEPTOMAIL_API_KEY || config?.zeptomailApiKey;
 
@@ -183,7 +183,7 @@ export const sendEventLaunchNotification = action({
     handler: async (ctx, args) => {
         const config = await ctx.runQuery(api.mail.getConfig);
         const templates = await ctx.runQuery(api.mail.getTemplates);
-        const template = templates.find((t: any) => t.category === "event_launch");
+        const template = templates.find((t: Record<string, unknown>) => t.category === "event_launch");
         const event = await ctx.runQuery(api.events.getById, { id: args.eventId });
         const subscribers = await ctx.runQuery(api.notifications.listByEvent, { eventId: args.eventId });
 
@@ -192,7 +192,7 @@ export const sendEventLaunchNotification = action({
             return;
         }
 
-        const pendingSubs = subscribers.filter((s: any) => s.status === "pending");
+        const pendingSubs = subscribers.filter((s: Record<string, unknown>) => s.status === "pending");
         if (pendingSubs.length === 0) return;
 
         for (const sub of pendingSubs) {

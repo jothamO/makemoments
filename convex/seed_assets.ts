@@ -150,6 +150,7 @@ export const seedAll = mutation({
                     id: p.id,
                     name: p.name,
                     emoji: p.emoji,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     type: p.type as any,
                     price: 0,
                     createdAt: Date.now(),
@@ -180,14 +181,14 @@ export const migrateEvents = mutation({
 
         for (const event of events) {
             // Check if standard fields are missing
-            const theme: any = event.theme;
+            const theme = event.theme as Record<string, unknown>;
 
             // Migration logic:
             // primary -> baseColor
             // glowColor (existing) or secondary -> glowColor
             // default type -> "light"
 
-            const updates: any = {};
+            const updates: Record<string, unknown> = {};
             let needsUpdate = false;
 
             if (!theme.baseColor) {

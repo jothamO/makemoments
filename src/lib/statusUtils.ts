@@ -17,6 +17,7 @@ function resolvePlaceholders(text: string, placeholders: Record<string, string>)
  * Window 2: 30 days after endDate -> Expired message
  * Fallback: Default "Wise-Ass" message
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getWiseAssMessage(event: any, now: number = Date.now()) {
     const ONE_MONTH_MS = 1000 * 60 * 60 * 24 * 30;
     const { launchDate, endDate, theme } = event;

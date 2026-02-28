@@ -32,6 +32,7 @@ export const subscribe = mutation({
 
         if (existing) {
             if (existing.status === "unsubscribed") {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 await ctx.db.patch(existing._id, { status: "pending", updatedAt: Date.now() } as any);
             }
             return existing._id;

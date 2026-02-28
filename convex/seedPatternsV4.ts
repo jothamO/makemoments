@@ -30,6 +30,7 @@ export const seedPatterns = mutation({
                     id: p.id,
                     name: p.name,
                     emojis: p.emoji.split(",").map(e => e.trim()),
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     type: p.type as any,
                     createdAt: Date.now(),
                 });
@@ -37,6 +38,7 @@ export const seedPatterns = mutation({
             } else {
                 // FORCE UPDATE to v4 specs
                 await ctx.db.patch(exists._id, {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     type: p.type as any,
                     emojis: p.emoji.split(",").map(e => e.trim()),
                     name: p.name

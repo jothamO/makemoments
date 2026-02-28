@@ -21,6 +21,7 @@ interface FontPickerProps {
   fontFamily: string;
   fontSize: FontSize;
   whitelist?: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   availableFonts?: any[];
   onFontChange: (font: string) => void;
   onSizeChange: (size: FontSize) => void;
@@ -54,6 +55,7 @@ export function FontPicker({ fontFamily, fontSize, whitelist, availableFonts = [
         </div>
         <ScrollArea className="h-[350px]">
           <div className="p-2 space-y-1">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {fonts.map((f: any) => (
               <motion.button
                 whileTap={{ scale: 0.97 }}

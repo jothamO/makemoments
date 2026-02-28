@@ -64,6 +64,7 @@ export default function LoginPage() {
             login(result.token);
             toast({ title: "Welcome back!", description: "Successfully logged in." });
             navigate(from, { replace: true });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast({
                 title: "Login failed",

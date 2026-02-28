@@ -47,6 +47,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [event, setEvent] = useState<CelebrationEvent | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (activeEvent) setEvent(activeEvent as any);
   }, [activeEvent]);
 
@@ -55,7 +56,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const t = event.theme || {};
     const root = document.documentElement;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const headlineFont = (t as any).headlineFont || "Inter";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bodyFont = (t as any).bodyFont || "Inter";
 
     root.style.setProperty("--font-headline", `"${headlineFont}", serif`);

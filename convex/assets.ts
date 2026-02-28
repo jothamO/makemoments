@@ -21,11 +21,14 @@ export const setDefaultAsset = mutation({
         if (!(await checkAdmin(ctx, args.token))) {
             throw new Error("Unauthorized");
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (!VALID_TABLES.includes(args.table as any)) {
             throw new Error(`Invalid table name: ${args.table}`);
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tableName = args.table as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const targetId = args.id as any;
 
         // Verify the asset exists

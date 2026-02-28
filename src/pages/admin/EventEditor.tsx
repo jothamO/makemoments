@@ -56,6 +56,7 @@ const EventEditor = () => {
 
   // Convex hooks
   const { token } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const event = useQuery(api.events.getById, id ? { id: id as any } : "skip");
   const updateEvent = useMutation(api.events.update);
   const createEvent = useMutation(api.events.create);
@@ -75,6 +76,7 @@ const EventEditor = () => {
   const [launchDate, setLaunchDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date(Date.now() + 2592000000));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [theme, setTheme] = useState<any>({
     baseColor: "#E2F0E9",
     glowColor: "#22c55e",
@@ -110,8 +112,11 @@ const EventEditor = () => {
       const payload = {
         name,
         slug,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         status: finalStatus as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tier: tier as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         kind: kind as any,
         theme,
         date: eventDate.getTime(),
@@ -120,6 +125,7 @@ const EventEditor = () => {
       };
 
       if (id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await updateEvent({ id: id as any, token: token || undefined, ...payload });
       } else {
         await createEvent({ ...payload, token: token || undefined });

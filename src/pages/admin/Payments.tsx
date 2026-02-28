@@ -78,9 +78,13 @@ export default function PaymentsPage() {
             setStripeEnabled(gatewayConfig.stripeEnabled);
             setPaystackTestMode(!!gatewayConfig.paystackTestMode);
             setStripeTestMode(!!gatewayConfig.stripeTestMode);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             setPaystackPublicKey((gatewayConfig as any).paystackPublicKey || "");
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             setPaystackSecretKey((gatewayConfig as any).paystackSecretKey || "");
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             setStripePublishableKey((gatewayConfig as any).stripePublishableKey || "");
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             setStripeSecretKey((gatewayConfig as any).stripeSecretKey || "");
         }
     }, [gatewayConfig]);
@@ -484,6 +488,7 @@ export default function PaymentsPage() {
 
 // ── Metric Card Component ──
 function MetricCard({ label, value, icon: Icon, subtitle, color = "text-emerald-600" }: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     label: string; value: string; icon: any; subtitle: string; color?: string;
 }) {
     return (

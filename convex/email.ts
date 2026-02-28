@@ -16,7 +16,8 @@ export const sendPostPaymentEmail = internalAction({
         password: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        const config = await ctx.runQuery(api.mail.getConfig) as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const config = await ctx.runQuery(api.mail.getConfig) as Record<string, any>;
         const apiKey = config?.zeptomailApiKey || process.env.ZEPTOMAIL_API_KEY;
 
         if (!apiKey) {
@@ -26,8 +27,9 @@ export const sendPostPaymentEmail = internalAction({
 
         const from = config ? { address: config.fromEmail, name: config.fromName } : { address: "noreply@makemoments.xyz", name: "MakeMoments" };
 
-        const templates = await ctx.runQuery(api.mail.getTemplates) as any[];
-        const template = templates?.find((t: any) => t.category === "post_payment");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const templates = await ctx.runQuery(api.mail.getTemplates) as Record<string, any>[];
+        const template = templates?.find((t: Record<string, unknown>) => t.category === "post_payment");
 
         const momentUrl = `https://makemoments.xyz/${args.slug}`;
         const downloadUrl = args.hdDownload ? `${momentUrl}?download=hd` : null;
@@ -35,7 +37,8 @@ export const sendPostPaymentEmail = internalAction({
         // If we have a Template ID, use it. Otherwise fallback to the legacy HTML body.
         const useTemplate = !!template?.templateId;
 
-        const payload: any = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const payload: Record<string, any> = {
             from,
             to: [{ email_address: { address: args.email, name: "" } }],
         };

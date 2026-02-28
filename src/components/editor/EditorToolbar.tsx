@@ -20,9 +20,13 @@ interface EditorToolbarProps {
   onPageUpdate: (updates: Partial<StoryPage>) => void;
   onMusicChange: (trackId: string | undefined) => void;
   onBackdropSelect: (theme: Partial<EventTheme>) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   availablePatterns?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   availableFonts?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   availableThemes?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   availableMusic?: any[];
   className?: string;
 }

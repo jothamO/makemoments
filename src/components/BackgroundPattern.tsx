@@ -49,6 +49,7 @@ export function BackgroundPattern({
                 name: dynamic.name,
                 type: 'emoji-canvas',
                 emojis: dynamic.emojis,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 physics: dynamic.type as any,
                 css: {}
             };
@@ -318,6 +319,7 @@ export function BackgroundPattern({
         return (
             <div
                 className={`absolute inset-0 pointer-events-none -z-10 ${className}`}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 style={(pattern as any).css}
             />
         );

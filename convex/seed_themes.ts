@@ -139,6 +139,7 @@ export const seed = mutation({
         // ------------------------------------------------------------------
         const tables = ["events", "celebrations", "globalThemes", "globalFonts", "musicTracks", "globalPatterns", "globalCharacters", "templates"];
         for (const table of tables) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const docs = await ctx.db.query(table as any).collect();
             for (const doc of docs) { await ctx.db.delete(doc._id); }
         }
@@ -176,6 +177,7 @@ export const seed = mutation({
         // Insert Patterns
         for (const p of PATTERNS) {
             await ctx.db.insert("globalPatterns", {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 id: p.id, name: p.name, emojis: p.emojis, type: p.type as any, price: 0, createdAt: Date.now(),
             });
         }

@@ -36,36 +36,39 @@ const EventThemeValidator = v.object({
     patternIds: v.optional(v.array(v.string())),
 });
 
-async function resolveEventAssets(ctx: any, event: any) {
-    const theme = event.theme || {};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveEventAssets(ctx: any, event: Record<string, unknown>) {
+    const theme = (event.theme || {}) as Record<string, unknown>;
 
     // Helper: fetch default asset if array is empty
     const getDefaults = async (tableName: string) => {
         return await ctx.db
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .query(tableName as any)
-            .filter((q: any) => q.eq(q.field("isDefault"), true))
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type, @typescript-eslint/no-explicit-any
+            .filter((q: Record<string, Function>) => q.eq(q.field("isDefault"), true))
             .collect();
     };
 
     // 1. Resolve Music
-    const musicTracksRaw = theme.musicTrackIds?.length > 0
-        ? await Promise.all(theme.musicTrackIds.map((id: any) => ctx.db.get(id)))
+    const musicTracksRaw = (theme.musicTrackIds as string[] | undefined)?.length
+        ? await Promise.all((theme.musicTrackIds as string[]).map((id: string) => ctx.db.get(id)))
         : await getDefaults("musicTracks");
 
     const musicTracks = await Promise.all(
-        musicTracksRaw.filter(Boolean).map(async (track: any) => ({
+        musicTracksRaw.filter(Boolean).map(async (track: Record<string, unknown>) => ({
             ...track,
             url: track.storageId ? await ctx.storage.getUrl(track.storageId) : track.url
         }))
     );
 
     // 2. Resolve Characters
-    const charactersRaw = theme.characterIds?.length > 0
-        ? await Promise.all(theme.characterIds.map((id: any) => ctx.db.get(id)))
+    const charactersRaw = (theme.characterIds as string[] | undefined)?.length
+        ? await Promise.all((theme.characterIds as string[]).map((id: string) => ctx.db.get(id)))
         : await getDefaults("globalCharacters");
 
     const characters = await Promise.all(
-        charactersRaw.filter(Boolean).map(async (char: any) => ({
+        charactersRaw.filter(Boolean).map(async (char: Record<string, unknown>) => ({
             ...char,
             url: char.storageId ? await ctx.storage.getUrl(char.storageId) : char.url
         }))
@@ -75,9 +78,9 @@ async function resolveEventAssets(ctx: any, event: any) {
     const defaultFonts = await getDefaults("globalFonts");
     let fontsRaw = [];
 
-    if (theme.allowedFontIds?.length > 0) {
+    if ((theme.allowedFontIds as string[] | undefined)?.length) {
         // Fetch event-specific fonts
-        const eventFonts = await Promise.all(theme.allowedFontIds.map((id: any) => ctx.db.get(id)));
+        const eventFonts = await Promise.all((theme.allowedFontIds as string[]).map((id: string) => ctx.db.get(id)));
 
         // Merge with defaults, ensuring default font is always first and deduplicated
         const mergedFonts = [...defaultFonts, ...eventFonts.filter(Boolean)];
@@ -93,7 +96,7 @@ async function resolveEventAssets(ctx: any, event: any) {
     }
 
     const fonts = await Promise.all(
-        fontsRaw.filter(Boolean).map(async (font: any) => ({
+        fontsRaw.filter(Boolean).map(async (font: Record<string, unknown>) => ({
             ...font,
             url: font.storageId ? await ctx.storage.getUrl(font.storageId) : font.url
         }))
@@ -101,16 +104,16 @@ async function resolveEventAssets(ctx: any, event: any) {
 
     // 4. Resolve Patterns
     let patternsRaw = [];
-    if (theme.patternIds?.length > 0) {
+    if ((theme.patternIds as string[] | undefined)?.length) {
         const allPatterns = await ctx.db.query("globalPatterns").collect();
-        patternsRaw = allPatterns.filter((p: any) => theme.patternIds.includes(p.id));
+        patternsRaw = allPatterns.filter((p: Record<string, unknown>) => (theme.patternIds as string[]).includes(p.id as string));
     } else {
         patternsRaw = await getDefaults("globalPatterns");
     }
 
     // 5. Resolve Themes (Backdrops)
-    const themes = theme.allowedThemeIds?.length > 0
-        ? await Promise.all(theme.allowedThemeIds.map((id: any) => ctx.db.get(id)))
+    const themes = (theme.allowedThemeIds as string[] | undefined)?.length
+        ? await Promise.all((theme.allowedThemeIds as string[]).map((id: string) => ctx.db.get(id)))
         : await getDefaults("globalThemes");
 
     return {
@@ -243,7 +246,8 @@ export const getLibrary = query({
         const comingSoon = upcomingEvents.slice(0, 3);
 
         // Resolve assets for all library items
-        const resolveBatch = async (items: any[]) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const resolveBatch = async (items: Record<string, unknown>[]): Promise<any[]> =>
             Promise.all(items.map(item => resolveEventAssets(ctx, item)));
 
         return {

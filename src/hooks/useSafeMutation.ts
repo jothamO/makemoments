@@ -23,6 +23,7 @@ export function useSafeMutation() {
             }
             // Return true if result is undefined but successful, to match old boolean behavior where needed
             return result === undefined ? (true as unknown as T) : result;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("Mutation error:", error);
             let msg = error.message || "An unexpected error occurred";

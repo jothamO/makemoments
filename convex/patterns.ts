@@ -68,7 +68,7 @@ export const update = mutation({
             throw new Error("Unauthorized");
         }
         const { id, token, patternId, ...rest } = args;
-        const updates: Record<string, any> = {};
+        const updates: Record<string, unknown> = {};
         if (patternId !== undefined) updates.id = patternId;
         Object.entries(rest).forEach(([k, v]) => { if (v !== undefined) updates[k] = v; });
         if (Object.keys(updates).length > 0) {

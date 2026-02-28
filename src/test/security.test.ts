@@ -3,6 +3,7 @@ import { checkRateLimit } from "../../convex/rateLimit";
 import { checkAdmin } from "../../convex/auth";
 
 describe("checkRateLimit", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mockCtx: any;
 
     beforeEach(() => {
@@ -101,6 +102,7 @@ describe("checkRateLimit", () => {
 });
 
 describe("checkAdmin", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mockCtx: any;
 
     beforeEach(() => {

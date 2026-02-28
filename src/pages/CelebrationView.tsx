@@ -38,6 +38,7 @@ const CelebrationView = () => {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = event.theme as any;
   const glowColor = t?.glowColor || t?.secondary || "#ec4899";
 
@@ -49,10 +50,12 @@ const CelebrationView = () => {
   const shareUrl = encodeURIComponent(window.location.href);
   const shareText = encodeURIComponent("Check out this celebration card! 🎉");
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const firstPage = celebration.pages?.[0] as any;
   const introBgColor = firstPage?.baseColor || t?.primary || "#000";
   const introBgImage = firstPage?.bgImage ? `url(${firstPage.bgImage})` : undefined;
   const introTextColor = firstPage?.textColor || t?.textLight || "#fff";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const defaultFont = fonts?.find((f: any) => f.isDefault)?.fontFamily || "Inter";
 
   // Intro screen
@@ -119,6 +122,7 @@ const CelebrationView = () => {
   );
 
   // Inject the Ourheart-style synthetic CTA watermark slide
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pages = [...(celebration.pages as any)];
   if (!celebration.removeWatermark) {
     pages.push({

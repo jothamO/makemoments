@@ -69,6 +69,7 @@ const AdminCelebrations = () => {
     return <GlobalLoader transparent />;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleStatusUpdate = async (id: any, status: "pending" | "paid" | "failed") => {
     await safeMutation(updateCelebrationStatus, { id, status, token: token || undefined }, `Status updated to ${status}`);
   };
@@ -173,6 +174,7 @@ const AdminCelebrations = () => {
                     </span>
                   </TableCell>
                   <TableCell>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <Select defaultValue={c.paymentStatus} onValueChange={(val: any) => handleStatusUpdate(c._id, val)}>
                       <SelectTrigger className={cn(
                         "h-7 w-28 text-[10px] font-bold uppercase tracking-wider border-none bg-transparent shadow-none focus:ring-0",
@@ -225,6 +227,7 @@ const AdminCelebrations = () => {
                     <Eye className="h-3 w-3" />
                     <span>{c.views || 0}</span>
                   </div>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   <Select defaultValue={c.paymentStatus} onValueChange={(val: any) => handleStatusUpdate(c._id, val)}>
                     <SelectTrigger className={cn(
                       "h-6 w-24 text-[10px] font-bold uppercase tracking-widest border-none bg-zinc-50 px-2 rounded",

@@ -55,6 +55,7 @@ export function StoryCanvas({ page, showWatermark = false, onPhotoClick, onTextC
           <div className="absolute inset-0 z-20 overflow-hidden pointer-events-none">
             {photos.map((photo, i) => (
               <div
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 key={(photo as any).id || i}
                 className="absolute inset-0 pointer-events-none"
               >

@@ -19,6 +19,7 @@ import {
 
 interface NotifyMeDialogProps {
     event: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         _id: any;
         name: string;
         theme: {
@@ -62,6 +63,7 @@ export function NotifyMeDialog({ event, open, onOpenChange }: NotifyMeDialogProp
                 description: `We'll let you know as soon as ${event.name} launches.`,
             });
             onOpenChange(false);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast({
                 title: "Subscription failed",
