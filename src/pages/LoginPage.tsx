@@ -62,13 +62,13 @@ export default function LoginPage() {
             }
 
             login(result.token);
-            toast({ title: "Welcome back!", description: "Successfully logged in." });
+            toast({ title: "Signed In" });
             navigate(from, { replace: true });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast({
-                title: "Login failed",
-                description: error.message || "Invalid credentials. Please try again.",
+                title: "Login Failed",
+                description: "Invalid credentials",
                 variant: "destructive",
             });
         } finally {

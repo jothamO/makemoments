@@ -43,8 +43,8 @@ export function NotifyMeDialog({ event, open, onOpenChange }: NotifyMeDialogProp
 
         if (!isLoggedIn && !email) {
             toast({
-                title: "Email required",
-                description: "Please enter your email to be notified.",
+                title: "Email Required",
+                description: "Please enter your email.",
                 variant: "destructive",
             });
             return;
@@ -59,14 +59,14 @@ export function NotifyMeDialog({ event, open, onOpenChange }: NotifyMeDialogProp
             });
 
             toast({
-                title: "All set!",
-                description: `We'll let you know as soon as ${event.name} launches.`,
+                title: "Subscribed",
+                description: "We'll notify you!",
             });
             onOpenChange(false);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast({
-                title: "Subscription failed",
+                title: "Subscription Failed",
                 description: error.message || "Something went wrong. Please try again.",
                 variant: "destructive",
             });

@@ -56,19 +56,19 @@ export default function Settings() {
         e.preventDefault();
         if (!token) return;
         if (newPassword !== confirmPassword) {
-            toast({ title: "Passwords do not match", variant: "destructive" });
+            toast({ title: "Passcodes Mismatch", variant: "destructive" });
             return;
         }
 
         setIsUpdatingPassword(true);
         try {
             await updatePasswordMutation({ token, oldPassword, newPassword });
-            toast({ title: "Password updated", description: "Your password has been changed successfully." });
+            toast({ title: "Passcode Reset" });
             setOldPassword("");
             setNewPassword("");
             setConfirmPassword("");
         } catch (error: any) {
-            toast({ title: "Failed to update password", description: error.message, variant: "destructive" });
+            toast({ title: "Update Failed", description: error.message, variant: "destructive" });
         } finally {
             setIsUpdatingPassword(false);
         }
@@ -78,9 +78,9 @@ export default function Settings() {
         setProcessingId(eventId);
         try {
             await unsubscribe({ email, eventId });
-            toast({ title: "Unsubscribed successfully" });
+            toast({ title: "Unsubscribed" });
         } catch (error) {
-            toast({ title: "Failed to unsubscribe", variant: "destructive" });
+            toast({ title: "Action Failed", variant: "destructive" });
         } finally {
             setProcessingId(null);
         }

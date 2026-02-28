@@ -306,4 +306,10 @@ export default defineSchema({
         count: v.number(),
         resetAt: v.number(),    // Timestamp when the window resets
     }).index("by_identifier_action", ["identifier", "action"]),
+
+    securityAudits: defineTable({
+        event: v.string(),          // "debugger_detected", "domain_mismatch", "timing_anomaly"
+        metadata: v.optional(v.any()), // Extra context (user agent, hostname, etc.)
+        timestamp: v.number(),
+    }).index("by_event", ["event"]),
 });

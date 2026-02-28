@@ -130,10 +130,10 @@ const EventEditor = () => {
       } else {
         await createEvent({ ...payload, token: token || undefined });
       }
-      toast({ title: isPublish ? "Event Published!" : "Event Saved" });
+      toast({ title: isPublish ? "Published" : "Saved" });
       if (!id || isPublish) navigate("/admin/events");
     } catch (error) {
-      toast({ title: "Error saving event", variant: "destructive" });
+      toast({ title: "Save Failed", variant: "destructive" });
     }
   };
 

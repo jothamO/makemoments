@@ -45,7 +45,7 @@ const CelebrationView = () => {
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
-    toast({ title: "Link copied!", description: "Share it with your loved ones 💕" });
+    toast({ title: "Link Copied", description: "Shared!" });
   };
 
   const shareUrl = encodeURIComponent(window.location.href);

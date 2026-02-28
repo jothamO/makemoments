@@ -1,8 +1,9 @@
-import { Toaster } from "@/components/ui/toaster";
+import { useEffect } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useMutation } from "convex/react";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Homepage from "./pages/Homepage";
 import CreatePage from "./pages/CreatePage";
@@ -30,17 +31,31 @@ import { useAuth } from "./hooks/useAuth";
 import { AuthProvider } from "./contexts/AuthContext";
 import { BottomNavigation } from "./components/public/BottomNavigation";
 import { ReloadPrompt } from "./components/ReloadPrompt";
+import { setAuditReporter, initIntegrityChecks, teardownIntegrityChecks } from "./lib/integrity";
 
 const queryClient = new QueryClient();
+
+/** Passive security monitor — connects integrity.ts to Convex */
+function IntegrityGuard() {
+  const logEvent = useMutation(api.audit.logSecurityEvent);
+  useEffect(() => {
+    setAuditReporter((event, metadata) => {
+      logEvent({ event, metadata }).catch(() => { });
+    });
+    initIntegrityChecks();
+    return () => teardownIntegrityChecks();
+  }, [logEvent]);
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
         <ThemeProvider>
-          <Toaster />
           <Sonner />
           <ReloadPrompt />
+          <IntegrityGuard />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               <Route path="/" element={<Homepage />} />

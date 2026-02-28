@@ -5,6 +5,11 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
+
+// ── Environment Hardening ──
+// Set to `false` and rebuild to temporarily restore console logs in production for debugging.
+const STRIP_CONSOLE = true;
+
 export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
@@ -38,7 +43,27 @@ export default defineConfig(({ mode }) => ({
         ]
       }
     })
-  ].filter(Boolean),
+  ],
+  build: {
+    sourcemap: false, // Never ship source maps to production
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: STRIP_CONSOLE,
+        drop_debugger: true,
+        pure_funcs: STRIP_CONSOLE
+          ? ['console.log', 'console.info', 'console.debug']
+          : [],
+      },
+      mangle: {
+        toplevel: true,
+        safari10: true,
+      },
+      format: {
+        comments: false,
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

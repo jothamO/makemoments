@@ -9,6 +9,7 @@
  */
 
 import type * as assets from "../assets.js";
+import type * as audit from "../audit.js";
 import type * as auth from "../auth.js";
 import type * as backup from "../backup.js";
 import type * as celebrationExpiry from "../celebrationExpiry.js";
@@ -48,6 +49,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   assets: typeof assets;
+  audit: typeof audit;
   auth: typeof auth;
   backup: typeof backup;
   celebrationExpiry: typeof celebrationExpiry;

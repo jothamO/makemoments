@@ -91,7 +91,7 @@ export default function FilesPage() {
     const [newMusic, setNewMusic] = useState({ name: "", artist: "", duration: 0, url: "", isPremium: false, price: 0 });
 
     const handleAddTheme = async () => {
-        if (!newTheme.name) return toast({ title: "Name required", variant: "destructive" });
+        if (!newTheme.name) return toast({ title: "Name Required", variant: "destructive" });
 
         const payload = {
             name: newTheme.name,
@@ -105,8 +105,8 @@ export default function FilesPage() {
 
         const success = editingThemeId
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ? await safeMutation(updateTheme, { id: editingThemeId as any, token: token || undefined, ...payload }, "Theme updated")
-            : await safeMutation(createTheme, { ...payload, token: token || undefined }, "Theme added");
+            ? await safeMutation(updateTheme, { id: editingThemeId as any, token: token || undefined, ...payload }, "Updated")
+            : await safeMutation(createTheme, { ...payload, token: token || undefined }, "Added");
 
         if (success) {
             setIsThemeOpen(false);
@@ -119,7 +119,7 @@ export default function FilesPage() {
     };
 
     const handleAddFont = async () => {
-        if (!newFont.name) return toast({ title: "Name required", variant: "destructive" });
+        if (!newFont.name) return toast({ title: "Name Required", variant: "destructive" });
 
         if (editingFontId) {
             const success = await safeMutation(updateFont, {
@@ -130,7 +130,7 @@ export default function FilesPage() {
                 fontFamily: newFont.fontFamily,
                 isPremium: newFont.isPremium,
                 price: newFont.price
-            }, "Font updated");
+            }, "Updated");
             if (success) {
                 setIsFontOpen(false);
                 setEditingFontId(null);
@@ -143,12 +143,12 @@ export default function FilesPage() {
                 try {
                     storageId = await uploadToConvexStorage((file: File) => generateFontUploadUrl({ token: token || undefined }), fontFileRef.current.files[0]);
                 } catch {
-                    toast({ title: "Upload failed", variant: "destructive" });
+                    toast({ title: "Upload Failed", variant: "destructive" });
                     setIsUploading(false);
                     return;
                 }
             }
-            const success = await safeMutation(createFontMutation, { ...newFont, storageId, token: token || undefined }, "Font added");
+            const success = await safeMutation(createFontMutation, { ...newFont, storageId, token: token || undefined }, "Added");
             if (success) {
                 setIsFontOpen(false);
                 setIsUploading(false);
@@ -184,9 +184,9 @@ export default function FilesPage() {
         };
 
         const success = editingPatternId
-            ? await safeMutation(updatePattern, { ...payload, token: token || undefined }, "Pattern updated")
+            ? await safeMutation(updatePattern, { ...payload, token: token || undefined }, "Updated")
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            : await safeMutation(createPattern, { ...payload, id: newPattern.id, token: token || undefined } as any, "Pattern added");
+            : await safeMutation(createPattern, { ...payload, id: newPattern.id, token: token || undefined } as any, "Added");
 
         if (success) {
             setIsPatternOpen(false);
@@ -196,7 +196,7 @@ export default function FilesPage() {
     };
 
     const handleAddMusic = async () => {
-        if (!newMusic.name || !newMusic.artist) return toast({ title: "Name and Artist required", variant: "destructive" });
+        if (!newMusic.name || !newMusic.artist) return toast({ title: "Details Required", variant: "destructive" });
 
         if (editingMusicId) {
             const success = await safeMutation(updateMusic, {
@@ -208,7 +208,7 @@ export default function FilesPage() {
                 duration: newMusic.duration,
                 isPremium: newMusic.isPremium,
                 price: newMusic.price
-            }, "Music track updated");
+            }, "Updated");
             if (success) {
                 setIsMusicOpen(false);
                 setEditingMusicId(null);
@@ -229,7 +229,7 @@ export default function FilesPage() {
                 try {
                     storageId = await uploadToConvexStorage((file: File) => generateUploadUrl({ token: token || undefined }), file);
                 } catch {
-                    toast({ title: "Upload failed", variant: "destructive" });
+                    toast({ title: "Upload Failed", variant: "destructive" });
                     setIsUploading(false);
                     return;
                 }
@@ -243,7 +243,7 @@ export default function FilesPage() {
                 storageId,
                 isPremium: newMusic.isPremium,
                 price: newMusic.price
-            }, "Music track added");
+            }, "Added");
 
             if (success) {
                 setIsMusicOpen(false);
@@ -261,10 +261,10 @@ export default function FilesPage() {
                 const storageId = await uploadToConvexStorage((file: File) => generateCharacterUploadUrl({ token: token || undefined }), file);
                 await createCharacter({ name: file.name.split(".")[0], storageId, token: token || undefined });
             }
-            toast({ title: "Characters uploaded" });
+            toast({ title: "Uploaded" });
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+            toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
         }
         setIsUploading(false);
     };
@@ -272,7 +272,7 @@ export default function FilesPage() {
     const handleUpdateCharacter = async () => {
         if (!editingCharacterId || !editingName) return;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const success = await safeMutation(updateCharacter, { id: editingCharacterId as any, name: editingName, token: token || undefined }, "Character renamed");
+        const success = await safeMutation(updateCharacter, { id: editingCharacterId as any, name: editingName, token: token || undefined }, "Renamed");
         if (success) {
             setEditingCharacterId(null);
             setEditingName("");

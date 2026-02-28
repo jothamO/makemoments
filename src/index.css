@@ -260,3 +260,26 @@
     height: 100%;
   }
 }
+
+/* ── Apple-style Pill Toasts ───────────────────────────── */
+.apple-pill-toast {
+  @apply !rounded-full !bg-black/80 !backdrop-blur-xl !border-white/10 !shadow-[0_20px_50px_rgba(0,0,0,0.3)] !px-6 !py-3 !text-white !font-medium !tracking-tight !border;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 140px !important;
+  max-width: fit-content !important;
+  pointer-events: auto !important;
+}
+
+.apple-pill-toast [data-icon] {
+  @apply !mr-2;
+}
+
+.apple-pill-toast [data-title] {
+  @apply !text-sm;
+}
+
+.apple-pill-toast [data-description] {
+  @apply !text-[10px] !opacity-60 !ml-1;
+}

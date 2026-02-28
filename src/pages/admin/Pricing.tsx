@@ -34,12 +34,7 @@ export default function PricingPage() {
     const globalPricing = useQuery(api.pricing.list, { token: token || undefined }) || [];
 
     // ── Mutations ──
-    const setGlobalPrice = useMutation(api.pricing.set);
-    const updateTheme = useMutation(api.themes.update);
-    const updateFont = useMutation(api.fonts.update);
-    const updateMusic = useMutation(api.music.update);
-    const updatePattern = useMutation(api.patterns.update);
-    const updateCharacter = useMutation(api.characters.update);
+    const bulkUpdatePricing = useMutation(api.pricing.bulkUpdate);
 
     // ── Local State ──
     const [prices, setPrices] = useState<Record<string, { ngn: number, usd: number }>>({});
@@ -90,34 +85,34 @@ export default function PricingPage() {
         });
     }, [globalPricing, themes, fonts, music, patterns, characters]);
 
-
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // 1. Save Category Prices
-            for (const [cat, matrix] of Object.entries(prices)) {
-                await safeMutation(setGlobalPrice, { category: cat, prices: matrix, token: token || undefined }, "");
-            }
+            const categoryPrices = Object.entries(prices).map(([category, prices]) => ({
+                category,
+                prices
+            }));
 
-            // 2. Save Individual Premium Status
-            for (const [key, isPremium] of Object.entries(premiumStatus)) {
-                const [type, id] = key.split('-');
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (type === 'theme') await updateTheme({ id: id as any, isPremium, token: token || undefined });
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (type === 'font') await updateFont({ id: id as any, isPremium, token: token || undefined });
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (type === 'music') await updateMusic({ id: id as any, isPremium, token: token || undefined });
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (type === 'pattern') await updatePattern({ id: id as any, isPremium, token: token || undefined });
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (type === 'char') await updateCharacter({ id: id as any, isPremium, token: token || undefined });
-            }
+            const assetPremiumStatus = Object.entries(premiumStatus).map(([key, isPremium]) => {
+                const [typePrefix, id] = key.split('-');
+                let type: "theme" | "font" | "music" | "pattern" | "character" = "theme";
+                if (typePrefix === 'font') type = "font";
+                if (typePrefix === 'music') type = "music";
+                if (typePrefix === 'pattern') type = "pattern";
+                if (typePrefix === 'char') type = "character";
+                return { type, id, isPremium };
+            });
 
-            toast({ title: "Pricing and asset configuration saved" });
+            await safeMutation(bulkUpdatePricing, {
+                token: token || undefined,
+                categoryPrices,
+                assetPremiumStatus
+            }, "");
+
+            toast({ title: "Config Saved" });
         } catch (error) {
             console.error(error);
-            toast({ title: "Failed to save pricing", variant: "destructive" });
+            toast({ title: "Save Failed", variant: "destructive" });
         } finally {
             setIsSaving(false);
         }

@@ -275,7 +275,7 @@ export function PaymentModal({ open, onClose, event, pages, musicTrackId }: Paym
         customLink,
         customSlug: customLink ? slug : undefined,
         hdDownload,
-        totalPaid: total,
+        totalPaid: total, // Client-side estimate for reference; recalculated server-side
         currency,
         gateway: activeGateway,
         paymentReference: paystackConfig.reference,

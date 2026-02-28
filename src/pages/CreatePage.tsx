@@ -363,8 +363,7 @@ export default function CreatePage() {
                 const state = location.state;
                 if (state?.fromTemplate) {
                     toast({
-                        title: "Music error",
-                        description: "Failed to load music track. It might be unavailable.",
+                        title: "Playback Error",
                         variant: "destructive"
                     });
                 }
