@@ -6,7 +6,15 @@ import tseslint from "typescript-eslint";
 import security from "eslint-plugin-security";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  {
+    ignores: [
+      "dist",
+      "convex/_generated",
+      "scripts",
+      "inject-stars.mjs",
+      "convex/test_query.ts",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -24,6 +32,11 @@ export default tseslint.config(
       ...security.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-empty-object-type": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
+      "@typescript-eslint/no-require-imports": "warn",
+      "@typescript-eslint/no-non-null-asserted-optional-chain": "warn",
     },
   },
 );

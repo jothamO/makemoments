@@ -377,7 +377,7 @@ export function StoryViewer({
                         // The text wrapper is vertically centered in this frame.
                         // We calculate the available top/bottom safe heights by dividing the remaining space.
 
-                        let safeMaxHeight = 128; // Default max
+                        const safeMaxHeight = 128; // Default max
                         if (textHeight > 0) {
                           const isTopHemisphere = (photo.transform.yp || 0) < 0;
 

@@ -318,7 +318,7 @@ export function StoryPreviewPlayer({ pages, open, onClose, musicTrack }: StoryPr
                                     {page.photos && page.photos.length > 0 && (
                                         <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
                                             {page.photos.map((photo, i) => {
-                                                let safeMaxHeight = 128; // Default max
+                                                const safeMaxHeight = 128; // Default max
                                                 if (textHeight > 0) {
                                                     const isTopHemisphere = (photo.transform.yp || 0) < 0;
                                                 }

@@ -1,6 +1,0 @@
-dist
-node_modules
-.convex
-build
-*.json
-src/test/security.test.ts
