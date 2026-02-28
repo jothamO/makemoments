@@ -335,9 +335,14 @@ function AssetTable({ items, type, premiumStatus, setPremiumStatus }: any) {
                                     )}
                                 </TableCell>
                                 <TableCell className="font-medium text-zinc-900">
-                                    <span style={type === 'font' ? { fontFamily: item.fontFamily } : {}}>
-                                        {item.name}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span style={type === 'font' ? { fontFamily: item.fontFamily } : {}}>
+                                            {item.name}
+                                        </span>
+                                        {!!premiumStatus[`${type}-${item._id}`] && (
+                                            <DollarSign className="h-3 w-3 text-emerald-600" />
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell className="text-center">
                                     <Checkbox
@@ -346,7 +351,7 @@ function AssetTable({ items, type, premiumStatus, setPremiumStatus }: any) {
                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             setPremiumStatus((prev: any) => ({ ...prev, [`${type}-${item._id}`]: !!checked }));
                                         }}
-                                        className="data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900"
+                                        className="data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900 accent-zinc-900"
                                     />
                                 </TableCell>
                             </TableRow>
@@ -392,8 +397,11 @@ function AssetTable({ items, type, premiumStatus, setPremiumStatus }: any) {
                                 )}
                             </div>
                             <div className="space-y-0.5">
-                                <p className="text-sm font-bold text-zinc-900 leading-tight" style={type === 'font' ? { fontFamily: item.fontFamily } : {}}>
+                                <p className="text-sm font-bold text-zinc-900 leading-tight flex items-center gap-1.5" style={type === 'font' ? { fontFamily: item.fontFamily } : {}}>
                                     {item.name}
+                                    {!!premiumStatus[`${type}-${item._id}`] && (
+                                        <DollarSign className="h-3 w-3 text-emerald-600" />
+                                    )}
                                 </p>
                                 <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">{type}</p>
                             </div>
@@ -407,7 +415,7 @@ function AssetTable({ items, type, premiumStatus, setPremiumStatus }: any) {
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     setPremiumStatus((prev: any) => ({ ...prev, [`${type}-${item._id}`]: !!checked }));
                                 }}
-                                className="data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900 h-4 w-4"
+                                className="data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900 h-4 w-4 accent-zinc-900"
                             />
                         </div>
                     </div>

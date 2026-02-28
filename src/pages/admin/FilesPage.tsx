@@ -58,7 +58,6 @@ export default function FilesPage() {
     const updateCharacter = useMutation(api.characters.update);
     const removeCharacter = useMutation(api.characters.remove);
     const generateCharacterUploadUrl = useMutation(api.characters.generateUploadUrl);
-    const setGlobalPrice = useMutation(api.pricing.set);
     const setDefaultAsset = useMutation(api.assets.setDefaultAsset);
 
     // ── Refs ──
@@ -82,13 +81,12 @@ export default function FilesPage() {
 
     const [newTheme, setNewTheme] = useState({
         name: "", baseColor: "#ffffff", glowColor: "#ffffff", type: "light",
-        isPremium: false, price: 0
     });
-    const [newFont, setNewFont] = useState({ name: "", fontFamily: "", isCustom: false, isPremium: false, price: 0 });
+    const [newFont, setNewFont] = useState({ name: "", fontFamily: "", isCustom: false });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [newPattern, setNewPattern] = useState({ id: "", name: "", emojis: "", type: "fall" as any, isPremium: false, price: 0 });
+    const [newPattern, setNewPattern] = useState({ id: "", name: "", emojis: "", type: "fall" as any });
     const [editingPatternId, setEditingPatternId] = useState<string | null>(null);
-    const [newMusic, setNewMusic] = useState({ name: "", artist: "", duration: 0, url: "", isPremium: false, price: 0 });
+    const [newMusic, setNewMusic] = useState({ name: "", artist: "", duration: 0, url: "" });
 
     const handleAddTheme = async () => {
         if (!newTheme.name) return toast({ title: "Name Required", variant: "destructive" });
@@ -99,8 +97,6 @@ export default function FilesPage() {
             glowColor: newTheme.glowColor,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type: newTheme.type as any,
-            isPremium: newTheme.isPremium,
-            price: newTheme.price
         };
 
         const success = editingThemeId
@@ -112,8 +108,7 @@ export default function FilesPage() {
             setIsThemeOpen(false);
             setEditingThemeId(null);
             setNewTheme({
-                name: "", baseColor: "#ffffff", glowColor: "#ffffff", type: "light",
-                isPremium: false, price: 0
+                name: "", baseColor: "#ffffff", glowColor: "#ffffff", type: "light"
             });
         }
     };
@@ -128,13 +123,11 @@ export default function FilesPage() {
                 id: editingFontId as any,
                 name: newFont.name,
                 fontFamily: newFont.fontFamily,
-                isPremium: newFont.isPremium,
-                price: newFont.price
             }, "Updated");
             if (success) {
                 setIsFontOpen(false);
                 setEditingFontId(null);
-                setNewFont({ name: "", fontFamily: "", isCustom: false, isPremium: false, price: 0 });
+                setNewFont({ name: "", fontFamily: "", isCustom: false });
             }
         } else {
             let storageId = undefined;
@@ -152,7 +145,7 @@ export default function FilesPage() {
             if (success) {
                 setIsFontOpen(false);
                 setIsUploading(false);
-                setNewFont({ name: "", fontFamily: "", isCustom: false, isPremium: false, price: 0 });
+                setNewFont({ name: "", fontFamily: "", isCustom: false });
             }
         }
     };
@@ -179,8 +172,6 @@ export default function FilesPage() {
             emojis: emojiArray,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type: newPattern.type as any,
-            isPremium: newPattern.isPremium,
-            price: newPattern.price
         };
 
         const success = editingPatternId
@@ -190,7 +181,7 @@ export default function FilesPage() {
 
         if (success) {
             setIsPatternOpen(false);
-            setNewPattern({ id: "", name: "", emojis: "", type: "fall", isPremium: false, price: 0 });
+            setNewPattern({ id: "", name: "", emojis: "", type: "fall" as any });
             setEditingPatternId(null);
         }
     };
@@ -206,13 +197,11 @@ export default function FilesPage() {
                 name: newMusic.name,
                 artist: newMusic.artist,
                 duration: newMusic.duration,
-                isPremium: newMusic.isPremium,
-                price: newMusic.price
             }, "Updated");
             if (success) {
                 setIsMusicOpen(false);
                 setEditingMusicId(null);
-                setNewMusic({ name: "", artist: "", duration: 0, url: "", isPremium: false, price: 0 });
+                setNewMusic({ name: "", artist: "", duration: 0, url: "" });
             }
         } else {
             let storageId = undefined;
@@ -241,14 +230,12 @@ export default function FilesPage() {
                 artist: newMusic.artist,
                 duration: duration || 180,
                 storageId,
-                isPremium: newMusic.isPremium,
-                price: newMusic.price
             }, "Added");
 
             if (success) {
                 setIsMusicOpen(false);
                 setIsUploading(false);
-                setNewMusic({ name: "", artist: "", duration: 0, url: "", isPremium: false, price: 0 });
+                setNewMusic({ name: "", artist: "", duration: 0, url: "" });
             }
         }
     };
@@ -382,11 +369,6 @@ export default function FilesPage() {
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-
-                                                <div className="flex items-center gap-2 pt-8">
-                                                    <input type="checkbox" id="theme-premium" checked={newTheme.isPremium} onChange={e => setNewTheme(p => ({ ...p, isPremium: e.target.checked }))} className="rounded bg-white/5 border-white/10" />
-                                                    <Label htmlFor="theme-premium" className="text-xs">Premium</Label>
-                                                </div>
                                             </div>
                                         </div>
 
@@ -425,12 +407,11 @@ export default function FilesPage() {
                                                 baseColor: theme.baseColor || "#ffffff",
                                                 glowColor: theme.glowColor || "#ffffff",
                                                 type: theme.type || "light",
-                                                isPremium: theme.isPremium || false,
-                                                price: theme.price || 0
+                                                type: theme.type || "light",
                                             });
                                         } else {
                                             setEditingThemeId(null);
-                                            setNewTheme({ name: "", baseColor: "#ffffff", glowColor: "#ffffff", type: "light", isPremium: false, price: 0 });
+                                            setNewTheme({ name: "", baseColor: "#ffffff", glowColor: "#ffffff", type: "light" });
                                         }
                                     }}>
                                         <DialogTrigger asChild>
@@ -574,71 +555,55 @@ export default function FilesPage() {
                                                         </Select>
                                                     </div>
 
-                                                    <div className="flex items-center gap-2 py-4">
-                                                        <input
-                                                            type="checkbox"
-                                                            id={`premium-${theme._id}`}
-                                                            defaultChecked={theme.isPremium}
-                                                            onChange={e => {
-                                                                setEditingThemeId(theme._id);
-                                                                setNewTheme(p => ({ ...p, isPremium: e.target.checked }));
-                                                            }}
-                                                            className="rounded bg-white/5 border-zinc-200"
-                                                        />
-                                                        <Label htmlFor={`premium-${theme._id}`}>Premium Asset</Label>
-                                                    </div>
-
-                                                    <div className="pt-4 border-t border-zinc-100">
-                                                        <Label className="text-[10px] uppercase font-bold text-zinc-400 mb-2 block">Live Preview</Label>
-                                                        <div
-                                                            className="flex flex-col items-center justify-center h-32 rounded-xl relative overflow-hidden transition-all duration-300 border border-zinc-100 shadow-inner"
-                                                            style={{
-                                                                backgroundColor: newTheme.baseColor || theme.baseColor,
-                                                                backgroundImage: getBrandRadialGradient(newTheme.baseColor || theme.baseColor, newTheme.glowColor || theme.glowColor, (newTheme.type || theme.type) === 'dark')
-
-                                                            }}
-                                                        >
-                                                            <span
-                                                                className="font-bold text-lg"
-                                                                style={{ color: (newTheme.type || theme.type) === 'dark' ? '#fff' : '#000' }}
-                                                            >
-                                                                {newTheme.name || theme.name}
-                                                            </span>
-                                                        </div>
-                                                    </div>
                                                 </div>
 
-                                                <div className="flex gap-3 pt-6">
-                                                    <DialogClose asChild>
-                                                        <Button variant="outline" className="flex-1">Cancel</Button>
-                                                    </DialogClose>
-                                                    <Button
-                                                        className="flex-1"
-                                                        onClick={async () => {
-                                                            // If editingThemeId is not set, it means no changes were made
-                                                            const success = await safeMutation(updateTheme, {
-                                                                id: theme._id,
-                                                                token: token || undefined,
-                                                                name: newTheme.name || theme.name,
-                                                                baseColor: newTheme.baseColor || theme.baseColor,
-                                                                glowColor: newTheme.glowColor || theme.glowColor,
-                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                                type: (newTheme.type || theme.type) as any,
-                                                                isPremium: newTheme.isPremium !== undefined ? newTheme.isPremium : (theme.isPremium || false),
-                                                                price: newTheme.price !== undefined ? newTheme.price : (theme.price || 0)
-                                                            }, "Theme updated");
-                                                            if (success) {
-                                                                setEditingThemeId(null);
-                                                                setNewTheme({ name: "", baseColor: "#ffffff", glowColor: "#ffffff", type: "light", isPremium: false, price: 0 });
-                                                            }
+                                                <div className="pt-4 border-t border-zinc-100">
+                                                    <Label className="text-[10px] uppercase font-bold text-zinc-400 mb-2 block">Live Preview</Label>
+                                                    <div
+                                                        className="flex flex-col items-center justify-center h-32 rounded-xl relative overflow-hidden transition-all duration-300 border border-zinc-100 shadow-inner"
+                                                        style={{
+                                                            backgroundColor: newTheme.baseColor || theme.baseColor,
+                                                            backgroundImage: getBrandRadialGradient(newTheme.baseColor || theme.baseColor, newTheme.glowColor || theme.glowColor, (newTheme.type || theme.type) === 'dark')
+
                                                         }}
                                                     >
-                                                        Save Changes
-                                                    </Button>
+                                                        <span
+                                                            className="font-bold text-lg"
+                                                            style={{ color: (newTheme.type || theme.type) === 'dark' ? '#fff' : '#000' }}
+                                                        >
+                                                            {newTheme.name || theme.name}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </DialogContent>
 
+                                            <div className="flex gap-3 pt-6">
+                                                <DialogClose asChild>
+                                                    <Button variant="outline" className="flex-1">Cancel</Button>
+                                                </DialogClose>
+                                                <Button
+                                                    className="flex-1"
+                                                    onClick={async () => {
+                                                        // If editingThemeId is not set, it means no changes were made
+                                                        const success = await safeMutation(updateTheme, {
+                                                            id: theme._id,
+                                                            token: token || undefined,
+                                                            name: newTheme.name || theme.name,
+                                                            baseColor: newTheme.baseColor || theme.baseColor,
+                                                            glowColor: newTheme.glowColor || theme.glowColor,
+                                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                            type: (newTheme.type || theme.type) as any,
+                                                        }, "Theme updated");
+                                                        if (success) {
+                                                            setEditingThemeId(null);
+                                                            setNewTheme({ name: "", baseColor: "#ffffff", glowColor: "#ffffff", type: "light" });
+                                                        }
+                                                    }}
+                                                >
+                                                    Save Changes
+                                                </Button>
+                                            </div>
+                                        </DialogContent>
                                     </Dialog>
                                 ))}
                             </div>
@@ -655,7 +620,7 @@ export default function FilesPage() {
                                 setIsFontOpen(open);
                                 if (!open) {
                                     setEditingFontId(null);
-                                    setNewFont({ name: "", fontFamily: "", isCustom: false, isPremium: false, price: 0 });
+                                    setNewFont({ name: "", fontFamily: "", isCustom: false });
                                 }
                             }}>
                                 <DialogTrigger asChild>
@@ -744,8 +709,6 @@ export default function FilesPage() {
                                                             name: font.name,
                                                             fontFamily: font.fontFamily,
                                                             isCustom: font.isCustom,
-                                                            isPremium: font.isPremium || false,
-                                                            price: font.price || 0
                                                         });
                                                         setIsFontOpen(true);
                                                     }}>
@@ -849,19 +812,6 @@ export default function FilesPage() {
                                                         />
                                                     </div>
 
-                                                    <div className="flex items-center gap-2 py-4">
-                                                        <input
-                                                            type="checkbox"
-                                                            id={`font-premium-${font._id}`}
-                                                            defaultChecked={font.isPremium}
-                                                            onChange={e => {
-                                                                setEditingFontId(font._id);
-                                                                setNewFont(p => ({ ...p, isPremium: e.target.checked }));
-                                                            }}
-                                                            className="rounded bg-white/5 border-zinc-200"
-                                                        />
-                                                        <Label htmlFor={`font-premium-${font._id}`}>Premium Asset</Label>
-                                                    </div>
 
                                                     <div className="pt-4 border-t border-zinc-100">
                                                         <Label className="text-[10px] uppercase font-bold text-zinc-400 mb-4 block">Live Preview</Label>
@@ -888,12 +838,10 @@ export default function FilesPage() {
                                                                 token: token || undefined,
                                                                 name: newFont.name || font.name,
                                                                 fontFamily: newFont.fontFamily || font.fontFamily,
-                                                                isPremium: newFont.isPremium !== undefined ? newFont.isPremium : (font.isPremium || false),
-                                                                price: newFont.price !== undefined ? newFont.price : (font.price || 0)
                                                             }, "Font updated");
                                                             if (success) {
                                                                 setEditingFontId(null);
-                                                                setNewFont({ name: "", fontFamily: "", isCustom: false, isPremium: false, price: 0 });
+                                                                setNewFont({ name: "", fontFamily: "", isCustom: false });
                                                             }
                                                         }}
                                                     >
@@ -934,9 +882,7 @@ export default function FilesPage() {
                                                 <div className="relative group rounded-xl border border-zinc-100 bg-zinc-50 p-2 flex flex-col items-center gap-2 hover:border-zinc-300 transition-all shadow-sm cursor-pointer active:scale-95">
                                                     <div className="aspect-square w-full flex items-center justify-center relative">
                                                         <img src={char.url} alt={char.name} className="max-w-full max-h-full object-contain drop-shadow-md" />
-                                                        {char.isPremium && (
-                                                            <span className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold rounded-full h-4 w-4 flex items-center justify-center shadow-sm">$</span>
-                                                        )}
+
                                                     </div>
                                                     <p className="text-[10px] font-bold text-zinc-600 truncate w-full text-center px-1 sm:hidden">{char.name}</p>
 
@@ -1011,49 +957,6 @@ export default function FilesPage() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Premium Toggle */}
-                                                        <div className="flex items-center gap-3 py-2">
-                                                            <input
-                                                                type="checkbox"
-                                                                id={`char-premium-${char._id}`}
-                                                                defaultChecked={char.isPremium || false}
-                                                                className="h-4 w-4 rounded border-zinc-300 accent-zinc-900"
-                                                                onChange={(e) => {
-                                                                    safeMutation(updateCharacter, {
-                                                                        id: char._id,
-                                                                        isPremium: e.target.checked,
-                                                                        ...(!e.target.checked ? { price: 0 } : {}),
-                                                                        token: token || undefined,
-                                                                    }, e.target.checked ? "Marked as Premium" : "Set to Free");
-                                                                }}
-                                                            />
-                                                            <Label htmlFor={`char-premium-${char._id}`} className="flex items-center gap-2 cursor-pointer">
-                                                                <DollarSign className="h-3.5 w-3.5 text-amber-500" />
-                                                                Premium Character
-                                                            </Label>
-                                                        </div>
-
-                                                        {char.isPremium && (
-                                                            <div className="space-y-2">
-                                                                <Label>Price (USD)</Label>
-                                                                <Input
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    min="0"
-                                                                    defaultValue={char.price || 0}
-                                                                    className="h-10"
-                                                                    onBlur={(e) => {
-                                                                        const price = parseFloat(e.target.value) || 0;
-                                                                        safeMutation(updateCharacter, {
-                                                                            id: char._id,
-                                                                            price,
-                                                                            token: token || undefined,
-                                                                        }, "Price updated");
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        )}
-
                                                         <Button
                                                             className="h-10 w-full bg-zinc-900 text-white px-6"
                                                             onClick={async () => {
@@ -1127,7 +1030,7 @@ export default function FilesPage() {
                                 setIsMusicOpen(open);
                                 if (!open) {
                                     setEditingMusicId(null);
-                                    setNewMusic({ name: "", artist: "", duration: 0, url: "", isPremium: false, price: 0 });
+                                    setNewMusic({ name: "", artist: "", duration: 0, url: "" });
                                 }
                             }}>
                                 <DialogTrigger asChild>
@@ -1230,8 +1133,6 @@ export default function FilesPage() {
                                                             artist: track.artist,
                                                             duration: track.duration,
                                                             url: track.url || "",
-                                                            isPremium: track.isPremium || false,
-                                                            price: track.price || 0
                                                         });
                                                         setIsMusicOpen(true);
                                                     }}>
@@ -1366,19 +1267,6 @@ export default function FilesPage() {
                                                         />
                                                     </div>
 
-                                                    <div className="flex items-center gap-2 py-4">
-                                                        <input
-                                                            type="checkbox"
-                                                            id={`music-premium-${track._id}`}
-                                                            defaultChecked={track.isPremium}
-                                                            onChange={e => {
-                                                                setEditingMusicId(track._id);
-                                                                setNewMusic(p => ({ ...p, isPremium: e.target.checked }));
-                                                            }}
-                                                            className="rounded bg-white/5 border-zinc-200"
-                                                        />
-                                                        <Label htmlFor={`music-premium-${track._id}`}>Premium Asset</Label>
-                                                    </div>
                                                 </div>
 
                                                 <div className="flex gap-3 pt-6">
@@ -1394,8 +1282,7 @@ export default function FilesPage() {
                                                                 name: newMusic.name || track.name,
                                                                 artist: newMusic.artist || track.artist,
                                                                 duration: newMusic.duration !== undefined ? newMusic.duration : track.duration,
-                                                                isPremium: newMusic.isPremium !== undefined ? newMusic.isPremium : (track.isPremium || false),
-                                                                price: newMusic.price !== undefined ? newMusic.price : (track.price || 0)
+                                                                duration: newMusic.duration !== undefined ? newMusic.duration : track.duration,
                                                             }, "Music updated");
                                                             if (success) {
                                                                 setEditingName("");
@@ -1425,7 +1312,7 @@ export default function FilesPage() {
                                 setIsPatternOpen(open);
                                 if (!open) {
                                     setEditingPatternId(null);
-                                    setNewPattern({ id: "", name: "", emojis: "", type: "fall", isPremium: false, price: 0 });
+                                    setNewPattern({ id: "", name: "", emojis: "", type: "fall" });
                                 }
                             }}>
                                 <DialogTrigger asChild>
@@ -1521,8 +1408,6 @@ export default function FilesPage() {
                                                             emojis: pattern.emojis?.join(", ") || "",
                                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                             type: (pattern.type as any) || "fall",
-                                                            isPremium: pattern.isPremium || false,
-                                                            price: pattern.price || 0
                                                         });
                                                         setEditingPatternId(pattern._id);
                                                         setIsPatternOpen(true);
@@ -1645,19 +1530,6 @@ export default function FilesPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-2 py-4">
-                                                        <input
-                                                            type="checkbox"
-                                                            id={`pattern-premium-${pattern._id}`}
-                                                            defaultChecked={pattern.isPremium}
-                                                            onChange={e => {
-                                                                setEditingPatternId(pattern._id);
-                                                                setNewPattern(p => ({ ...p, isPremium: e.target.checked }));
-                                                            }}
-                                                            className="rounded bg-white/5 border-zinc-200"
-                                                        />
-                                                        <Label htmlFor={`pattern-premium-${pattern._id}`}>Premium Asset</Label>
-                                                    </div>
                                                 </div>
 
                                                 <div className="flex gap-3 pt-6">
@@ -1674,8 +1546,6 @@ export default function FilesPage() {
                                                                 emojis: newPattern.emojis || pattern.emojis?.join(", "),
                                                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                 type: (newPattern.type || pattern.type) as any,
-                                                                isPremium: newPattern.isPremium !== undefined ? newPattern.isPremium : (pattern.isPremium || false),
-                                                                price: newPattern.price !== undefined ? newPattern.price : (pattern.price || 0)
                                                             }, "Pattern updated");
                                                             if (success) {
                                                                 setEditingPatternId(null);

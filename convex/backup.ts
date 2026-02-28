@@ -5,23 +5,28 @@ import { checkAdmin } from "./auth";
 import { Doc, Id, TableNames } from "./_generated/dataModel";
 
 const BACKUP_TABLES: TableNames[] = [
+    // ── Configuration & Content (Migrate to Production) ──
     "events",
-    "musicTracks",
-    "celebrations",
-    "globalThemes",
-    "globalFonts",
-    "globalPatterns",
-    "globalCharacters",
-    "globalPricing",
-    "templates",
     "exchangeRates",
     "gatewayConfig",
-    "users",
-    "sessions",
+    "globalFonts",
+    "globalPatterns",
+    "globalPricing",
+    "globalThemes",
     "mailConfig",
     "mailTemplates",
+    "musicTracks",
+    "sitePages",
+    "users",
+
+    // ── User-Generated & Transient Data (Usually skipped for Production Sync) ──
+    "celebrations",
     "eventNotifications",
+    "globalCharacters",
     "rateLimits",
+    "securityAudits",
+    "sessions",
+    "templates",
 ];
 
 export const exportAll = query({
@@ -46,7 +51,7 @@ export const exportAllInternal = internalQuery({
         const data: Record<string, any[]> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
         for (const table of BACKUP_TABLES) {
             // eslint-disable-next-line security/detect-object-injection
-            data[table] = await ctx.db.query(table).collect();
+            data[table] = await ctx.db.query(table as any).collect();
         }
         return data;
     },
@@ -61,7 +66,7 @@ export const runBackupAction = action({
         const b2KeyId = process.env.B2_APPLICATION_KEY_ID;
         const b2Key = process.env.B2_APPLICATION_KEY;
         const b2Bucket = process.env.B2_BUCKET_NAME;
-        const b2Endpoint = process.env.B2_ENDPOINT; // e.g., bucket-name.s3.us-west-004.backblazeb2.com
+        const b2Endpoint = process.env.B2_ENDPOINT;
 
         if (!b2KeyId || !b2Key || !b2Bucket || !b2Endpoint) {
             console.error("Backblaze B2 configuration missing");
@@ -74,11 +79,6 @@ export const runBackupAction = action({
         const filename = `backups/makemoments-backup-${timestamp}.json`;
 
         try {
-            // Using B2 Native API Flow: 1. Authorize 2. Get Upload URL 3. Upload
-            // Note: For 2026 best practices, we use the easiest reliable method available in the environment.
-            // B2 S3-compatible API is often preferred, but requires SigV4 signing.
-            // Let's use a simpler Fetch approach for this environment.
-
             const authResponse = await fetch("https://api.backblazeb2.com/b2api/v2/b2_authorize_account", {
                 headers: {
                     Authorization: `Basic ${btoa(`${b2KeyId}:${b2Key}`)}`
@@ -103,7 +103,7 @@ export const runBackupAction = action({
                     Authorization: uploadUrlData.authorizationToken,
                     "X-Bz-File-Name": encodeURIComponent(filename),
                     "Content-Type": "application/json",
-                    "X-Bz-Content-Sha1": "do_not_verify" // Simplified for now, best practice would be to compute SHA
+                    "X-Bz-Content-Sha1": "do_not_verify"
                 },
                 body: backupJson
             });
@@ -139,7 +139,7 @@ export const restoreFromBackup = internalMutation({
                 if (existing) {
                     await ctx.db.patch(_id, fields);
                 } else {
-                    await ctx.db.insert(table, { ...fields, _id } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+                    await ctx.db.insert(table as any, { ...fields, _id } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
                 }
             }
         }

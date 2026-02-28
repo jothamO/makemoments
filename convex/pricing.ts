@@ -72,19 +72,37 @@ export const bulkUpdate = mutation({
         }
 
         // 2. Update Individual Assets
+        const categoryMap = new Map();
+        for (const item of args.categoryPrices) {
+            categoryMap.set(item.category, item.prices);
+        }
+
         for (const item of args.assetPremiumStatus) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const id = item.id as any;
-            if (item.type === 'theme') await ctx.db.patch(id, { isPremium: item.isPremium });
-            if (item.type === 'font') await ctx.db.patch(id, { isPremium: item.isPremium });
-            if (item.type === 'music') await ctx.db.patch(id, { isPremium: item.isPremium });
+            const targetPrice = item.isPremium
+                ? (categoryMap.get(item.type === 'character' ? 'characters' :
+                    item.type === 'font' ? 'fonts' :
+                        item.type === 'music' ? 'music' :
+                            item.type === 'pattern' ? 'patterns' : 'themes') || { ngn: 0, usd: 0 })
+                : { ngn: 0, usd: 0 };
+
+            if (item.type === 'theme') {
+                await ctx.db.patch(id, { isPremium: item.isPremium, price: targetPrice });
+            }
+            if (item.type === 'font') {
+                await ctx.db.patch(id, { isPremium: item.isPremium, price: targetPrice });
+            }
+            if (item.type === 'music') {
+                await ctx.db.patch(id, { isPremium: item.isPremium, price: targetPrice });
+            }
             if (item.type === 'pattern') {
                 const existing = await ctx.db.query("globalPatterns").filter(q => q.eq(q.field("id"), item.id)).first();
-                if (existing) await ctx.db.patch(existing._id, { isPremium: item.isPremium });
+                if (existing) await ctx.db.patch(existing._id, { isPremium: item.isPremium, price: targetPrice });
             }
             if (item.type === 'character') {
-                const existing = await ctx.db.query("globalCharacters").filter(q => q.eq(q.field("_id"), item.id)).first();
-                if (existing) await ctx.db.patch(existing._id, { isPremium: item.isPremium });
+                const existing = await ctx.db.get(id);
+                if (existing) await ctx.db.patch(existing._id, { isPremium: item.isPremium, price: targetPrice });
             }
         }
     }
