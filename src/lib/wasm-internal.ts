@@ -39,6 +39,7 @@ export async function _w_transform(data: Uint8Array, key: number): Promise<Uint8
     const inst = await _initWasm();
     if (!inst) return data; // Fallback
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const exports = inst.exports as any;
     const mem = exports.mem as WebAssembly.Memory;
 

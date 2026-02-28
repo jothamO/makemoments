@@ -3,7 +3,6 @@
  * These are benign but confusing to static analysis tools and decompilers.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _v = (a: number, b: number) => {
     const r = (a * b) % 7;
     if (r === 0) return true;
@@ -14,7 +13,6 @@ const _v = (a: number, b: number) => {
  * A decoy function that looks like it's calculating a secure hash or key,
  * but only performs trivial arithmetic.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function _verifyIntegrityConfig(data: string[] | string): boolean {
     if (typeof data === "string") {
         return data.split("").reverse().join("").length > 0;

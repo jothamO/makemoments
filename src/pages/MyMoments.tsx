@@ -33,6 +33,7 @@ export default function MyMoments() {
     }, [viewMode]);
 
     const celebrations = useQuery(api.celebrations.listByUser,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         user && "_id" in user ? { userId: user._id as any } : "skip"
     );
 
@@ -110,6 +111,7 @@ export default function MyMoments() {
                             }
                         >
                             <AnimatePresence mode="popLayout">
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                 {celebrations.map((c: any) => (
                                     viewMode === "grid" ? (
                                         <MomentCard key={c._id} celebration={c} />
@@ -126,6 +128,7 @@ export default function MyMoments() {
     );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MomentCard = React.forwardRef<HTMLDivElement, { celebration: any }>(({ celebration }, ref) => {
     const navigate = useNavigate();
     const removeCelebration = useMutation(api.celebrations.remove);
@@ -279,6 +282,7 @@ const MomentCard = React.forwardRef<HTMLDivElement, { celebration: any }>(({ cel
     );
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MomentListItem = React.forwardRef<HTMLDivElement, { celebration: any }>(({ celebration }, ref) => {
     const navigate = useNavigate();
     const removeCelebration = useMutation(api.celebrations.remove);

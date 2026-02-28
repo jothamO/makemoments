@@ -67,6 +67,7 @@ export default function Settings() {
             setOldPassword("");
             setNewPassword("");
             setConfirmPassword("");
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast({ title: "Update Failed", description: error.message, variant: "destructive" });
         } finally {
@@ -74,6 +75,7 @@ export default function Settings() {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleUnsubscribe = async (eventId: any, email: string) => {
         setProcessingId(eventId);
         try {

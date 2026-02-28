@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 interface AuthContextType {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user: any;
     isLoggedIn: boolean;
     isAdmin: boolean;

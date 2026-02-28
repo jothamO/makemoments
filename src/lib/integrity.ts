@@ -69,7 +69,6 @@ function startDebuggerWatch() {
     _devtoolsCheckInterval = setInterval(() => {
         const t0 = performance.now();
         // This is intentionally a no-op that a debugger breakpoint would pause
-        // eslint-disable-next-line no-debugger
         (function () { })();
         const t1 = performance.now();
         // Normal execution: < 5ms. Debugger paused: >> 50ms.
