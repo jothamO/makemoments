@@ -34,14 +34,14 @@ export const deepCleanPrices = mutation({
 
                 // Case 1: Price is a number (The legacy issue)
                 if (typeof currentPrice === "number") {
-                    await ctx.db.patch(asset._id as any, {
+                    await ctx.db.patch(asset._id as Id<"globalFonts" | "globalCharacters" | "musicTracks" | "globalThemes" | "globalPatterns">, {
                         price: { ngn: currentPrice, usd: currentPrice }
                     });
                     updated++;
                 }
                 // Case 2: Price is missing
                 else if (currentPrice === undefined || currentPrice === null) {
-                    await ctx.db.patch(asset._id as any, {
+                    await ctx.db.patch(asset._id as Id<"globalFonts" | "globalCharacters" | "musicTracks" | "globalThemes" | "globalPatterns">, {
                         price: { ngn: 0, usd: 0 }
                     });
                     updated++;
