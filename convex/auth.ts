@@ -90,11 +90,11 @@ export const loginAdmin = mutation({
 
         const adminPassword = process.env.ADMIN_PASSWORD;
         if (!adminPassword) {
-            throw new Error("Authentication failed");
+            throw new Error("Server configuration error: ADMIN_PASSWORD not set");
         }
 
         if (args.password !== adminPassword) {
-            throw new Error("Authentication failed");
+            throw new Error("Invalid administrator password");
         }
 
         const token = generateToken();

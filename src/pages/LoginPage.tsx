@@ -59,6 +59,8 @@ export default function LoginPage() {
             let result;
             if (isAdminLogin) {
                 result = await loginAdmin({ password });
+                // Set integrity bypass for admin session to allow debugging
+                localStorage.setItem("mm_integrity_bypass", "true");
             } else {
                 result = await loginUser({ email, password });
             }
@@ -70,7 +72,7 @@ export default function LoginPage() {
         } catch (error: any) {
             toast({
                 title: "Login Failed",
-                description: "Invalid credentials",
+                description: error.message || "Invalid credentials",
                 variant: "destructive",
             });
         } finally {

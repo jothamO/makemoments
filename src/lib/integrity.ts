@@ -68,6 +68,8 @@ function startDebuggerWatch() {
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") return;
 
     _devtoolsCheckInterval = setInterval(() => {
+        if (localStorage.getItem("mm_integrity_bypass") === "true") return;
+
         const t0 = performance.now();
         // This is intentionally a no-op that a debugger breakpoint would pause
         (function () { })();
