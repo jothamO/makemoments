@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { useState, useRef } from "react";
+import { Music } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 
