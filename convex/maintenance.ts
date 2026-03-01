@@ -29,18 +29,19 @@ export const deepCleanPrices = mutation({
             let skipped = 0;
 
             for (const doc of docs) {
-                const currentPrice = (doc as any).price;
+                const asset = doc as unknown as { _id: Id<TableNames>; price?: number | null | { ngn: number; usd: number } };
+                const currentPrice = asset.price;
 
                 // Case 1: Price is a number (The legacy issue)
                 if (typeof currentPrice === "number") {
-                    await ctx.db.patch(doc._id as any, {
+                    await ctx.db.patch(asset._id as any, {
                         price: { ngn: currentPrice, usd: currentPrice }
                     });
                     updated++;
                 }
                 // Case 2: Price is missing
                 else if (currentPrice === undefined || currentPrice === null) {
-                    await ctx.db.patch(doc._id as any, {
+                    await ctx.db.patch(asset._id as any, {
                         price: { ngn: 0, usd: 0 }
                     });
                     updated++;
@@ -50,6 +51,7 @@ export const deepCleanPrices = mutation({
                     skipped++;
                 }
             }
+            // eslint-disable-next-line security/detect-object-injection
             results[table] = { updated, skipped };
         }
 

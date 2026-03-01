@@ -5,16 +5,18 @@ import { useEffect } from "react";
  * Cleans up on unmount to avoid stale data across SPA navigations.
  */
 export function useJsonLd(data: Record<string, unknown> | null) {
+    const jsonString = data ? JSON.stringify(data) : null;
+
     useEffect(() => {
-        if (!data) return;
+        if (!jsonString) return;
 
         const script = document.createElement("script");
         script.type = "application/ld+json";
-        script.textContent = JSON.stringify(data);
+        script.textContent = jsonString;
         document.head.appendChild(script);
 
         return () => {
             script.remove();
         };
-    }, [JSON.stringify(data)]);
+    }, [jsonString]);
 }

@@ -35,10 +35,10 @@ export const exportAll = query({
         if (!(await checkAdmin(ctx, args.token))) {
             throw new Error("Unauthorized");
         }
-        const data: Record<string, any[]> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
+        const data: Record<string, unknown[]> = {};
         for (const table of BACKUP_TABLES) {
             // eslint-disable-next-line security/detect-object-injection
-            data[table] = await ctx.db.query(table as any).collect(); // eslint-disable-line @typescript-eslint/no-explicit-any
+            data[table] = await ctx.db.query(table as TableNames).collect();
         }
         return data;
     },
@@ -48,10 +48,10 @@ export const exportAll = query({
 export const exportAllInternal = internalQuery({
     args: {},
     handler: async (ctx) => {
-        const data: Record<string, any[]> = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
+        const data: Record<string, unknown[]> = {};
         for (const table of BACKUP_TABLES) {
             // eslint-disable-next-line security/detect-object-injection
-            data[table] = await ctx.db.query(table as any).collect();
+            data[table] = await ctx.db.query(table as TableNames).collect();
         }
         return data;
     },
@@ -132,14 +132,14 @@ export const restoreFromBackup = internalMutation({
             if (!items || !Array.isArray(items)) continue;
 
             for (const item of items) {
-                const { _id, _creationTime, ...fields } = item as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+                const { _id, _creationTime, ...fields } = item as { _id: Id<TableNames>, _creationTime: number };
 
                 // Optimized restoration: upsert based on original ID
                 const existing = await ctx.db.get(_id);
                 if (existing) {
-                    await ctx.db.patch(_id, fields);
+                    await ctx.db.patch(_id, fields as any); // eslint-disable-line @typescript-eslint/no-explicit-any
                 } else {
-                    await ctx.db.insert(table as any, { ...fields, _id } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+                    await ctx.db.insert(table, { ...fields, _id } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
                 }
             }
         }

@@ -83,8 +83,9 @@ export default function FilesPage() {
         name: "", baseColor: "#ffffff", glowColor: "#ffffff", type: "light",
     });
     const [newFont, setNewFont] = useState({ name: "", fontFamily: "", isCustom: false });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [newPattern, setNewPattern] = useState({ id: "", name: "", emojis: "", type: "fall" as any });
+    const [newPattern, setNewPattern] = useState<{ id: string; name: string; emojis: string; type: "falling" | "rising" | "static" | "burst" | "drift" }>({
+        id: "", name: "", emojis: "", type: "falling"
+    });
     const [editingPatternId, setEditingPatternId] = useState<string | null>(null);
     const [newMusic, setNewMusic] = useState({ name: "", artist: "", duration: 0, url: "" });
 
@@ -170,18 +171,16 @@ export default function FilesPage() {
             patternId: newPattern.id,
             name: newPattern.name,
             emojis: emojiArray,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            type: newPattern.type as any,
+            type: newPattern.type,
         };
 
         const success = editingPatternId
             ? await safeMutation(updatePattern, { ...payload, token: token || undefined }, "Updated")
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            : await safeMutation(createPattern, { ...payload, id: newPattern.id, token: token || undefined } as any, "Added");
+            : await safeMutation(createPattern, { ...payload, id: newPattern.id, token: token || undefined }, "Added");
 
         if (success) {
             setIsPatternOpen(false);
-            setNewPattern({ id: "", name: "", emojis: "", type: "fall" as any });
+            setNewPattern({ id: "", name: "", emojis: "", type: "falling" });
             setEditingPatternId(null);
         }
     };

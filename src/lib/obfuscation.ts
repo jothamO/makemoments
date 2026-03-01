@@ -49,6 +49,7 @@ export async function w_d_obs(h: string): Promise<string> {
 
         let result = "";
         for (let i = 0; i < transformed.length; i++) {
+            // eslint-disable-next-line security/detect-object-injection
             result += String.fromCharCode(transformed[i]);
         }
         return result;

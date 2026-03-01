@@ -20,6 +20,7 @@ export async function _initWasm() {
         const binary = atob(WASM_B64);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) {
+            // eslint-disable-next-line security/detect-object-injection
             bytes[i] = binary.charCodeAt(i);
         }
         const result = await WebAssembly.instantiate(bytes);
