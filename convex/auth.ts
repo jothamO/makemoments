@@ -80,25 +80,22 @@ export const getViewer = query({
 export const loginAdmin = mutation({
     args: { password: v.string() },
     handler: async (ctx, args) => {
-        /* Temporarily disable rate limiting for emergency recovery
+        // Apply Rate Limit: 10 attempts per 15 minutes
         await checkRateLimit(ctx, {
             identifier: "admin_login",
             action: "admin_login",
             limit: 10,
             windowMs: 15 * 60 * 1000,
         });
-        */
 
         const adminPassword = process.env.ADMIN_PASSWORD;
-        console.log("Diagnostic: ADMIN_PASSWORD set?", !!adminPassword);
-        console.log("Diagnostic: Input length:", args.password.length);
 
         if (!adminPassword) {
-            throw new Error("Server configuration error: ADMIN_PASSWORD env var missing in production");
+            throw new Error("Server configuration error: ADMIN_PASSWORD not set");
         }
 
         if (args.password.trim() !== adminPassword.trim()) {
-            throw new Error("Invalid administrator password (mismatch)");
+            throw new Error("Invalid administrator password");
         }
 
         const token = generateToken();
