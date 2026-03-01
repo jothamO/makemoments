@@ -10,6 +10,7 @@ const ALLOWED_HOSTS = [
     "www.makemoments.xyz",
     "localhost",
     "127.0.0.1",
+    "vercel.app"
 ];
 
 type AuditReporter = (event: string, metadata?: Record<string, unknown>) => void;
